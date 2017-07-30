@@ -27,6 +27,20 @@ Let bindings:
     id = x -> x
     id
 
+Algebraic data types:
+
+    bool = data (true, false)
+
+    maybe = data (none, just x)
+
+    tree = data (
+      empty
+      left x
+      right x
+    )
+
+    tree
+
 Grouping:
 
     f -> g -> x -> f (g x)

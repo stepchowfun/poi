@@ -18,10 +18,6 @@ poi::Variable::Variable(
 ) : name(name), variable_id(variable_id) {
 }
 
-std::unique_ptr<poi::Term> poi::Variable::clone() {
-  return std::unique_ptr<Term>(new Variable(name, variable_id));
-}
-
 std::string poi::Variable::show() {
   return *name;
 }
@@ -42,18 +38,6 @@ poi::Abstraction::Abstraction(
   size_t variable_id,
   std::shared_ptr<poi::Term> body
 ) : variable(variable), variable_id(variable_id), body(body) {
-}
-
-std::unique_ptr<poi::Term> poi::Abstraction::clone() {
-  return std::unique_ptr<Term>(new Abstraction(
-    variable,
-    variable_id,
-    std::shared_ptr<Term>(
-      body ?
-        static_cast<Term*>(body->clone().release()) :
-        nullptr
-    )
-  ));
 }
 
 std::string poi::Abstraction::show() {
@@ -87,20 +71,6 @@ poi::Application::Application(
   std::shared_ptr<poi::Term> abstraction,
   std::shared_ptr<poi::Term> operand
 ) : abstraction(abstraction), operand(operand) {
-}
-
-std::unique_ptr<poi::Term> poi::Application::clone() {
-  return std::unique_ptr<Term>(new Application(
-    std::shared_ptr<Term>(
-      abstraction ?
-        static_cast<Term*>(abstraction->clone().release()) :
-        nullptr
-    ), std::shared_ptr<Term>(
-      operand ?
-        static_cast<Term*>(operand->clone().release()) :
-        nullptr
-    )
-  ));
 }
 
 std::string poi::Application::show() {
@@ -160,23 +130,6 @@ poi::Let::Let(
   body(body) {
 }
 
-std::unique_ptr<poi::Term> poi::Let::clone() {
-  return std::unique_ptr<Term>(new Let(
-    variable,
-    variable_id,
-    std::shared_ptr<Term>(
-      definition ?
-        static_cast<Term*>(definition->clone().release()) :
-        nullptr
-    ),
-    std::shared_ptr<Term>(
-      body ?
-        static_cast<Term*>(body->clone().release()) :
-        nullptr
-    )
-  ));
-}
-
 std::string poi::Let::show() {
   return
     "(" +
@@ -205,18 +158,68 @@ std::shared_ptr<poi::Value> poi::Let::eval(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// DataConstructor                                                           //
+///////////////////////////////////////////////////////////////////////////////
+
+poi::DataConstructor::DataConstructor(
+  std::shared_ptr<std::string> name,
+  size_t name_id,
+  std::shared_ptr<std::vector<std::shared_ptr<std::string>>> params,
+  std::shared_ptr<std::vector<size_t>> param_ids
+) : name(name), name_id(name_id), params(params), param_ids(param_ids) {
+}
+
+std::string poi::DataConstructor::show() {
+  auto result = *name;
+  for (auto param : *params) {
+    result += " " + *param;
+  }
+  return result;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// DataType                                                                  //
+///////////////////////////////////////////////////////////////////////////////
+
+poi::DataType::DataType(
+  std::shared_ptr<std::vector<poi::DataConstructor>> constructors
+) : constructors(constructors) {
+}
+
+std::string poi::DataType::show() {
+  std::string result = "data (";
+  for (
+    auto iter = constructors->begin();
+    iter != constructors->end();
+    ++iter
+  ) {
+    result += iter->show();
+    if (iter + 1 < constructors->end()) {
+      result += ", ";
+    }
+  }
+  result += ")";
+  return result;
+}
+
+std::shared_ptr<poi::Value> poi::DataType::eval(
+  std::shared_ptr<poi::Term> term,
+  std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment
+) {
+  throw poi::Error(
+    "eval(...) has not been implemented for poi::DataType.",
+    *source, *source_name,
+    start_pos, end_pos
+  );
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Group                                                                     //
 ///////////////////////////////////////////////////////////////////////////////
 
 poi::Group::Group(
   std::shared_ptr<poi::Term> body
 ) : body(body) {
-}
-
-std::unique_ptr<poi::Term> poi::Group::clone() {
-  return std::unique_ptr<Term>(new Group(
-    body ? std::shared_ptr<Term>(body->clone().release()) : nullptr
-  ));
 }
 
 std::string poi::Group::show() {

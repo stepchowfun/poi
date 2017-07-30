@@ -16,11 +16,18 @@
   ambiguous, and below we will resolve ambiguities by encoding precedence and
   associativity into the production rules.
 
-    Term = Variable | Abstraction | Application | Let | Group
+    Term = Variable | Abstraction | Application | Let | DataType | Group
     Variable = IDENTIFIER
     Abstraction = IDENTIFIER ARROW Term
     Application = Term Term
     Let = IDENTIFIER EQUALS Term SEPARATOR Term
+    DataType =
+      DATA LEFT_PAREN
+      ( | DataConstructorList DataConstructor)
+      RIGHT_PAREN
+    DataConstructorList = | DataConstructor SEPARATOR DataConstructorList
+    DataConstructor = IDENTIFIER DataConstructorParams
+    DataConstructorParams = | IDENTIFIER DataConstructorParams
     Group = LEFT_PAREN Term RIGHT_PAREN
 
   We note the following ambiguities, and the chosen resolutions:
@@ -48,21 +55,34 @@
   We can resolve the ambiguities in the grammar by expanding definitions and
   eliminating alternatives:
 
-    Term = Variable | Abstraction | Application | Let | Group
+    Term = Variable | Abstraction | Application | Let | DataType | Group
     Variable = IDENTIFIER
     Abstraction = IDENTIFIER ARROW Term
-    Application = (Variable | Application | Group) (Variable | Group)
+    Application =
+      (Variable | Application | DataType | Group)
+      (Variable | DataType | Group)
     Let = IDENTIFIER EQUALS Term SEPARATOR Term
+    DataType =
+      DATA LEFT_PAREN
+      ( | DataConstructorList DataConstructor)
+      RIGHT_PAREN
+    DataConstructorList = | DataConstructor SEPARATOR DataConstructorList
+    DataConstructor = IDENTIFIER DataConstructorParams
+    DataConstructorParams = | IDENTIFIER DataConstructorParams
     Group = LEFT_PAREN Term RIGHT_PAREN
 
   There is still a problem with this grammar: the Application rule is left-
   recursive, and packrat parsers can't handle left-recursion:
 
-    Application = (Variable | Application | Group) (Variable | Group)
+    Application =
+      (Variable | Application | DataType | Group)
+      (Variable | DataType | Group)
 
   To fix this, we rewrite the rule to use right-recursion instead:
 
-    Application = (Variable | Group) (Variable | Group | Application)
+    Application =
+      (Variable | DataType | Group)
+      (Variable | Application | DataType | Group)
 
   This makes Application have right-associativity, which is not what we want.
   In the parsing rule for Application, we use a special trick to flip the
@@ -82,6 +102,7 @@ enum class MemoType {
   ABSTRACTION,
   APPLICATION,
   LET,
+  DATA_TYPE,
   GROUP
 };
 
@@ -225,6 +246,14 @@ std::shared_ptr<poi::Let> parse_let(
   size_t variable_id
 );
 
+std::shared_ptr<poi::DataType> parse_data_type(
+  MemoMap &memo,
+  std::vector<poi::Token> &tokens,
+  std::vector<poi::Token>::iterator &next,
+  std::unordered_map<std::string, size_t> &environment,
+  size_t variable_id
+);
+
 std::shared_ptr<poi::Group> parse_group(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
@@ -300,6 +329,12 @@ std::shared_ptr<poi::Term> parse_term(
     next,
     term,
     parse_let(memo, tokens, next, environment, variable_id)
+  );
+  TRY_RULE(
+    begin,
+    next,
+    term,
+    parse_data_type(memo, tokens, next, environment, variable_id)
   );
   TRY_RULE(
     begin,
@@ -456,6 +491,12 @@ std::shared_ptr<poi::Application> parse_application(
     left_term_begin,
     next,
     left_term,
+    parse_data_type(memo, tokens, next, environment, variable_id)
+  );
+  TRY_RULE(
+    left_term_begin,
+    next,
+    left_term,
     parse_group(memo, tokens, next, environment, variable_id, false)
   );
   if (!left_term) {
@@ -470,6 +511,12 @@ std::shared_ptr<poi::Application> parse_application(
     next,
     right_term,
     parse_variable(memo, tokens, next, environment, variable_id)
+  );
+  TRY_RULE(
+    right_term_begin,
+    next,
+    right_term,
+    parse_data_type(memo, tokens, next, environment, variable_id)
   );
   TRY_RULE(
     right_term_begin,
@@ -643,6 +690,101 @@ std::shared_ptr<poi::Let> parse_let(
 
   // Memoize whatever we parsed and return it.
   MEMOIZE_AND_RETURN(memo_key, let, next);
+}
+
+std::shared_ptr<poi::DataType> parse_data_type(
+  MemoMap &memo,
+  std::vector<poi::Token> &tokens,
+  std::vector<poi::Token>::iterator &next,
+  std::unordered_map<std::string, size_t> &environment,
+  size_t variable_id
+) {
+  // Check if we can reuse a memoized result.
+  auto begin = next;
+  auto memo_key = MEMO_KEY_SIMPLE(DATA_TYPE, begin);
+  MEMO_CHECK(memo, memo_key, DataType, next);
+
+  // Parse the DATA.
+  if (next == tokens.end() || next->type != poi::TokenType::DATA) {
+    MEMOIZE_AND_FAIL(memo_key, DataType, begin, next);
+  }
+  ++next;
+
+  // Parse the LEFT_PAREN.
+  if (next == tokens.end() || next->type != poi::TokenType::LEFT_PAREN) {
+    throw poi::Error(
+      "Expected '(' after 'data'.",
+      *(begin->source), *(begin->source_name),
+      begin->start_pos, (next - 1)->end_pos
+    );
+  }
+  ++next;
+
+  // Parse the constructors. Note that the lexical analyzer guarantees
+  // parentheses are matched.
+  auto constructors = std::make_shared<std::vector<poi::DataConstructor>>();
+  bool first_constructor = true;
+  while (next->type != poi::TokenType::RIGHT_PAREN) {
+    // Parse the SEPARATOR if applicable.
+    if (first_constructor) {
+      first_constructor = false;
+    } else {
+      ++next;
+    }
+
+    // Mark the start of the constructor for nice error reporting.
+    auto constructor_start = next;
+
+    // Parse the name of the constructor.
+    if (next->type != poi::TokenType::IDENTIFIER) {
+      throw poi::Error(
+        "Invalid data constructor.",
+        *(begin->source), *(begin->source_name),
+        constructor_start->start_pos, next->end_pos
+      );
+    }
+    auto name = next->literal;
+    size_t name_id = variable_id;
+    ++variable_id;
+    ++next;
+
+    // Parse the parameters.
+    auto params = std::make_shared<
+      std::vector<std::shared_ptr<std::string>>
+    >();
+    auto param_ids = std::make_shared<std::vector<size_t>>();
+    while (
+      next->type != poi::TokenType::SEPARATOR &&
+      next->type != poi::TokenType::RIGHT_PAREN
+    ) {
+      if (next->type != poi::TokenType::IDENTIFIER) {
+        throw poi::Error(
+          "Invalid data constructor.",
+          *(begin->source), *(begin->source_name),
+          constructor_start->start_pos, next->end_pos
+        );
+      }
+      auto parameter = next->literal;
+      params->push_back(parameter);
+      param_ids->push_back(variable_id);
+      ++variable_id;
+      ++next;
+    }
+
+    // Construct the DataConstructor.
+    poi::DataConstructor constructor(name, name_id, params, param_ids);
+    constructors->push_back(constructor);
+  }
+
+  // Skip the closing RIGHT_PAREN.
+  ++next;
+
+  // Construct the DataType.
+  auto data_type = std::make_shared<poi::DataType>(constructors);
+  span_tokens(*data_type, begin, next);
+
+  // Memoize whatever we parsed and return it.
+  MEMOIZE_AND_RETURN(memo_key, data_type, next);
 }
 
 std::shared_ptr<poi::Group> parse_group(

@@ -12,6 +12,7 @@ namespace poi {
 
   enum class TokenType {
     ARROW,
+    DATA,
     EQUALS,
     IDENTIFIER,
     LEFT_PAREN,
@@ -21,6 +22,7 @@ namespace poi {
 
   const char * const TokenTypeName[] = {
     "ARROW",
+    "DATA",
     "EQUALS",
     "IDENTIFIER",
     "LEFT_PAREN",
