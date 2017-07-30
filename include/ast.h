@@ -6,9 +6,14 @@
 #define POI_AST_H
 
 #include <memory>
+#include <poi/value.h>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace poi {
+
+  class Value; // Declared in gram/value.h
 
   class Term {
   public:
@@ -16,36 +21,51 @@ namespace poi {
     std::shared_ptr<std::string> source;
     size_t start_pos; // Inclusive
     size_t end_pos; // Exclusive
+    std::unordered_set<size_t> free_variables;
 
     virtual ~Term();
     virtual std::unique_ptr<Term> clone() = 0;
     virtual std::string show() = 0;
+    virtual std::shared_ptr<poi::Value> eval(
+      std::shared_ptr<poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment
+    ) = 0;
   };
 
   class Variable : public Term {
   public:
     std::shared_ptr<std::string> name;
-    size_t de_bruijn_index;
+    size_t variable_id;
 
     explicit Variable(
       std::shared_ptr<std::string> name,
-      size_t de_bruijn_index
+      size_t variable_id
     );
     std::unique_ptr<Term> clone() override;
     std::string show() override;
+    std::shared_ptr<poi::Value> eval(
+      std::shared_ptr<poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment
+    ) override;
   };
 
   class Abstraction : public Term {
   public:
     std::shared_ptr<std::string> variable;
+    size_t variable_id;
     std::shared_ptr<poi::Term> body;
 
-    Abstraction(
+    explicit Abstraction(
       std::shared_ptr<std::string> variable,
+      size_t variable_id,
       std::shared_ptr<poi::Term> body
     );
     std::unique_ptr<Term> clone() override;
     std::string show() override;
+    std::shared_ptr<poi::Value> eval(
+      std::shared_ptr<poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment
+    ) override;
   };
 
   class Application : public Term {
@@ -53,27 +73,37 @@ namespace poi {
     std::shared_ptr<poi::Term> abstraction;
     std::shared_ptr<poi::Term> operand;
 
-    Application(
+    explicit Application(
       std::shared_ptr<poi::Term> abstraction,
       std::shared_ptr<poi::Term> operand
     );
     std::unique_ptr<Term> clone() override;
     std::string show() override;
+    std::shared_ptr<poi::Value> eval(
+      std::shared_ptr<poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment
+    ) override;
   };
 
   class Let : public Term {
   public:
     std::shared_ptr<std::string> variable;
+    size_t variable_id;
     std::shared_ptr<poi::Term> definition;
     std::shared_ptr<poi::Term> body;
 
-    Let(
+    explicit Let(
       std::shared_ptr<std::string> variable,
+      size_t variable_id,
       std::shared_ptr<poi::Term> definition,
       std::shared_ptr<poi::Term> body
     );
     std::unique_ptr<Term> clone() override;
     std::string show() override;
+    std::shared_ptr<poi::Value> eval(
+      std::shared_ptr<poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment
+    ) override;
   };
 
   class Group : public Term {
@@ -83,6 +113,10 @@ namespace poi {
     explicit Group(std::shared_ptr<poi::Term> body);
     std::unique_ptr<Term> clone() override;
     std::string show() override;
+    std::shared_ptr<poi::Value> eval(
+      std::shared_ptr<poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment
+    ) override;
   };
 
 }
