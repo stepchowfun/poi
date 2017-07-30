@@ -39,7 +39,7 @@ namespace poi {
 
     bool explicit_separator; // Only used for SEPARATOR tokens
 
-    Token(
+    explicit Token(
       poi::TokenType type,
       std::shared_ptr<std::string> literal,
       std::shared_ptr<std::string> source_name,
