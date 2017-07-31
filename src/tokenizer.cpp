@@ -204,6 +204,13 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
 
     // Parse one-character symbols.
 
+    // DOT
+    if (parse_symbol(
+      TokenType::DOT, ".", false, false, static_cast<TokenType>(0)
+    )) {
+      continue;
+    }
+
     // EQUALS
     if (parse_symbol(
       TokenType::EQUALS, "=", false, false, static_cast<TokenType>(0)

@@ -13,13 +13,13 @@ poi::Term::~Term() {
 ///////////////////////////////////////////////////////////////////////////////
 
 poi::Variable::Variable(
-  std::shared_ptr<std::string> name,
+  std::shared_ptr<std::string> variable,
   size_t variable_id
-) : name(name), variable_id(variable_id) {
+) : variable(variable), variable_id(variable_id) {
 }
 
 std::string poi::Variable::show() {
-  return *name;
+  return *variable;
 }
 
 std::shared_ptr<poi::Value> poi::Variable::eval(
@@ -208,6 +208,32 @@ std::shared_ptr<poi::Value> poi::DataType::eval(
 ) {
   return std::make_shared<poi::DataTypeValue>(
     std::dynamic_pointer_cast<poi::DataType>(term)
+  );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Member                                                                    //
+///////////////////////////////////////////////////////////////////////////////
+
+poi::Member::Member(
+  std::shared_ptr<poi::Term> data,
+  std::shared_ptr<std::string> field,
+  size_t field_id
+) : data(data), field(field), field_id(field_id) {
+}
+
+std::string poi::Member::show() {
+  return "(" + data->show() + "." + *field + ")";
+}
+
+std::shared_ptr<poi::Value> poi::Member::eval(
+  std::shared_ptr<poi::Term> term,
+  std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment
+) {
+  throw poi::Error(
+    "eval(...) has not been implemented for poi::Member.",
+    *source, *source_name,
+    start_pos, end_pos
   );
 }
 
