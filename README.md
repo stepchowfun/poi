@@ -31,11 +31,11 @@ Algebraic data types:
 
     bool = data (true, false)
 
-    maybe = data (none, just x)
+    maybe = data (none, just value)
 
     tree = data (
       empty
-      node left val right
+      node left value right
     )
 
     tree
