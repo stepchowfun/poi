@@ -92,7 +92,7 @@ std::shared_ptr<poi::Value> poi::Application::eval(
   );
   if (!abstraction_value_fun) {
     throw poi::Error(
-      abstraction_value->show() + "is not a function.",
+      abstraction_value->show() + " is not a function.",
       *source, *source_name,
       start_pos, end_pos
     );
@@ -206,10 +206,8 @@ std::shared_ptr<poi::Value> poi::DataType::eval(
   std::shared_ptr<poi::Term> term,
   std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment
 ) {
-  throw poi::Error(
-    "eval(...) has not been implemented for poi::DataType.",
-    *source, *source_name,
-    start_pos, end_pos
+  return std::make_shared<poi::DataTypeValue>(
+    std::dynamic_pointer_cast<poi::DataType>(term)
   );
 }
 
