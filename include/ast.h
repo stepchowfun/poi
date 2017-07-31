@@ -34,11 +34,11 @@ namespace poi {
 
   class Variable : public Term {
   public:
-    std::shared_ptr<std::string> name;
+    std::shared_ptr<std::string> variable;
     size_t variable_id;
 
     explicit Variable(
-      std::shared_ptr<std::string> name,
+      std::shared_ptr<std::string> variable,
       size_t variable_id
     );
     std::string show() override;
@@ -124,6 +124,24 @@ namespace poi {
 
     explicit DataType(
       std::shared_ptr<std::vector<poi::DataConstructor>> constructors
+    );
+    std::string show() override;
+    std::shared_ptr<poi::Value> eval(
+      std::shared_ptr<poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment
+    ) override;
+  };
+
+  class Member : public Term {
+  public:
+    std::shared_ptr<poi::Term> data;
+    std::shared_ptr<std::string> field;
+    size_t field_id;
+
+    explicit Member(
+      std::shared_ptr<poi::Term> data,
+      std::shared_ptr<std::string> field,
+      size_t field_id
     );
     std::string show() override;
     std::shared_ptr<poi::Value> eval(

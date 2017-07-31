@@ -16,18 +16,18 @@
   ambiguous, and below we will resolve ambiguities by encoding precedence and
   associativity into the production rules.
 
-    Term = Variable | Abstraction | Application | Let | DataType | Group
+    Term =
+      Variable | Abstraction | Application | Let | DataType | Member | Group
     Variable = IDENTIFIER
     Abstraction = IDENTIFIER ARROW Term
     Application = Term Term
     Let = IDENTIFIER EQUALS Term SEPARATOR Term
-    DataType =
-      DATA LEFT_PAREN
-      ( | DataConstructorList DataConstructor)
-      RIGHT_PAREN
-    DataConstructorList = | DataConstructor SEPARATOR DataConstructorList
+    DataType = DATA LEFT_PAREN DataConstructorList RIGHT_PAREN
+    DataConstructorList = | DataConstructor DataConstructorTail
+    DataConstructorTail = | SEPARATOR DataConstructor DataConstructorTail
     DataConstructor = IDENTIFIER DataConstructorParams
     DataConstructorParams = | IDENTIFIER DataConstructorParams
+    Member = Term DOT IDENTIFIER
     Group = LEFT_PAREN Term RIGHT_PAREN
 
   We note the following ambiguities, and the chosen resolutions:
@@ -36,6 +36,10 @@
     x -> (t t)
     (x -> t) t
 
+    # Resolution: Member has higher precedence than Abstraction.
+    x -> (t . x)
+    (x -> t) . x
+
     # Resolution: Application is left-associative.
     (t x) t
     t (x t)
@@ -43,6 +47,14 @@
     # Resolution: Application has higher precedence than Let.
     x = t, (x t)
     (x = t, x) t
+
+    # Resolution: Member has higher precedence than Application.
+    t (x . x)
+    (t x) . x
+
+    # Resolution: Member has higher precedence than Let.
+    x = t, (x . x)
+    (x = t, x) . x
 
     # Resolution: The right side of an Application cannot be an Abstraction.
     (t (x -> x)) t
@@ -55,34 +67,35 @@
   We can resolve the ambiguities in the grammar by expanding definitions and
   eliminating alternatives:
 
-    Term = Variable | Abstraction | Application | Let | DataType | Group
+    Term =
+      Variable | Abstraction | Application | Let | DataType | Member | Group
     Variable = IDENTIFIER
     Abstraction = IDENTIFIER ARROW Term
     Application =
-      (Variable | Application | DataType | Group)
-      (Variable | DataType | Group)
+      (Variable | Application | DataType | Member | Group)
+      (Variable | DataType | Member | Group)
     Let = IDENTIFIER EQUALS Term SEPARATOR Term
-    DataType =
-      DATA LEFT_PAREN
-      ( | DataConstructorList DataConstructor)
-      RIGHT_PAREN
-    DataConstructorList = | DataConstructor SEPARATOR DataConstructorList
+    DataType = DATA LEFT_PAREN DataConstructorList RIGHT_PAREN
+    DataConstructorList = | DataConstructor DataConstructorTail
+    DataConstructorTail = | SEPARATOR DataConstructor DataConstructorTail
     DataConstructor = IDENTIFIER DataConstructorParams
     DataConstructorParams = | IDENTIFIER DataConstructorParams
+    Member = (Variable | DataType | Member | Group) DOT IDENTIFIER
     Group = LEFT_PAREN Term RIGHT_PAREN
 
-  There is still a problem with this grammar: the Application rule is left-
-  recursive, and packrat parsers can't handle left-recursion:
+  There are still two problems with this grammar: the Application and Member
+  rules are left-recursive, and packrat parsers can't handle left-recursion:
 
     Application =
-      (Variable | Application | DataType | Group)
-      (Variable | DataType | Group)
+      (Variable | Application | DataType | Member | Group)
+      (Variable | DataType | Member | Group)
+    Member = (Variable | DataType | Member | Group) DOT IDENTIFIER
 
-  To fix this, we rewrite the rule to use right-recursion instead:
+  To fix Application, we rewrite the rule to use right-recursion instead:
 
     Application =
-      (Variable | DataType | Group)
-      (Variable | Application | DataType | Group)
+      (Variable | DataType | Member | Group)
+      (Variable | Application | DataType | Member | Group)
 
   This makes Application have right-associativity, which is not what we want.
   In the parsing rule for Application, we use a special trick to flip the
@@ -90,6 +103,12 @@
   results of right-recursive calls, we pass the left term (`application_prior`)
   to the right-recursive call and let it assemble the tree with left-
   associativity.
+
+  To fix Member, we rewrite the rule to eliminate the left recursion:
+
+    Member = (Variable | DataType | Group) DOT IDENTIFIER MemberSuffix
+    MemberSuffix = | DOT IDENTIFIER
+
 */
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -103,6 +122,7 @@ enum class MemoType {
   APPLICATION,
   LET,
   DATA_TYPE,
+  MEMBER,
   GROUP
 };
 
@@ -254,6 +274,14 @@ std::shared_ptr<poi::DataType> parse_data_type(
   size_t variable_id
 );
 
+std::shared_ptr<poi::Member> parse_member(
+  MemoMap &memo,
+  std::vector<poi::Token> &tokens,
+  std::vector<poi::Token>::iterator &next,
+  std::unordered_map<std::string, size_t> &environment,
+  size_t variable_id
+);
+
 std::shared_ptr<poi::Group> parse_group(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
@@ -340,6 +368,12 @@ std::shared_ptr<poi::Term> parse_term(
     begin,
     next,
     term,
+    parse_member(memo, tokens, next, environment, variable_id)
+  );
+  TRY_RULE(
+    begin,
+    next,
+    term,
     parse_group(memo, tokens, next, environment, variable_id, false)
   );
 
@@ -415,7 +449,7 @@ std::shared_ptr<poi::Abstraction> parse_abstraction(
   auto variable = next->literal;
   ++next;
 
-  // Parse the ARROW token.
+  // Parse the ARROW.
   if (next == tokens.end() || next->type != poi::TokenType::ARROW) {
     MEMOIZE_AND_FAIL(memo_key, Abstraction, begin, next);
   }
@@ -497,6 +531,12 @@ std::shared_ptr<poi::Application> parse_application(
     left_term_begin,
     next,
     left_term,
+    parse_member(memo, tokens, next, environment, variable_id)
+  );
+  TRY_RULE(
+    left_term_begin,
+    next,
+    left_term,
     parse_group(memo, tokens, next, environment, variable_id, false)
   );
   if (!left_term) {
@@ -517,6 +557,12 @@ std::shared_ptr<poi::Application> parse_application(
     next,
     right_term,
     parse_data_type(memo, tokens, next, environment, variable_id)
+  );
+  TRY_RULE(
+    right_term_begin,
+    next,
+    right_term,
+    parse_member(memo, tokens, next, environment, variable_id)
   );
   TRY_RULE(
     right_term_begin,
@@ -785,6 +831,92 @@ std::shared_ptr<poi::DataType> parse_data_type(
 
   // Memoize whatever we parsed and return it.
   MEMOIZE_AND_RETURN(memo_key, data_type, next);
+}
+
+std::shared_ptr<poi::Member> parse_member(
+  MemoMap &memo,
+  std::vector<poi::Token> &tokens,
+  std::vector<poi::Token>::iterator &next,
+  std::unordered_map<std::string, size_t> &environment,
+  size_t variable_id
+) {
+  // Check if we can reuse a memoized result.
+  auto begin = next;
+  auto memo_key = MEMO_KEY_SIMPLE(MEMBER, begin);
+  MEMO_CHECK(memo, memo_key, Member, next);
+
+  // Parse the data.
+  std::shared_ptr<poi::Term> data;
+  TRY_RULE(
+    begin,
+    next,
+    data,
+    parse_variable(memo, tokens, next, environment, variable_id)
+  );
+  TRY_RULE(
+    begin,
+    next,
+    data,
+    parse_data_type(memo, tokens, next, environment, variable_id)
+  );
+  TRY_RULE(
+    begin,
+    next,
+    data,
+    parse_group(memo, tokens, next, environment, variable_id, false)
+  );
+  if (!data) {
+    MEMOIZE_AND_FAIL(memo_key, Member, begin, next);
+  }
+
+  // Parse the DOT.
+  if (next == tokens.end() || next->type != poi::TokenType::DOT) {
+    MEMOIZE_AND_FAIL(memo_key, Member, begin, next);
+  }
+  ++next;
+
+  // Parse the IDENTIFIER.
+  if (next == tokens.end() || next->type != poi::TokenType::IDENTIFIER) {
+    throw poi::Error(
+      "Invalid member access.",
+      *(begin->source), *(begin->source_name),
+      begin->start_pos, (next - 1)->end_pos
+    );
+  }
+  auto field = next->literal;
+  size_t field_id = variable_id;
+  ++next;
+
+  // Construct the Member.
+  auto member = std::make_shared<poi::Member>(data, field, field_id);
+  member->free_variables = data->free_variables;
+  span_tokens(*member, begin, next);
+
+  // Check for additional member accesses.
+  while (next != tokens.end() && next->type == poi::TokenType::DOT) {
+    // Skip the DOT.
+    ++next;
+
+    // Parse the IDENTIFIER.
+    if (next == tokens.end() || next->type != poi::TokenType::IDENTIFIER) {
+      throw poi::Error(
+        "Invalid member access.",
+        *(begin->source), *(begin->source_name),
+        begin->start_pos, (next - 1)->end_pos
+      );
+    }
+    field = next->literal;
+    field_id = variable_id;
+    ++next;
+
+    // Construct the new Member.
+    member = std::make_shared<poi::Member>(member, field, field_id);
+    member->free_variables = member->free_variables;
+    span_tokens(*member, begin, next);
+  }
+
+  // Memoize whatever we parsed and return it.
+  MEMOIZE_AND_RETURN(memo_key, member, next);
 }
 
 std::shared_ptr<poi::Group> parse_group(
