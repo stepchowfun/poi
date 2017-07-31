@@ -23,8 +23,15 @@ namespace poi {
     size_t source;
     size_t start_pos; // Inclusive
     size_t end_pos; // Exclusive
-    std::unordered_set<size_t> free_variables;
+    std::shared_ptr<std::unordered_set<size_t>> free_variables;
 
+    Term(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables
+    );
     virtual ~Term();
     virtual std::string show(poi::StringPool &pool) = 0;
     virtual std::shared_ptr<poi::Value> eval(
@@ -39,6 +46,11 @@ namespace poi {
     size_t variable;
 
     explicit Variable(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables,
       size_t variable
     );
     std::string show(poi::StringPool &pool) override;
@@ -55,6 +67,11 @@ namespace poi {
     std::shared_ptr<poi::Term> body;
 
     explicit Abstraction(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables,
       size_t variable,
       std::shared_ptr<poi::Term> body
     );
@@ -72,6 +89,11 @@ namespace poi {
     std::shared_ptr<poi::Term> operand;
 
     explicit Application(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables,
       std::shared_ptr<poi::Term> abstraction,
       std::shared_ptr<poi::Term> operand
     );
@@ -90,6 +112,11 @@ namespace poi {
     std::shared_ptr<poi::Term> body;
 
     explicit Let(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables,
       size_t variable,
       std::shared_ptr<poi::Term> definition,
       std::shared_ptr<poi::Term> body
@@ -102,24 +129,23 @@ namespace poi {
     ) override;
   };
 
-  class DataConstructor {
-  public:
-    size_t name;
-    std::shared_ptr<std::vector<size_t>> params;
-
-    explicit DataConstructor(
-      size_t name,
-      std::shared_ptr<std::vector<size_t>> params
-    );
-    std::string show(poi::StringPool &pool);
-  };
-
   class DataType : public Term {
   public:
-    std::shared_ptr<std::vector<poi::DataConstructor>> constructors;
+    std::shared_ptr<std::vector<size_t>> constructor_names;
+    std::shared_ptr<
+      std::unordered_map<size_t, std::vector<size_t>>
+    > constructors;
 
     explicit DataType(
-      std::shared_ptr<std::vector<poi::DataConstructor>> constructors
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables,
+      std::shared_ptr<std::vector<size_t>> constructor_names,
+      std::shared_ptr<
+        std::unordered_map<size_t, std::vector<size_t>>
+      > constructors
     );
     std::string show(poi::StringPool &pool) override;
     std::shared_ptr<poi::Value> eval(
@@ -129,13 +155,23 @@ namespace poi {
     ) override;
   };
 
+  // A Member `t.x` can refer to one of two things:
+  // a) If `t` is a data type, then `t.x` refers to one of its constructors.
+  //    Example: `bool.true`
+  // b) If `t` is a data value, then `t.x` refers to one of its members.
+  //    Example: `person.name`
   class Member : public Term {
   public:
-    std::shared_ptr<poi::Term> data;
+    std::shared_ptr<poi::Term> object;
     size_t field;
 
     explicit Member(
-      std::shared_ptr<poi::Term> data,
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables,
+      std::shared_ptr<poi::Term> object,
       size_t field
     );
     std::string show(poi::StringPool &pool) override;
@@ -146,11 +182,23 @@ namespace poi {
     ) override;
   };
 
+  // A Data term evaluates to a DataValue value. These terms show up in the
+  // automatically generated constructor functions. There is no concrete
+  // syntax for Data terms.
   class Data : public Term {
   public:
     std::shared_ptr<poi::DataTypeValue> type;
+    size_t constructor;
 
-    explicit Data(std::shared_ptr<poi::DataTypeValue> type);
+    explicit Data(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables,
+      std::shared_ptr<poi::DataTypeValue> type,
+      size_t constructor
+    );
     std::string show(poi::StringPool &pool) override;
     std::shared_ptr<poi::Value> eval(
       std::shared_ptr<poi::Term> term,
@@ -163,7 +211,14 @@ namespace poi {
   public:
     std::shared_ptr<poi::Term> body;
 
-    explicit Group(std::shared_ptr<poi::Term> body);
+    explicit Group(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables,
+      std::shared_ptr<poi::Term> body
+    );
     std::string show(poi::StringPool &pool) override;
     std::shared_ptr<poi::Value> eval(
       std::shared_ptr<poi::Term> term,

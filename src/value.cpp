@@ -15,7 +15,9 @@ poi::Value::~Value() {
 
 poi::FunctionValue::FunctionValue(
   std::shared_ptr<poi::Abstraction> abstraction,
-  std::unordered_map<size_t, std::shared_ptr<poi::Value>> &captures
+  std::shared_ptr<
+    std::unordered_map<size_t, std::shared_ptr<poi::Value>>
+  > captures
 ) : abstraction(abstraction), captures(captures) {
 }
 
@@ -43,17 +45,17 @@ std::string poi::DataTypeValue::show(poi::StringPool &pool) {
 poi::DataValue::DataValue(
   std::shared_ptr<poi::DataTypeValue> type,
   std::size_t constructor,
-  std::shared_ptr<std::vector<std::shared_ptr<poi::Value>>> members
-) : type(type), constructor(constructor), members(members) {
+  std::shared_ptr<
+    std::unordered_map<size_t, std::shared_ptr<poi::Value>>
+  > captures
+) : type(type), constructor(constructor), captures(captures) {
 }
 
 std::string poi::DataValue::show(poi::StringPool &pool) {
-  std::string result =
-    "(" +
-    pool.find((*type->data_type->constructors)[constructor].name);
-  for (auto &member : *members) {
-    result += " " + member->show(pool);
+  std::string result = "(" + pool.find(constructor);
+  for (auto &capture : *captures) {
+    result += " " + capture.second->show(pool);
   }
-  result += " : " + type->show(pool) + ")";
+  result += ")";
   return result;
 }

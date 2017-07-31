@@ -258,8 +258,8 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
     if (iter->type == TokenType::SEPARATOR && !iter->explicit_separator) {
       // Skip redundant SEPARATOR tokens.
       if (
-        (iter + 1) != tokens.end() &&
-        (iter + 1)->type == TokenType::SEPARATOR
+        std::next(iter) != tokens.end() &&
+        std::next(iter)->type == TokenType::SEPARATOR
       ) {
         continue;
       }
@@ -276,12 +276,12 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
       }
 
       // Don't add SEPARATOR tokens at the end of the file.
-      if ((iter + 1) == tokens.end()) {
+      if (std::next(iter) == tokens.end()) {
         continue;
       }
 
       // Don't add SEPARATOR tokens after a group opener.
-      auto next_token = *(iter + 1);
+      auto next_token = *std::next(iter);
       if (next_token.type == TokenType::RIGHT_PAREN) {
         continue;
       }

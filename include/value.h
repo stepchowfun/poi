@@ -23,11 +23,15 @@ namespace poi {
   class FunctionValue : public Value {
   public:
     std::shared_ptr<poi::Abstraction> abstraction;
-    std::unordered_map<size_t, std::shared_ptr<poi::Value>> captures;
+    std::shared_ptr<
+      std::unordered_map<size_t, std::shared_ptr<poi::Value>>
+    > captures;
 
     explicit FunctionValue(
       std::shared_ptr<poi::Abstraction> abstraction,
-      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &captures
+      std::shared_ptr<
+        std::unordered_map<size_t, std::shared_ptr<poi::Value>>
+      > captures
     );
     std::string show(poi::StringPool &pool) override;
   };
@@ -46,12 +50,16 @@ namespace poi {
   public:
     std::shared_ptr<poi::DataTypeValue> type;
     std::size_t constructor;
-    std::shared_ptr<std::vector<std::shared_ptr<poi::Value>>> members;
+    std::shared_ptr<
+      std::unordered_map<size_t, std::shared_ptr<poi::Value>>
+    > captures;
 
     explicit DataValue(
       std::shared_ptr<poi::DataTypeValue> type,
       std::size_t constructor,
-      std::shared_ptr<std::vector<std::shared_ptr<poi::Value>>> members
+      std::shared_ptr<
+        std::unordered_map<size_t, std::shared_ptr<poi::Value>>
+      > captures
     );
     std::string show(poi::StringPool &pool) override;
   };

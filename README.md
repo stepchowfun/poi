@@ -30,6 +30,8 @@ Let bindings:
 Algebraic data types:
 
     bool = data (true, false)
+    true = bool.true
+    false = bool.false
 
     maybe = data (none, just value)
 
@@ -38,7 +40,8 @@ Algebraic data types:
       node left value right
     )
 
-    tree
+    subtree = tree.node tree.empty true tree.empty
+    tree.node subtree false subtree
 
 Grouping:
 

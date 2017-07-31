@@ -175,7 +175,7 @@ using MemoMap = std::unordered_map<
 #define MEMOIZE_AND_RETURN(memo_key, term, next) do { \
   auto n = (term); \
   memo.insert({(memo_key), make_tuple( \
-    std::dynamic_pointer_cast<poi::Term>(n), \
+    std::static_pointer_cast<poi::Term>(n), \
     (next) \
   )}); \
   return n; \
@@ -185,7 +185,7 @@ using MemoMap = std::unordered_map<
   auto n = std::shared_ptr<poi::type>(); \
   (next) = (begin); \
   memo.insert({(memo_key), make_tuple( \
-    std::dynamic_pointer_cast<poi::Term>(n), \
+    std::static_pointer_cast<poi::Term>(n), \
     (next) \
   )}); \
   return n; \
@@ -213,18 +213,6 @@ using MemoMap = std::unordered_map<
     (next) = old_next; \
   } \
 } while (false)
-
-void span_tokens(
-  poi::Term &term,
-  std::vector<poi::Token>::iterator begin,
-  std::vector<poi::Token>::iterator end
-);
-
-void span_terms(
-  poi::Term &term,
-  poi::Term &begin,
-  poi::Term &end
-);
 
 std::shared_ptr<poi::Term> parse_term(
   MemoMap &memo,
@@ -292,28 +280,6 @@ std::shared_ptr<poi::Group> parse_group(
   bool top_level
 );
 
-void span_tokens(
-  poi::Term &term,
-  std::vector<poi::Token>::iterator begin,
-  std::vector<poi::Token>::iterator end
-) {
-  term.source_name = begin->source_name;
-  term.source = begin->source;
-  term.start_pos = begin->start_pos;
-  term.end_pos = (end - 1)->end_pos;
-}
-
-void span_terms(
-  poi::Term &term,
-  poi::Term &begin,
-  poi::Term &end
-) {
-  term.source_name = begin.source_name;
-  term.source = begin.source;
-  term.start_pos = begin.start_pos;
-  term.end_pos = end.end_pos;
-}
-
 std::shared_ptr<poi::Term> parse_term(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
@@ -348,7 +314,7 @@ std::shared_ptr<poi::Term> parse_term(
       memo,
       tokens,
       next,
-      std::shared_ptr<poi::Term>(),
+      nullptr,
       environment,
       pool
     )
@@ -418,10 +384,17 @@ std::shared_ptr<poi::Variable> parse_variable(
   }
 
   // Construct the Variable.
-  auto variable = std::make_shared<poi::Variable>(next->literal);
-  variable->free_variables.insert(next->literal);
+  auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+  free_variables->insert(next->literal);
+  auto variable = std::make_shared<poi::Variable>(
+    begin->source_name,
+    begin->source,
+    begin->start_pos,
+    (next - 1)->end_pos,
+    free_variables,
+    next->literal
+  );
   ++next;
-  span_tokens(*variable, begin, next);
 
   // Memoize whatever we parsed and return it.
   MEMOIZE_AND_RETURN(memo_key, variable, next);
@@ -473,13 +446,21 @@ std::shared_ptr<poi::Abstraction> parse_abstraction(
   }
 
   // Construct the Abstraction.
+  auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+  free_variables->insert(
+    body->free_variables->begin(),
+    body->free_variables->end()
+  );
+  free_variables->erase(variable);
   auto abstraction = std::make_shared<poi::Abstraction>(
+    begin->source_name,
+    begin->source,
+    begin->start_pos,
+    (next - 1)->end_pos,
+    free_variables,
     variable,
     body
   );
-  abstraction->free_variables = body->free_variables;
-  abstraction->free_variables.erase(variable);
-  span_tokens(*abstraction, begin, next);
 
   // Memoize whatever we parsed and return it.
   MEMOIZE_AND_RETURN(memo_key, abstraction, next);
@@ -563,11 +544,24 @@ std::shared_ptr<poi::Application> parse_application(
   );
   std::shared_ptr<poi::Application> right_application;
   if (application_prior) {
+    auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+    free_variables->insert(
+      application_prior->free_variables->begin(),
+      application_prior->free_variables->end()
+    );
+    free_variables->insert(
+      left_term->free_variables->begin(),
+      left_term->free_variables->end()
+    );
     auto prior_of_left = std::make_shared<poi::Application>(
+      application_prior->source_name,
+      application_prior->source,
+      application_prior->start_pos,
+      left_term->end_pos,
+      free_variables,
       application_prior,
       left_term
     );
-    span_terms(*prior_of_left, *application_prior, *left_term);
     TRY_RULE(
       right_term_begin,
       next,
@@ -610,29 +604,69 @@ std::shared_ptr<poi::Application> parse_application(
     application = right_application;
   } else {
     if (application_prior) {
+      auto prior_of_left_free_variables = std::make_shared<
+        std::unordered_set<size_t>
+      >();
+      prior_of_left_free_variables->insert(
+        application_prior->free_variables->begin(),
+        application_prior->free_variables->end()
+      );
+      prior_of_left_free_variables->insert(
+        left_term->free_variables->begin(),
+        left_term->free_variables->end()
+      );
+      auto prior_of_left = std::make_shared<poi::Application>(
+        application_prior->source_name,
+        application_prior->source,
+        application_prior->start_pos,
+        left_term->end_pos,
+        prior_of_left_free_variables,
+        application_prior,
+        left_term
+      );
+
+      auto free_variables = std::make_shared<
+        std::unordered_set<size_t>
+      >();
+      free_variables->insert(
+        prior_of_left->free_variables->begin(),
+        prior_of_left->free_variables->end()
+      );
+      free_variables->insert(
+        right_term->free_variables->begin(),
+        right_term->free_variables->end()
+      );
+
       application = std::make_shared<poi::Application>(
-        application = std::make_shared<poi::Application>(
-          application_prior,
-          left_term
-        ),
+        prior_of_left->source_name,
+        prior_of_left->source,
+        prior_of_left->start_pos,
+        right_term->end_pos,
+        free_variables,
+        prior_of_left,
         right_term
       );
-      span_terms(*application, *application_prior, *right_term);
     } else {
+      auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+      free_variables->insert(
+        left_term->free_variables->begin(),
+        left_term->free_variables->end()
+      );
+      free_variables->insert(
+        right_term->free_variables->begin(),
+        right_term->free_variables->end()
+      );
       application = std::make_shared<poi::Application>(
+        left_term->source_name,
+        left_term->source,
+        left_term->start_pos,
+        right_term->end_pos,
+        free_variables,
         left_term,
         right_term
       );
-      span_terms(*application, *left_term, *right_term);
     }
   }
-
-  // The free variables come from the subterms.
-  application->free_variables = application->abstraction->free_variables;
-  application->free_variables.insert(
-    application->operand->free_variables.begin(),
-    application->operand->free_variables.end()
-  );
 
   // Memoize whatever we parsed and return it.
   MEMOIZE_AND_RETURN(memo_key, application, next);
@@ -710,14 +744,22 @@ std::shared_ptr<poi::Let> parse_let(
   }
 
   // Construct the Let.
+  auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+  free_variables->insert(
+    body->free_variables->begin(),
+    body->free_variables->end()
+  );
+  free_variables->erase(variable);
   auto let = std::make_shared<poi::Let>(
+    begin->source_name,
+    begin->source,
+    begin->start_pos,
+    (next - 1)->end_pos,
+    free_variables,
     variable,
     definition,
     body
   );
-  let->free_variables = body->free_variables;
-  let->free_variables.erase(variable);
-  span_tokens(*let, begin, next);
 
   // Memoize whatever we parsed and return it.
   MEMOIZE_AND_RETURN(memo_key, let, next);
@@ -753,7 +795,10 @@ std::shared_ptr<poi::DataType> parse_data_type(
 
   // Parse the constructors. Note that the lexical analyzer guarantees
   // parentheses are matched.
-  auto constructors = std::make_shared<std::vector<poi::DataConstructor>>();
+  auto constructor_names = std::make_shared<std::vector<size_t>>();
+  auto constructors = std::make_shared<
+    std::unordered_map<size_t, std::vector<size_t>>
+  >();
   bool first_constructor = true;
   while (next->type != poi::TokenType::RIGHT_PAREN) {
     // Parse the SEPARATOR if applicable.
@@ -778,7 +823,7 @@ std::shared_ptr<poi::DataType> parse_data_type(
     ++next;
 
     // Parse the parameters.
-    auto params = std::make_shared<std::vector<size_t>>();
+    std::vector<size_t> params;
     while (
       next->type != poi::TokenType::SEPARATOR &&
       next->type != poi::TokenType::RIGHT_PAREN
@@ -791,21 +836,28 @@ std::shared_ptr<poi::DataType> parse_data_type(
         );
       }
       auto parameter = next->literal;
-      params->push_back(parameter);
+      params.push_back(parameter);
       ++next;
     }
 
     // Construct the DataConstructor.
-    poi::DataConstructor constructor(name, params);
-    constructors->push_back(constructor);
+    constructor_names->push_back(name);
+    constructors->insert({ name, params });
   }
 
   // Skip the closing RIGHT_PAREN.
   ++next;
 
   // Construct the DataType.
-  auto data_type = std::make_shared<poi::DataType>(constructors);
-  span_tokens(*data_type, begin, next);
+  auto data_type = std::make_shared<poi::DataType>(
+    begin->source_name,
+    begin->source,
+    begin->start_pos,
+    (next - 1)->end_pos,
+    std::make_shared<std::unordered_set<size_t>>(),
+    constructor_names,
+    constructors
+  );
 
   // Memoize whatever we parsed and return it.
   MEMOIZE_AND_RETURN(memo_key, data_type, next);
@@ -823,27 +875,27 @@ std::shared_ptr<poi::Member> parse_member(
   auto memo_key = MEMO_KEY_SIMPLE(MEMBER, begin);
   MEMO_CHECK(memo, memo_key, Member, next);
 
-  // Parse the data.
-  std::shared_ptr<poi::Term> data;
+  // Parse the object.
+  std::shared_ptr<poi::Term> object;
   TRY_RULE(
     begin,
     next,
-    data,
+    object,
     parse_variable(memo, tokens, next, environment, pool)
   );
   TRY_RULE(
     begin,
     next,
-    data,
+    object,
     parse_data_type(memo, tokens, next, environment, pool)
   );
   TRY_RULE(
     begin,
     next,
-    data,
+    object,
     parse_group(memo, tokens, next, environment, pool, false)
   );
-  if (!data) {
+  if (!object) {
     MEMOIZE_AND_FAIL(memo_key, Member, begin, next);
   }
 
@@ -865,9 +917,20 @@ std::shared_ptr<poi::Member> parse_member(
   ++next;
 
   // Construct the Member.
-  auto member = std::make_shared<poi::Member>(data, field);
-  member->free_variables = data->free_variables;
-  span_tokens(*member, begin, next);
+  auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+  free_variables->insert(
+    object->free_variables->begin(),
+    object->free_variables->end()
+  );
+  auto member = std::make_shared<poi::Member>(
+    begin->source_name,
+    begin->source,
+    begin->start_pos,
+    (next - 1)->end_pos,
+    free_variables,
+    object,
+    field
+  );
 
   // Check for additional member accesses.
   while (next != tokens.end() && next->type == poi::TokenType::DOT) {
@@ -886,9 +949,20 @@ std::shared_ptr<poi::Member> parse_member(
     ++next;
 
     // Construct the new Member.
-    member = std::make_shared<poi::Member>(member, field);
-    member->free_variables = member->free_variables;
-    span_tokens(*member, begin, next);
+    free_variables = std::make_shared<std::unordered_set<size_t>>();
+    free_variables->insert(
+      member->free_variables->begin(),
+      member->free_variables->end()
+    );
+    member = std::make_shared<poi::Member>(
+      begin->source_name,
+      begin->source,
+      begin->start_pos,
+      (next - 1)->end_pos,
+      free_variables,
+      member,
+      field
+    );
   }
 
   // Memoize whatever we parsed and return it.
@@ -953,9 +1027,19 @@ std::shared_ptr<poi::Group> parse_group(
   }
 
   // Construct the Group.
-  auto group = std::make_shared<poi::Group>(body);
-  group->free_variables = body->free_variables;
-  span_tokens(*group, begin, next);
+  auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+  free_variables->insert(
+    body->free_variables->begin(),
+    body->free_variables->end()
+  );
+  auto group = std::make_shared<poi::Group>(
+    begin->source_name,
+    begin->source,
+    begin->start_pos,
+    (next - 1)->end_pos,
+    free_variables,
+    body
+  );
 
   // Memoize whatever we parsed and return it.
   MEMOIZE_AND_RETURN(memo_key, group, next);
