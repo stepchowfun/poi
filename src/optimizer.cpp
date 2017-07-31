@@ -2,6 +2,8 @@
 #include <poi/optimizer.h>
 
 std::shared_ptr<poi::Term> poi::optimize(std::shared_ptr<poi::Term> term) {
+  // Currently, the only optimization pass is replacing Groups with their
+  // bodies.
   auto variable = std::dynamic_pointer_cast<poi::Variable>(term);
   if (variable) {
     return variable;
@@ -10,7 +12,6 @@ std::shared_ptr<poi::Term> poi::optimize(std::shared_ptr<poi::Term> term) {
   if (abstraction) {
     return std::make_shared<poi::Abstraction>(
       abstraction->variable,
-      abstraction->variable_id,
       optimize(abstraction->body)
     );
   }
@@ -25,7 +26,6 @@ std::shared_ptr<poi::Term> poi::optimize(std::shared_ptr<poi::Term> term) {
   if (let) {
     return std::make_shared<poi::Let>(
       let->variable,
-      let->variable_id,
       optimize(let->definition),
       optimize(let->body)
     );

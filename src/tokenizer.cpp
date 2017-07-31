@@ -8,36 +8,26 @@ enum class LineContinuationStatus {
   LCS_WAIT_FOR_TOKEN
 };
 
-std::shared_ptr<std::string> intern(
-  std::unordered_map<std::string, std::shared_ptr<std::string>> &intern_pool,
-  std::string &s
-) {
-  auto iter = intern_pool.find(s);
-  if (iter == intern_pool.end()) {
-    auto interned_s = std::make_shared<std::string>(s);
-    intern_pool.insert({ s, interned_s });
-    return interned_s;
-  } else {
-    return iter->second;
-  }
-}
-
 std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
-  std::shared_ptr<std::string> source_name,
-  std::shared_ptr<std::string> source
+  size_t source_name,
+  size_t source,
+  poi::StringPool &pool
 ) {
+  // For performance, get a local copy of the source name and content.
+  std::string source_name_str = pool.find(source_name);
+  std::string source_str = pool.find(source);
+
   std::vector<Token> tokens;
   size_t pos = 0;
   std::vector<Token> grouping_stack;
   LineContinuationStatus line_continuation_status =
     LineContinuationStatus::LCS_DEFAULT;
   size_t line_continuation_marker_pos = 0;
-  std::unordered_map<std::string, std::shared_ptr<std::string>> intern_pool;
 
-  while (pos < source->size()) {
+  while (pos < source_str.size()) {
     // Comments begin with '#' and continue to the end of the line.
-    if ((*source)[pos] == '#') {
-      while (pos < source->size() && (*source)[pos] != '\n') {
+    if (source_str[pos] == '#') {
+      while (pos < source_str.size() && source_str[pos] != '\n') {
         ++pos;
         continue;
       }
@@ -46,20 +36,20 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
     // Ignore whitespace except for line feeds;
     // it is only used to separate other tokens.
     if (
-      (*source)[pos] == ' ' ||
-      (*source)[pos] == '\t' ||
-      (*source)[pos] == '\r'
+      source_str[pos] == ' ' ||
+      source_str[pos] == '\t' ||
+      source_str[pos] == '\r'
     ) {
       ++pos;
       continue;
     }
 
     // Parse line continuation markers.
-    if ((*source)[pos] == '\\') {
+    if (source_str[pos] == '\\') {
       if (line_continuation_status != LineContinuationStatus::LCS_DEFAULT) {
         throw Error(
           "Duplicate '\\'.",
-          *source, *source_name,
+          source_str, source_name_str,
           pos, pos + 1
         );
       }
@@ -71,11 +61,11 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
 
     // For line feeds, insert a SEPARATOR unless
     // there was a line continuation marker.
-    if ((*source)[pos] == '\n') {
+    if (source_str[pos] == '\n') {
       if (line_continuation_status == LineContinuationStatus::LCS_DEFAULT) {
         std::string literal("");
         tokens.push_back(Token(
-          TokenType::SEPARATOR, intern(intern_pool, literal),
+          TokenType::SEPARATOR, pool.insert(literal),
           source_name, source,
           pos, pos
         ));
@@ -88,7 +78,7 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
         line_continuation_status = LineContinuationStatus::LCS_WAIT_FOR_TOKEN;
       }
 
-      line_continuation_marker_pos = source->size();
+      line_continuation_marker_pos = source_str.size();
       ++pos;
       continue;
     }
@@ -101,7 +91,7 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
     ) {
       throw Error(
         "Unexpected '\\'.",
-        *source, *source_name,
+        source_str, source_name_str,
         line_continuation_marker_pos, line_continuation_marker_pos + 1
       );
     }
@@ -117,31 +107,31 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
     // Identifiers consist of ASCII letters, digits, and underscores, and must
     // not start with a letter. We also accept any bytes >= 0x80, which allows
     // for Unicode symbols.
-    if ((*source)[pos] == '_' ||
-      ((*source)[pos] >= 'A' && (*source)[pos] <= 'Z') ||
-      ((*source)[pos] >= 'a' && (*source)[pos] <= 'z') ||
-      ((*source)[pos] & 0x80) != 0) {
+    if (source_str[pos] == '_' ||
+      (source_str[pos] >= 'A' && source_str[pos] <= 'Z') ||
+      (source_str[pos] >= 'a' && source_str[pos] <= 'z') ||
+      (source_str[pos] & 0x80) != 0) {
       size_t end_pos = pos + 1;
-      while (end_pos < source->size() && ((*source)[end_pos] == '_' ||
-        ((*source)[end_pos] >= 'A' && (*source)[end_pos] <= 'Z') ||
-        ((*source)[end_pos] >= 'a' && (*source)[end_pos] <= 'z') ||
-        ((*source)[end_pos] >= '0' && (*source)[end_pos] <= '9') ||
-        ((*source)[end_pos] & 0x80) != 0)) {
+      while (end_pos < source_str.size() && (source_str[end_pos] == '_' ||
+        (source_str[end_pos] >= 'A' && source_str[end_pos] <= 'Z') ||
+        (source_str[end_pos] >= 'a' && source_str[end_pos] <= 'z') ||
+        (source_str[end_pos] >= '0' && source_str[end_pos] <= '9') ||
+        (source_str[end_pos] & 0x80) != 0)) {
         ++end_pos;
       }
       size_t length = end_pos - pos;
-      auto literal = source->substr(pos, length);
+      auto literal = source_str.substr(pos, length);
       if (literal == "data") {
         tokens.push_back(Token(
           TokenType::DATA,
-          intern(intern_pool, literal),
+          pool.insert(literal),
           source_name, source,
           pos, end_pos
         ));
       } else {
         tokens.push_back(Token(
           TokenType::IDENTIFIER,
-          intern(intern_pool, literal),
+          pool.insert(literal),
           source_name, source,
           pos, end_pos
         ));
@@ -158,27 +148,27 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
       TokenType opener_type
     ) {
       if (
-        pos + literal.size() <= source->size() &&
-        source->substr(pos, literal.size()) == literal
+        pos + literal.size() <= source_str.size() &&
+        source_str.substr(pos, literal.size()) == literal
       ) {
         if (closer) {
           if (grouping_stack.empty()) {
             throw Error(
               "Unmatched '" + literal + "'.",
-              *source, *source_name,
+              source_str, source_name_str,
               pos, pos + 1
             );
           } else if (grouping_stack.back().type != opener_type) {
             throw Error(
-              "Unmatched '" + *(grouping_stack.back().literal) + "'.",
-              *source, *source_name,
+              "Unmatched '" + pool.find(grouping_stack.back().literal) + "'.",
+              source_str, source_name_str,
               grouping_stack.back().start_pos, grouping_stack.back().end_pos
             );
           }
           grouping_stack.pop_back();
         }
         Token token(
-          type, intern(intern_pool, literal),
+          type, pool.insert(literal),
           source_name, source,
           pos, pos + literal.size()
         );
@@ -243,16 +233,17 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
     // If we made it this far, the input wasn't recognized and
     // should be rejected.
     throw Error(
-      "Unexpected character '" + source->substr(pos, 1) + "'.",
-      *source, *source_name,
+      "Unexpected character '" + source_str.substr(pos, 1) + "'.",
+      source_str, source_name_str,
       pos, pos + 1
     );
   }
 
   // Make sure all braces/brackets have been closed.
   if (!grouping_stack.empty()) {
-    throw Error("Unmatched '" + *(grouping_stack.back().literal) + "'.",
-      *source, *source_name,
+    throw Error(
+      "Unmatched '" + pool.find(grouping_stack.back().literal) + "'.",
+      source_str, source_name_str,
       grouping_stack.back().start_pos, grouping_stack.back().end_pos
     );
   }

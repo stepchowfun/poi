@@ -13,7 +13,10 @@
 namespace poi {
 
   // Parse a stream of tokens.
-  std::shared_ptr<poi::Term> parse(std::vector<poi::Token> &tokens);
+  std::shared_ptr<poi::Term> parse(
+    std::vector<poi::Token> &tokens,
+    poi::StringPool &pool
+  );
 
 }
 

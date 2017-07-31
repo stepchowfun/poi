@@ -63,7 +63,7 @@ The continuous integration system will run these checks on pull requests automat
 
   **Rationale:** This ensures that including a header file multiple times (directly or indirectly) is safe.
 
-- Header files should be included in lexicographical order, including the opening `"` or `<` delimiters. That means local header files come before system header files. Header files should be included at the top of the file, outside any namespaces, but inside the include guard if applicable.
+- Header files should be included in lexicographical order, including the opening `"` or `<` delimiters. Header files should be included at the top of the file, outside any namespaces, but inside the include guard if applicable.
 
   **Rationale:** This convention makes it easy to determine if a particular header is included.
 

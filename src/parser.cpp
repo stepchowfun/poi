@@ -2,6 +2,7 @@
 #include <poi/error.h>
 #include <poi/parser.h>
 #include <tuple>
+#include <type_traits>
 #include <unordered_map>
 
 /*
@@ -229,24 +230,24 @@ std::shared_ptr<poi::Term> parse_term(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool
 );
 
 std::shared_ptr<poi::Variable> parse_variable(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool
 );
 
 std::shared_ptr<poi::Abstraction> parse_abstraction(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool
 );
 
 std::shared_ptr<poi::Application> parse_application(
@@ -254,40 +255,40 @@ std::shared_ptr<poi::Application> parse_application(
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
   std::shared_ptr<poi::Term> application_prior,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool
 );
 
 std::shared_ptr<poi::Let> parse_let(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool
 );
 
 std::shared_ptr<poi::DataType> parse_data_type(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool
 );
 
 std::shared_ptr<poi::Member> parse_member(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool
 );
 
 std::shared_ptr<poi::Group> parse_group(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id,
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool,
   bool top_level
 );
 
@@ -317,8 +318,8 @@ std::shared_ptr<poi::Term> parse_term(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
@@ -331,13 +332,13 @@ std::shared_ptr<poi::Term> parse_term(
     begin,
     next,
     term,
-    parse_variable(memo, tokens, next, environment, variable_id)
+    parse_variable(memo, tokens, next, environment, pool)
   );
   TRY_RULE(
     begin,
     next,
     term,
-    parse_abstraction(memo, tokens, next, environment, variable_id)
+    parse_abstraction(memo, tokens, next, environment, pool)
   );
   TRY_RULE(
     begin,
@@ -349,32 +350,32 @@ std::shared_ptr<poi::Term> parse_term(
       next,
       std::shared_ptr<poi::Term>(),
       environment,
-      variable_id
+      pool
     )
   );
   TRY_RULE(
     begin,
     next,
     term,
-    parse_let(memo, tokens, next, environment, variable_id)
+    parse_let(memo, tokens, next, environment, pool)
   );
   TRY_RULE(
     begin,
     next,
     term,
-    parse_data_type(memo, tokens, next, environment, variable_id)
+    parse_data_type(memo, tokens, next, environment, pool)
   );
   TRY_RULE(
     begin,
     next,
     term,
-    parse_member(memo, tokens, next, environment, variable_id)
+    parse_member(memo, tokens, next, environment, pool)
   );
   TRY_RULE(
     begin,
     next,
     term,
-    parse_group(memo, tokens, next, environment, variable_id, false)
+    parse_group(memo, tokens, next, environment, pool, false)
   );
 
   // Memoize whatever we parsed and return it.
@@ -385,8 +386,8 @@ std::shared_ptr<poi::Variable> parse_variable(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
@@ -399,8 +400,7 @@ std::shared_ptr<poi::Variable> parse_variable(
   }
 
   // Look up the variable in the environment.
-  auto iter = environment.find(*(next->literal));
-  if (iter == environment.end()) {
+  if (environment.find(next->literal) == environment.end()) {
     if (
       next + 1 != tokens.end() && (
         (next + 1)->type == poi::TokenType::EQUALS ||
@@ -410,19 +410,16 @@ std::shared_ptr<poi::Variable> parse_variable(
       MEMOIZE_AND_FAIL(memo_key, Variable, begin, next);
     } else {
       throw poi::Error(
-        "Undefined variable '" + *(next->literal) + "'.",
-        *(begin->source), *(begin->source_name),
+        "Undefined variable '" + pool.find(next->literal) + "'.",
+        pool.find(begin->source), pool.find(begin->source_name),
         begin->start_pos, next->end_pos
       );
     }
   }
 
   // Construct the Variable.
-  auto variable = std::make_shared<poi::Variable>(
-    next->literal,
-    iter->second
-  );
-  variable->free_variables.insert(iter->second);
+  auto variable = std::make_shared<poi::Variable>(next->literal);
+  variable->free_variables.insert(next->literal);
   ++next;
   span_tokens(*variable, begin, next);
 
@@ -434,8 +431,8 @@ std::shared_ptr<poi::Abstraction> parse_abstraction(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
@@ -456,13 +453,8 @@ std::shared_ptr<poi::Abstraction> parse_abstraction(
   ++next;
 
   // Add the variable to the environment.
-  auto new_variable_id = variable_id + 1;
   auto new_environment = environment;
-  new_environment.erase(*variable);
-  new_environment.insert({
-    *variable,
-    variable_id
-  });
+  new_environment.insert(variable);
 
   // Parse the body.
   auto body = parse_term(
@@ -470,12 +462,12 @@ std::shared_ptr<poi::Abstraction> parse_abstraction(
     tokens,
     next,
     new_environment,
-    new_variable_id
+    pool
   );
   if (!body) {
     throw poi::Error(
       "This function needs a body.",
-      *(begin->source), *(begin->source_name),
+      pool.find(begin->source), pool.find(begin->source_name),
       begin->start_pos, (next - 1)->end_pos
     );
   }
@@ -483,11 +475,10 @@ std::shared_ptr<poi::Abstraction> parse_abstraction(
   // Construct the Abstraction.
   auto abstraction = std::make_shared<poi::Abstraction>(
     variable,
-    variable_id,
     body
   );
   abstraction->free_variables = body->free_variables;
-  abstraction->free_variables.erase(variable_id);
+  abstraction->free_variables.erase(variable);
   span_tokens(*abstraction, begin, next);
 
   // Memoize whatever we parsed and return it.
@@ -499,8 +490,8 @@ std::shared_ptr<poi::Application> parse_application(
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
   std::shared_ptr<poi::Term> application_prior,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
@@ -519,25 +510,25 @@ std::shared_ptr<poi::Application> parse_application(
     left_term_begin,
     next,
     left_term,
-    parse_variable(memo, tokens, next, environment, variable_id)
+    parse_variable(memo, tokens, next, environment, pool)
   );
   TRY_RULE(
     left_term_begin,
     next,
     left_term,
-    parse_data_type(memo, tokens, next, environment, variable_id)
+    parse_data_type(memo, tokens, next, environment, pool)
   );
   TRY_RULE(
     left_term_begin,
     next,
     left_term,
-    parse_member(memo, tokens, next, environment, variable_id)
+    parse_member(memo, tokens, next, environment, pool)
   );
   TRY_RULE(
     left_term_begin,
     next,
     left_term,
-    parse_group(memo, tokens, next, environment, variable_id, false)
+    parse_group(memo, tokens, next, environment, pool, false)
   );
   if (!left_term) {
     MEMOIZE_AND_FAIL(memo_key, Application, begin, next);
@@ -550,25 +541,25 @@ std::shared_ptr<poi::Application> parse_application(
     right_term_begin,
     next,
     right_term,
-    parse_variable(memo, tokens, next, environment, variable_id)
+    parse_variable(memo, tokens, next, environment, pool)
   );
   TRY_RULE(
     right_term_begin,
     next,
     right_term,
-    parse_data_type(memo, tokens, next, environment, variable_id)
+    parse_data_type(memo, tokens, next, environment, pool)
   );
   TRY_RULE(
     right_term_begin,
     next,
     right_term,
-    parse_member(memo, tokens, next, environment, variable_id)
+    parse_member(memo, tokens, next, environment, pool)
   );
   TRY_RULE(
     right_term_begin,
     next,
     right_term,
-    parse_group(memo, tokens, next, environment, variable_id, false)
+    parse_group(memo, tokens, next, environment, pool, false)
   );
   std::shared_ptr<poi::Application> right_application;
   if (application_prior) {
@@ -587,7 +578,7 @@ std::shared_ptr<poi::Application> parse_application(
         next,
         prior_of_left,
         environment,
-        variable_id
+        pool
       )
     );
   } else {
@@ -601,7 +592,7 @@ std::shared_ptr<poi::Application> parse_application(
         next,
         left_term,
         environment,
-        variable_id
+        pool
       )
     );
   }
@@ -651,8 +642,8 @@ std::shared_ptr<poi::Let> parse_let(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
@@ -678,12 +669,12 @@ std::shared_ptr<poi::Let> parse_let(
     tokens,
     next,
     environment,
-    variable_id
+    pool
   );
   if (!definition) {
     throw poi::Error(
       "This variable needs a definition.",
-      *(begin->source), *(begin->source_name),
+      pool.find(begin->source), pool.find(begin->source_name),
       begin->start_pos, (next - 1)->end_pos
     );
   }
@@ -692,20 +683,15 @@ std::shared_ptr<poi::Let> parse_let(
   if (next == tokens.end() || next->type != poi::TokenType::SEPARATOR) {
     throw poi::Error(
       "This let needs a body.",
-      *(begin->source), *(begin->source_name),
+      pool.find(begin->source), pool.find(begin->source_name),
       begin->start_pos, (next - 1)->end_pos
     );
   }
   ++next;
 
   // Add the variable to the environment.
-  auto new_variable_id = variable_id + 1;
   auto new_environment = environment;
-  new_environment.erase(*variable);
-  new_environment.insert({
-    *variable,
-    variable_id
-  });
+  new_environment.insert(variable);
 
   // Parse the body.
   auto body = parse_term(
@@ -713,12 +699,12 @@ std::shared_ptr<poi::Let> parse_let(
     tokens,
     next,
     new_environment,
-    new_variable_id
+    pool
   );
   if (!body) {
     throw poi::Error(
       "This let needs a body.",
-      *(begin->source), *(begin->source_name),
+      pool.find(begin->source), pool.find(begin->source_name),
       begin->start_pos, (next - 1)->end_pos
     );
   }
@@ -726,12 +712,11 @@ std::shared_ptr<poi::Let> parse_let(
   // Construct the Let.
   auto let = std::make_shared<poi::Let>(
     variable,
-    variable_id,
     definition,
     body
   );
   let->free_variables = body->free_variables;
-  let->free_variables.erase(variable_id);
+  let->free_variables.erase(variable);
   span_tokens(*let, begin, next);
 
   // Memoize whatever we parsed and return it.
@@ -742,8 +727,8 @@ std::shared_ptr<poi::DataType> parse_data_type(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
@@ -760,7 +745,7 @@ std::shared_ptr<poi::DataType> parse_data_type(
   if (next == tokens.end() || next->type != poi::TokenType::LEFT_PAREN) {
     throw poi::Error(
       "Expected '(' after 'data'.",
-      *(begin->source), *(begin->source_name),
+      pool.find(begin->source), pool.find(begin->source_name),
       begin->start_pos, (next - 1)->end_pos
     );
   }
@@ -785,20 +770,15 @@ std::shared_ptr<poi::DataType> parse_data_type(
     if (next->type != poi::TokenType::IDENTIFIER) {
       throw poi::Error(
         "Invalid data constructor.",
-        *(begin->source), *(begin->source_name),
+        pool.find(begin->source), pool.find(begin->source_name),
         constructor_start->start_pos, next->end_pos
       );
     }
     auto name = next->literal;
-    size_t name_id = variable_id;
-    ++variable_id;
     ++next;
 
     // Parse the parameters.
-    auto params = std::make_shared<
-      std::vector<std::shared_ptr<std::string>>
-    >();
-    auto param_ids = std::make_shared<std::vector<size_t>>();
+    auto params = std::make_shared<std::vector<size_t>>();
     while (
       next->type != poi::TokenType::SEPARATOR &&
       next->type != poi::TokenType::RIGHT_PAREN
@@ -806,19 +786,17 @@ std::shared_ptr<poi::DataType> parse_data_type(
       if (next->type != poi::TokenType::IDENTIFIER) {
         throw poi::Error(
           "Invalid data constructor.",
-          *(begin->source), *(begin->source_name),
+          pool.find(begin->source), pool.find(begin->source_name),
           constructor_start->start_pos, next->end_pos
         );
       }
       auto parameter = next->literal;
       params->push_back(parameter);
-      param_ids->push_back(variable_id);
-      ++variable_id;
       ++next;
     }
 
     // Construct the DataConstructor.
-    poi::DataConstructor constructor(name, name_id, params, param_ids);
+    poi::DataConstructor constructor(name, params);
     constructors->push_back(constructor);
   }
 
@@ -837,8 +815,8 @@ std::shared_ptr<poi::Member> parse_member(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
@@ -851,19 +829,19 @@ std::shared_ptr<poi::Member> parse_member(
     begin,
     next,
     data,
-    parse_variable(memo, tokens, next, environment, variable_id)
+    parse_variable(memo, tokens, next, environment, pool)
   );
   TRY_RULE(
     begin,
     next,
     data,
-    parse_data_type(memo, tokens, next, environment, variable_id)
+    parse_data_type(memo, tokens, next, environment, pool)
   );
   TRY_RULE(
     begin,
     next,
     data,
-    parse_group(memo, tokens, next, environment, variable_id, false)
+    parse_group(memo, tokens, next, environment, pool, false)
   );
   if (!data) {
     MEMOIZE_AND_FAIL(memo_key, Member, begin, next);
@@ -879,16 +857,15 @@ std::shared_ptr<poi::Member> parse_member(
   if (next == tokens.end() || next->type != poi::TokenType::IDENTIFIER) {
     throw poi::Error(
       "Invalid member access.",
-      *(begin->source), *(begin->source_name),
+      pool.find(begin->source), pool.find(begin->source_name),
       begin->start_pos, (next - 1)->end_pos
     );
   }
   auto field = next->literal;
-  size_t field_id = variable_id;
   ++next;
 
   // Construct the Member.
-  auto member = std::make_shared<poi::Member>(data, field, field_id);
+  auto member = std::make_shared<poi::Member>(data, field);
   member->free_variables = data->free_variables;
   span_tokens(*member, begin, next);
 
@@ -901,16 +878,15 @@ std::shared_ptr<poi::Member> parse_member(
     if (next == tokens.end() || next->type != poi::TokenType::IDENTIFIER) {
       throw poi::Error(
         "Invalid member access.",
-        *(begin->source), *(begin->source_name),
+        pool.find(begin->source), pool.find(begin->source_name),
         begin->start_pos, (next - 1)->end_pos
       );
     }
     field = next->literal;
-    field_id = variable_id;
     ++next;
 
     // Construct the new Member.
-    member = std::make_shared<poi::Member>(member, field, field_id);
+    member = std::make_shared<poi::Member>(member, field);
     member->free_variables = member->free_variables;
     span_tokens(*member, begin, next);
   }
@@ -923,8 +899,8 @@ std::shared_ptr<poi::Group> parse_group(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
-  std::unordered_map<std::string, size_t> &environment,
-  size_t variable_id,
+  std::unordered_set<size_t> &environment,
+  poi::StringPool &pool,
   bool top_level
 ) {
   // Check if we can reuse a memoized result.
@@ -954,12 +930,12 @@ std::shared_ptr<poi::Group> parse_group(
     tokens,
     next,
     environment,
-    variable_id
+    pool
   );
   if (!body) {
     throw poi::Error(
       "Empty group.",
-      *(begin->source), *(begin->source_name),
+      pool.find(begin->source), pool.find(begin->source_name),
       begin->start_pos, (next - 1)->end_pos
     );
   }
@@ -969,7 +945,7 @@ std::shared_ptr<poi::Group> parse_group(
     if (next == tokens.end() || next->type != poi::TokenType::RIGHT_PAREN) {
       throw poi::Error(
         "This group needs to be closed with a ')'.",
-        *(begin->source), *(begin->source_name),
+        pool.find(begin->source), pool.find(begin->source_name),
         begin->start_pos, (next - 1)->end_pos
       );
     }
@@ -989,10 +965,12 @@ std::shared_ptr<poi::Group> parse_group(
 // Public interface                                                          //
 ///////////////////////////////////////////////////////////////////////////////
 
-std::shared_ptr<poi::Term> poi::parse(std::vector<poi::Token> &tokens) {
-  // The environment maps variable names to variable ids.
-  std::unordered_map<std::string, size_t> environment;
-  size_t variable_id = 0;
+std::shared_ptr<poi::Term> poi::parse(
+  std::vector<poi::Token> &tokens,
+  poi::StringPool &pool
+) {
+  // The environment records which variables are currently in scope.
+  std::unordered_set<size_t> environment;
 
   // Memoize the results of recursive descent calls.
   // This is the "packrat parser" technique.
@@ -1034,7 +1012,7 @@ std::shared_ptr<poi::Term> poi::parse(std::vector<poi::Token> &tokens) {
     tokens,
     next,
     environment,
-    variable_id,
+    pool,
     true
   );
 
@@ -1042,7 +1020,7 @@ std::shared_ptr<poi::Term> poi::parse(std::vector<poi::Token> &tokens) {
   if (next != tokens.end()) {
     throw poi::Error(
       "The end of the file was expected here.",
-      *(next->source), *(next->source_name),
+      pool.find(next->source), pool.find(next->source_name),
       next->start_pos, next->end_pos
     );
   }
