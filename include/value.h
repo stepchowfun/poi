@@ -6,18 +6,18 @@
 #define POI_VALUE_H
 
 #include <memory>
-#include <poi/ast.h>
 #include <unordered_map>
 
 namespace poi {
 
+  // Forward declarations to avoid mutually recursive headers
   class Abstraction; // Declared in poi/ast.h
   class DataType; // Declared in poi/ast.h
 
   class Value {
   public:
     virtual ~Value();
-    virtual std::string show() = 0;
+    virtual std::string show(poi::StringPool &pool) = 0;
   };
 
   class FunctionValue : public Value {
@@ -29,7 +29,7 @@ namespace poi {
       std::shared_ptr<poi::Abstraction> abstraction,
       std::unordered_map<size_t, std::shared_ptr<poi::Value>> &captures
     );
-    std::string show() override;
+    std::string show(poi::StringPool &pool) override;
   };
 
   class DataTypeValue : public Value {
@@ -39,7 +39,21 @@ namespace poi {
     explicit DataTypeValue(
       std::shared_ptr<poi::DataType> data_type
     );
-    std::string show() override;
+    std::string show(poi::StringPool &pool) override;
+  };
+
+  class DataValue : public Value {
+  public:
+    std::shared_ptr<poi::DataTypeValue> type;
+    std::size_t constructor;
+    std::shared_ptr<std::vector<std::shared_ptr<poi::Value>>> members;
+
+    explicit DataValue(
+      std::shared_ptr<poi::DataTypeValue> type,
+      std::size_t constructor,
+      std::shared_ptr<std::vector<std::shared_ptr<poi::Value>>> members
+    );
+    std::string show(poi::StringPool &pool) override;
   };
 
 }

@@ -5,7 +5,7 @@
 #ifndef POI_TOKENS_H
 #define POI_TOKENS_H
 
-#include <memory>
+#include <poi/string_pool.h>
 #include <string>
 
 namespace poi {
@@ -35,22 +35,20 @@ namespace poi {
   class Token {
   public:
     poi::TokenType type;
-    std::shared_ptr<std::string> literal;
-    std::shared_ptr<std::string> source_name;
-    std::shared_ptr<std::string> source;
+    size_t literal;
+    size_t source_name;
+    size_t source;
     size_t start_pos; // Inclusive
     size_t end_pos; // Exclusive
 
     bool explicit_separator; // Only used for SEPARATOR tokens
 
     explicit Token(
-      poi::TokenType type,
-      std::shared_ptr<std::string> literal,
-      std::shared_ptr<std::string> source_name,
-      std::shared_ptr<std::string> source,
+      poi::TokenType type, size_t literal,
+      size_t source_name, size_t source,
       size_t start_pos, size_t end_pos
     );
-    std::string show();
+    std::string show(poi::StringPool &pool);
   };
 
 }

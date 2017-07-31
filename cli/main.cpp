@@ -5,11 +5,13 @@
 #include <poi/error.h>
 #include <poi/optimizer.h>
 #include <poi/parser.h>
+#include <poi/string_pool.h>
 #include <poi/tokenizer.h>
 #include <poi/value.h>
 #include <poi/version.h>
 #include <sstream>
 
+// These are the actions we can perform on a source file.
 enum class CliAction {
   EMIT_TOKENS,
   EMIT_RAW_AST,
@@ -17,6 +19,8 @@ enum class CliAction {
   EVAL
 };
 
+// The logic for the command line interface is here.
+// Run `poi --help` for instructions.
 int main(int argc, char *argv[]) {
   // Print this message if we are unable to parse the input.
   const std::string parse_error = "Try poi --help for more information.\n";
@@ -62,7 +66,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Determine what the user wants us to do.
-  auto input_path = argv[1];
+  std::string input_path = argv[1];
   auto cli_action = CliAction::EVAL;
   if (argc == 3) {
     if (std::string(argv[1]) == "--emit-tokens") {
@@ -81,6 +85,9 @@ int main(int argc, char *argv[]) {
     input_path = argv[2];
   }
 
+  // Create a string pool to improve performance.
+  poi::StringPool pool;
+
   // Read the source file.
   std::ifstream input_file(input_path);
   if (!input_file.is_open()) {
@@ -90,25 +97,26 @@ int main(int argc, char *argv[]) {
   std::stringstream file_buffer;
   file_buffer << input_file.rdbuf();
   input_file.close();
-  auto source = std::make_shared<std::string>(file_buffer.str());
-  auto source_name = std::make_shared<std::string>(input_path);
+  std::string source_str = file_buffer.str();
+  auto source = pool.insert(source_str);
+  auto source_name = pool.insert(input_path);
 
   // Catch any Poi errors and report them.
   try {
     // Perform lexical analysis.
-    auto tokens = poi::tokenize(source_name, source);
+    auto tokens = poi::tokenize(source_name, source, pool);
     if (cli_action == CliAction::EMIT_TOKENS) {
       for (auto &token : *tokens) {
-        std::cout << token.show() << "\n";
+        std::cout << token.show(pool) << "\n";
       }
       return 0;
     }
 
     // Parse the tokens into an AST.
-    auto term = poi::parse(*tokens);
+    auto term = poi::parse(*tokens, pool);
     if (cli_action == CliAction::EMIT_RAW_AST) {
       if (term) {
-        std::cout << term->show() << "\n";
+        std::cout << term->show(pool) << "\n";
       }
       return 0;
     }
@@ -117,16 +125,17 @@ int main(int argc, char *argv[]) {
     auto optimized_term = poi::optimize(term);
     if (cli_action == CliAction::EMIT_OPTIMIZED_AST) {
       if (optimized_term) {
-        std::cout << optimized_term->show() << "\n";
+        std::cout << optimized_term->show(pool) << "\n";
       }
       return 0;
     }
 
     // Evaluate the program.
     std::unordered_map<size_t, std::shared_ptr<poi::Value>> environment;
-    auto value = term->eval(term, environment);
-    std::cout << value->show() << "\n";
+    auto value = term->eval(term, environment, pool);
+    std::cout << value->show(pool) << "\n";
   } catch(poi::Error &e) {
+    // There was an error. Print it and exit.
     std::cout << "Error: " << e.what() << "\n";
     return 1;
   }

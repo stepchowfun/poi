@@ -1,5 +1,5 @@
 /*
-  This header declares a class for errors reported by the compiler.
+  This header declares a class for reporting errors with nice formatting.
 */
 
 #ifndef POI_ERROR_H
