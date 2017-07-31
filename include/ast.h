@@ -14,7 +14,7 @@
 
 namespace poi {
 
-  class Value; // Declared in gram/value.h
+  class Value; // Declared in poi/value.h
 
   class Term {
   public:

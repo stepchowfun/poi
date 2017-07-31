@@ -11,7 +11,8 @@
 
 namespace poi {
 
-  class Abstraction; // Declared in gram/ast.h
+  class Abstraction; // Declared in poi/ast.h
+  class DataType; // Declared in poi/ast.h
 
   class Value {
   public:
@@ -27,6 +28,16 @@ namespace poi {
     explicit FunctionValue(
       std::shared_ptr<poi::Abstraction> abstraction,
       std::unordered_map<size_t, std::shared_ptr<poi::Value>> &captures
+    );
+    std::string show() override;
+  };
+
+  class DataTypeValue : public Value {
+  public:
+    std::shared_ptr<poi::DataType> data_type;
+
+    explicit DataTypeValue(
+      std::shared_ptr<poi::DataType> data_type
     );
     std::string show() override;
   };

@@ -21,3 +21,16 @@ poi::FunctionValue::FunctionValue(
 std::string poi::FunctionValue::show() {
   return abstraction->show();
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// DataTypeValue                                                             //
+///////////////////////////////////////////////////////////////////////////////
+
+poi::DataTypeValue::DataTypeValue(
+  std::shared_ptr<poi::DataType> data_type
+) : data_type(data_type) {
+}
+
+std::string poi::DataTypeValue::show() {
+  return data_type->show();
+}
