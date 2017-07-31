@@ -35,8 +35,7 @@ Algebraic data types:
 
     tree = data (
       empty
-      left x
-      right x
+      node left val right
     )
 
     tree
