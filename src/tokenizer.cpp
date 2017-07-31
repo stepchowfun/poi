@@ -113,7 +113,7 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
       line_continuation_status = LineContinuationStatus::LCS_DEFAULT;
     }
 
-    // IDENTIFIER
+    // IDENTIFIERs and keywords
     // Identifiers consist of ASCII letters, digits, and underscores, and must
     // not start with a letter. We also accept any bytes >= 0x80, which allows
     // for Unicode symbols.
@@ -131,12 +131,21 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
       }
       size_t length = end_pos - pos;
       auto literal = source->substr(pos, length);
-      tokens.push_back(Token(
-        TokenType::IDENTIFIER,
-        intern(intern_pool, literal),
-        source_name, source,
-        pos, end_pos
-      ));
+      if (literal == "data") {
+        tokens.push_back(Token(
+          TokenType::DATA,
+          intern(intern_pool, literal),
+          source_name, source,
+          pos, end_pos
+        ));
+      } else {
+        tokens.push_back(Token(
+          TokenType::IDENTIFIER,
+          intern(intern_pool, literal),
+          source_name, source,
+          pos, end_pos
+        ));
+      }
       pos = end_pos;
       continue;
     }
