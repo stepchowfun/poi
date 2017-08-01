@@ -1,7 +1,8 @@
-#!/usr/bin/env bash
-set -eu -o pipefail
+#!/usr/bin/sh
 
-# This script downloads, builds, and installs Poi.
+# This script downloads, builds, and installs Poi. This is intended to be
+# curled and piped into a shell. It should work with any POSIX-compatible
+# shell.
 
 # Usage:
 #   ./install.sh
