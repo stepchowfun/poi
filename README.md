@@ -40,8 +40,12 @@ Algebraic data types:
       node left value right
     )
 
-    subtree = tree.node tree.empty true tree.empty
-    tree.node subtree false subtree
+    subtree = tree.node tree.empty true (
+      tree.node tree.empty false tree.empty
+    )
+
+    something = maybe.just true
+    something.value
 
 Grouping:
 

@@ -364,11 +364,29 @@ std::shared_ptr<poi::Value> poi::Member::eval(
       );
     }
   } else {
-    throw poi::Error(
-      "eval(...) has not been implemented for poi::Member.",
-      pool.find(source), pool.find(source_name),
-      start_pos, end_pos
+    auto data_value = std::dynamic_pointer_cast<poi::DataValue>(
+      object_value
     );
+    if (data_value) {
+      auto captures = data_value->captures;
+      auto capture = captures->find(field);
+      if (capture == captures->end()) {
+        throw poi::Error(
+          object_value->show(pool) +
+            " has no member '" + pool.find(field) + "'",
+          pool.find(source), pool.find(source_name),
+          start_pos, end_pos
+        );
+      } else {
+        return capture->second;
+      }
+    } else {
+      throw poi::Error(
+        object_value->show(pool) + " has no member '" + pool.find(field) + "'",
+        pool.find(source), pool.find(source_name),
+        start_pos, end_pos
+      );
+    }
   }
 }
 
