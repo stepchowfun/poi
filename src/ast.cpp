@@ -215,14 +215,18 @@ poi::DataType::DataType(
   size_t end_pos,
   std::shared_ptr<std::unordered_set<size_t>> free_variables,
   std::shared_ptr<std::vector<size_t>> constructor_names,
-  std::shared_ptr<std::unordered_map<size_t, std::vector<size_t>>> constructors
+  std::shared_ptr<
+    std::unordered_map<size_t, std::vector<size_t>>
+  > constructor_params
 ) : Term(
     source_name,
     source,
     start_pos,
     end_pos,
     free_variables
-), constructor_names(constructor_names), constructors(constructors) {
+  ),
+  constructor_names(constructor_names),
+  constructor_params(constructor_params) {
 }
 
 std::string poi::DataType::show(poi::StringPool &pool) {
@@ -233,7 +237,7 @@ std::string poi::DataType::show(poi::StringPool &pool) {
     ++iter
   ) {
     result += pool.find(*iter);
-    for (auto param : constructors->at(*iter)) {
+    for (auto param : constructor_params->at(*iter)) {
       result += " " + pool.find(param);
     }
     if (std::next(iter) != constructor_names->end()) {
@@ -290,10 +294,10 @@ std::shared_ptr<poi::Value> poi::Member::eval(
   );
   if (data_type_value) {
     // Make sure the constructor exists.
-    auto constructors = data_type_value->data_type->constructors;
+    auto constructor_params = data_type_value->data_type->constructor_params;
     auto constructor_names = data_type_value->data_type->constructor_names;
-    auto constructor = constructors->find(field);
-    if (constructor == constructors->end()) {
+    auto constructor = constructor_params->find(field);
+    if (constructor == constructor_params->end()) {
       throw poi::Error(
         "'" + pool.find(field) + "' is not a constructor of " +
           data_type_value->show(pool),
@@ -302,7 +306,7 @@ std::shared_ptr<poi::Value> poi::Member::eval(
       );
     }
 
-    if (constructors->at(field).empty()) {
+    if (constructor_params->at(field).empty()) {
       // The constructor has no parameters. Instantiate immediately.
       return std::make_shared<poi::DataValue>(
         data_type_value,
@@ -360,11 +364,29 @@ std::shared_ptr<poi::Value> poi::Member::eval(
       );
     }
   } else {
-    throw poi::Error(
-      "eval(...) has not been implemented for poi::Member.",
-      pool.find(source), pool.find(source_name),
-      start_pos, end_pos
+    auto data_value = std::dynamic_pointer_cast<poi::DataValue>(
+      object_value
     );
+    if (data_value) {
+      auto captures = data_value->captures;
+      auto capture = captures->find(field);
+      if (capture == captures->end()) {
+        throw poi::Error(
+          object_value->show(pool) +
+            " has no member '" + pool.find(field) + "'",
+          pool.find(source), pool.find(source_name),
+          start_pos, end_pos
+        );
+      } else {
+        return capture->second;
+      }
+    } else {
+      throw poi::Error(
+        object_value->show(pool) + " has no member '" + pool.find(field) + "'",
+        pool.find(source), pool.find(source_name),
+        start_pos, end_pos
+      );
+    }
   }
 }
 
