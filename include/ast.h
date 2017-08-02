@@ -134,7 +134,7 @@ namespace poi {
     std::shared_ptr<std::vector<size_t>> constructor_names;
     std::shared_ptr<
       std::unordered_map<size_t, std::vector<size_t>>
-    > constructors;
+    > constructor_params;
 
     explicit DataType(
       size_t source_name,
@@ -145,7 +145,7 @@ namespace poi {
       std::shared_ptr<std::vector<size_t>> constructor_names,
       std::shared_ptr<
         std::unordered_map<size_t, std::vector<size_t>>
-      > constructors
+      > constructor_params
     );
     std::string show(poi::StringPool &pool) override;
     std::shared_ptr<poi::Value> eval(
