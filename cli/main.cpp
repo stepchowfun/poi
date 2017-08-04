@@ -3,7 +3,6 @@
 #include <memory>
 #include <poi/ast.h>
 #include <poi/error.h>
-#include <poi/optimizer.h>
 #include <poi/parser.h>
 #include <poi/string_pool.h>
 #include <poi/tokenizer.h>
@@ -14,8 +13,7 @@
 // These are the actions we can perform on a source file.
 enum class CliAction {
   EMIT_TOKENS,
-  EMIT_RAW_AST,
-  EMIT_OPTIMIZED_AST,
+  EMIT_AST,
   EVAL
 };
 
@@ -41,8 +39,7 @@ int main(int argc, char *argv[]) {
       "  poi -v, --version\n"
       "  poi source\n"
       "  poi --emit-tokens source\n"
-      "  poi --emit-raw-ast source\n"
-      "  poi --emit-optimized-ast source\n"
+      "  poi --emit-ast source\n"
       "  poi --eval source\n";
     return 0;
   }
@@ -71,10 +68,8 @@ int main(int argc, char *argv[]) {
   if (argc == 3) {
     if (std::string(argv[1]) == "--emit-tokens") {
       cli_action = CliAction::EMIT_TOKENS;
-    } else if (std::string(argv[1]) == "--emit-raw-ast") {
-      cli_action = CliAction::EMIT_RAW_AST;
-    } else if (std::string(argv[1]) == "--emit-optimized-ast") {
-      cli_action = CliAction::EMIT_OPTIMIZED_AST;
+    } else if (std::string(argv[1]) == "--emit-ast") {
+      cli_action = CliAction::EMIT_AST;
     } else if (std::string(argv[1]) == "--eval") {
       cli_action = CliAction::EVAL;
     } else {
@@ -114,18 +109,9 @@ int main(int argc, char *argv[]) {
 
     // Parse the tokens into an AST.
     auto term = poi::parse(*tokens, pool);
-    if (cli_action == CliAction::EMIT_RAW_AST) {
+    if (cli_action == CliAction::EMIT_AST) {
       if (term) {
         std::cout << term->show(pool) << "\n";
-      }
-      return 0;
-    }
-
-    // Optimize the program.
-    auto optimized_term = poi::optimize(term);
-    if (cli_action == CliAction::EMIT_OPTIMIZED_AST) {
-      if (optimized_term) {
-        std::cout << optimized_term->show(pool) << "\n";
       }
       return 0;
     }

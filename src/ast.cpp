@@ -427,35 +427,3 @@ std::shared_ptr<poi::Value> poi::Data::eval(
   }
   return std::make_shared<poi::DataValue>(type, constructor, captures);
 }
-
-///////////////////////////////////////////////////////////////////////////////
-// Group                                                                     //
-///////////////////////////////////////////////////////////////////////////////
-
-poi::Group::Group(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<std::unordered_set<size_t>> free_variables,
-  std::shared_ptr<poi::Term> body
-) : Term(
-    source_name,
-    source,
-    start_pos,
-    end_pos,
-    free_variables
-), body(body) {
-}
-
-std::string poi::Group::show(poi::StringPool &pool) {
-  return "(" + body->show(pool) + ")";
-}
-
-std::shared_ptr<poi::Value> poi::Group::eval(
-  std::shared_ptr<poi::Term> term,
-  std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-  poi::StringPool &pool
-) {
-  return body->eval(body, environment, pool);
-}

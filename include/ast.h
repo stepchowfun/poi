@@ -207,26 +207,6 @@ namespace poi {
     ) override;
   };
 
-  class Group : public Term {
-  public:
-    std::shared_ptr<poi::Term> body;
-
-    explicit Group(
-      size_t source_name,
-      size_t source,
-      size_t start_pos,
-      size_t end_pos,
-      std::shared_ptr<std::unordered_set<size_t>> free_variables,
-      std::shared_ptr<poi::Term> body
-    );
-    std::string show(poi::StringPool &pool) override;
-    std::shared_ptr<poi::Value> eval(
-      std::shared_ptr<poi::Term> term,
-      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-      poi::StringPool &pool
-    ) override;
-  };
-
 }
 
 #endif
