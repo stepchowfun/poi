@@ -18,7 +18,7 @@
   associativity into the production rules.
 
     Term =
-      Variable | Abstraction | Application | Let | DataType | Member | Group
+      Variable | Abstraction | Application | Let | DataType | Member
     Variable = IDENTIFIER
     Abstraction = IDENTIFIER ARROW Term
     Application = Term Term
@@ -29,7 +29,6 @@
     DataConstructor = IDENTIFIER DataConstructorParams
     DataConstructorParams = | IDENTIFIER DataConstructorParams
     Member = Term DOT IDENTIFIER
-    Group = LEFT_PAREN Term RIGHT_PAREN
 
   We note the following ambiguities, and the chosen resolutions:
 
@@ -69,34 +68,33 @@
   eliminating alternatives:
 
     Term =
-      Variable | Abstraction | Application | Let | DataType | Member | Group
+      Variable | Abstraction | Application | Let | DataType | Member
     Variable = IDENTIFIER
     Abstraction = IDENTIFIER ARROW Term
     Application =
-      (Variable | Application | DataType | Member | Group)
-      (Variable | DataType | Member | Group)
+      (Variable | Application | DataType | Member)
+      (Variable | DataType | Member)
     Let = IDENTIFIER EQUALS Term SEPARATOR Term
     DataType = DATA LEFT_PAREN DataConstructorList RIGHT_PAREN
     DataConstructorList = | DataConstructor DataConstructorTail
     DataConstructorTail = | SEPARATOR DataConstructor DataConstructorTail
     DataConstructor = IDENTIFIER DataConstructorParams
     DataConstructorParams = | IDENTIFIER DataConstructorParams
-    Member = (Variable | DataType | Member | Group) DOT IDENTIFIER
-    Group = LEFT_PAREN Term RIGHT_PAREN
+    Member = (Variable | DataType | Member) DOT IDENTIFIER
 
   There are still two problems with this grammar: the Application and Member
   rules are left-recursive, and packrat parsers can't handle left-recursion:
 
     Application =
-      (Variable | Application | DataType | Member | Group)
-      (Variable | DataType | Member | Group)
-    Member = (Variable | DataType | Member | Group) DOT IDENTIFIER
+      (Variable | Application | DataType | Member)
+      (Variable | DataType | Member)
+    Member = (Variable | DataType | Member) DOT IDENTIFIER
 
   To fix Application, we rewrite the rule to use right-recursion instead:
 
     Application =
-      (Variable | DataType | Member | Group)
-      (Variable | Application | DataType | Member | Group)
+      (Variable | DataType | Member)
+      (Variable | Application | DataType | Member)
 
   This makes Application have right-associativity, which is not what we want.
   In the parsing rule for Application, we use a special trick to flip the
@@ -107,7 +105,7 @@
 
   To fix Member, we rewrite the rule to eliminate the left recursion:
 
-    Member = (Variable | DataType | Group) DOT IDENTIFIER MemberSuffix
+    Member = (Variable | DataType) DOT IDENTIFIER MemberSuffix
     MemberSuffix = | DOT IDENTIFIER
 
 */
