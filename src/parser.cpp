@@ -271,7 +271,7 @@ std::shared_ptr<poi::Member> parse_member(
   poi::StringPool &pool
 );
 
-std::shared_ptr<poi::Group> parse_group(
+std::shared_ptr<poi::Term> parse_group(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
@@ -969,7 +969,7 @@ std::shared_ptr<poi::Member> parse_member(
   MEMOIZE_AND_RETURN(memo_key, member, next);
 }
 
-std::shared_ptr<poi::Group> parse_group(
+std::shared_ptr<poi::Term> parse_group(
   MemoMap &memo,
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
@@ -985,15 +985,15 @@ std::shared_ptr<poi::Group> parse_group(
     top_level,
     std::shared_ptr<poi::Term>()
   );
-  MEMO_CHECK(memo, memo_key, Group, next);
+  MEMO_CHECK(memo, memo_key, Term, next);
 
   // Parse the LEFT_PAREN, if applicable.
   if (next == tokens.end()) {
-    MEMOIZE_AND_FAIL(memo_key, Group, begin, next);
+    MEMOIZE_AND_FAIL(memo_key, Term, begin, next);
   }
   if (!top_level) {
     if (next->type != poi::TokenType::LEFT_PAREN) {
-      MEMOIZE_AND_FAIL(memo_key, Group, begin, next);
+      MEMOIZE_AND_FAIL(memo_key, Term, begin, next);
     }
     ++next;
   }
@@ -1026,23 +1026,8 @@ std::shared_ptr<poi::Group> parse_group(
     ++next;
   }
 
-  // Construct the Group.
-  auto free_variables = std::make_shared<std::unordered_set<size_t>>();
-  free_variables->insert(
-    body->free_variables->begin(),
-    body->free_variables->end()
-  );
-  auto group = std::make_shared<poi::Group>(
-    begin->source_name,
-    begin->source,
-    begin->start_pos,
-    (next - 1)->end_pos,
-    free_variables,
-    body
-  );
-
   // Memoize whatever we parsed and return it.
-  MEMOIZE_AND_RETURN(memo_key, group, next);
+  MEMOIZE_AND_RETURN(memo_key, body, next);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
