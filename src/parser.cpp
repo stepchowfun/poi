@@ -144,19 +144,8 @@ using MemoMap = std::unordered_map<
   std::function<size_t(const MemoKey &key)>
 >;
 
-#define MEMO_KEY_GENERAL( \
-  memo_type, \
-  begin, \
-  application_prior \
-) \
-  make_tuple( \
-    MemoType::memo_type, \
-    (begin), \
-    (application_prior) \
-  )
-
-#define MEMO_KEY_SIMPLE(memo_type, begin) \
-  MEMO_KEY_GENERAL(memo_type, (begin), std::shared_ptr<poi::Term>())
+#define MEMO_KEY(memo_type, begin, application_prior) \
+  make_tuple(MemoType::memo_type, (begin), (application_prior))
 
 #define MEMO_CHECK(memo, key, return_type, next) do { \
   auto &m = (memo); \
@@ -285,7 +274,7 @@ std::shared_ptr<poi::Term> parse_term(
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
-  auto memo_key = MEMO_KEY_SIMPLE(TERM, begin);
+  auto memo_key = MEMO_KEY(TERM, begin, std::shared_ptr<poi::Term>());
   MEMO_CHECK(memo, memo_key, Term, next);
 
   // A term is one of the following constructs.
@@ -353,7 +342,7 @@ std::shared_ptr<poi::Variable> parse_variable(
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
-  auto memo_key = MEMO_KEY_SIMPLE(VARIABLE, begin);
+  auto memo_key = MEMO_KEY(VARIABLE, begin, std::shared_ptr<poi::Term>());
   MEMO_CHECK(memo, memo_key, Variable, next);
 
   // Make sure we have an IDENTIFIER.
@@ -405,7 +394,7 @@ std::shared_ptr<poi::Abstraction> parse_abstraction(
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
-  auto memo_key = MEMO_KEY_SIMPLE(ABSTRACTION, begin);
+  auto memo_key = MEMO_KEY(ABSTRACTION, begin, std::shared_ptr<poi::Term>());
   MEMO_CHECK(memo, memo_key, Abstraction, next);
 
   // Parse the IDENTIFIER.
@@ -472,11 +461,7 @@ std::shared_ptr<poi::Application> parse_application(
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
-  auto memo_key = MEMO_KEY_GENERAL(
-    APPLICATION,
-    begin,
-    application_prior
-  );
+  auto memo_key = MEMO_KEY(APPLICATION, begin, application_prior);
   MEMO_CHECK(memo, memo_key, Application, next);
 
   // Parse the left term.
@@ -676,7 +661,7 @@ std::shared_ptr<poi::Let> parse_let(
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
-  auto memo_key = MEMO_KEY_SIMPLE(LET, begin);
+  auto memo_key = MEMO_KEY(LET, begin, std::shared_ptr<poi::Term>());
   MEMO_CHECK(memo, memo_key, Let, next);
 
   // Parse the IDENTIFIER.
@@ -769,7 +754,7 @@ std::shared_ptr<poi::DataType> parse_data_type(
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
-  auto memo_key = MEMO_KEY_SIMPLE(DATA_TYPE, begin);
+  auto memo_key = MEMO_KEY(DATA_TYPE, begin, std::shared_ptr<poi::Term>());
   MEMO_CHECK(memo, memo_key, DataType, next);
 
   // Parse the DATA.
@@ -867,7 +852,7 @@ std::shared_ptr<poi::Member> parse_member(
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
-  auto memo_key = MEMO_KEY_SIMPLE(MEMBER, begin);
+  auto memo_key = MEMO_KEY(MEMBER, begin, std::shared_ptr<poi::Term>());
   MEMO_CHECK(memo, memo_key, Member, next);
 
   // Parse the object.
@@ -973,10 +958,7 @@ std::shared_ptr<poi::Term> parse_group(
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
-  auto memo_key = MEMO_KEY_SIMPLE(
-    GROUP,
-    begin
-  );
+  auto memo_key = MEMO_KEY(GROUP, begin, std::shared_ptr<poi::Term>());
   MEMO_CHECK(memo, memo_key, Term, next);
 
   // Skip the LEFT_PAREN.
