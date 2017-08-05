@@ -22,7 +22,7 @@
     Variable = IDENTIFIER
     Abstraction = IDENTIFIER ARROW Term
     Application = Term Term
-    Let = IDENTIFIER EQUALS Term SEPARATOR Term
+    Let = Pattern EQUALS Term SEPARATOR Term
     DataType = DATA LEFT_PAREN DataConstructorList RIGHT_PAREN
     DataConstructorList = | DataConstructor DataConstructorTail
     DataConstructorTail = | SEPARATOR DataConstructor DataConstructorTail
@@ -30,6 +30,16 @@
     DataConstructorParams = | IDENTIFIER DataConstructorParams
     Member = Term DOT IDENTIFIER
     Group = LEFT_PAREN Term RIGHT_PAREN
+    Pattern =
+      VariablePattern | ConstructorPattern | LEFT_PAREN Pattern RIGHT_PAREN
+    VariablePattern = IDENTIFIER
+    ConstructorPattern = Term DOT IDENTIFIER PatternList
+    PatternList = PatternInList | PatternInList PatternList
+    PatternInList = VariablePattern | LEFT_PAREN ConstructorPattern RIGHT_PAREN
+    Match = MATCH Term LEFT_PAREN CaseList RIGHT_PAREN
+    CaseList = | Case CaseTail
+    CaseTail = | SEPARATOR Case CaseTail
+    Case = Pattern FATARROW Term
 
   We note the following ambiguities, and the chosen resolutions:
 
@@ -46,24 +56,32 @@
     t (x t)
 
     # Resolution: Application has higher precedence than Let.
-    x = t, (x t)
-    (x = t, x) t
+    p = t, (x t)
+    (p = t, x) t
 
     # Resolution: Member has higher precedence than Application.
     t (x . x)
     (t x) . x
 
     # Resolution: Member has higher precedence than Let.
-    x = t, (x . x)
-    (x = t, x) . x
+    p = t, (x . x)
+    (p = t, x) . x
+
+    # Resolution: Let has higher precedence than Abstraction.
+    (x -> t) . x p = t, t
+    x -> (t . x p = t, t)
+
+    # Resolution: The right side of an Application cannot be a Let.
+    (x . x) (p = t, t)
+    x . x p = t, t
 
     # Resolution: The right side of an Application cannot be an Abstraction.
     (t (x -> x)) t
     t (x -> (x t))
 
-    # Resolution: The right side of an Application cannot be a Let.
-    t (x = t, (x t))
-    (t (x = t, x)) t
+    # Resolution: The term of a ConstructorPattern cannot be a Let.
+    p = t, (x . x p = t, t)
+    (p = t, x) . x p = t, t
 
   We can resolve the ambiguities in the grammar by expanding definitions and
   eliminating alternatives:
@@ -75,7 +93,7 @@
     Application =
       (Variable | Application | DataType | Member | Group)
       (Variable | DataType | Member | Group)
-    Let = IDENTIFIER EQUALS Term SEPARATOR Term
+    Let = Pattern EQUALS Term SEPARATOR Term
     DataType = DATA LEFT_PAREN DataConstructorList RIGHT_PAREN
     DataConstructorList = | DataConstructor DataConstructorTail
     DataConstructorTail = | SEPARATOR DataConstructor DataConstructorTail
@@ -83,6 +101,18 @@
     DataConstructorParams = | IDENTIFIER DataConstructorParams
     Member = (Variable | DataType | Member | Group) DOT IDENTIFIER
     Group = LEFT_PAREN Term RIGHT_PAREN
+    Pattern =
+      VariablePattern | ConstructorPattern | LEFT_PAREN Pattern RIGHT_PAREN
+    VariablePattern = IDENTIFIER
+    ConstructorPattern =
+      (Variable | Application | DataType | Member | Group)
+      DOT IDENTIFIER PatternList
+    PatternList = PatternInList | PatternInList PatternList
+    PatternInList = VariablePattern | LEFT_PAREN ConstructorPattern RIGHT_PAREN
+    Match = MATCH Term LEFT_PAREN CaseList RIGHT_PAREN
+    CaseList = | Case CaseTail
+    CaseTail = | SEPARATOR Case CaseTail
+    Case = Pattern FATARROW Term
 
   There are still two problems with this grammar: the Application and Member
   rules are left-recursive, and packrat parsers can't handle left-recursion:
