@@ -130,7 +130,6 @@ enum class MemoType {
 using MemoKey = std::tuple<
   MemoType,
   std::vector<poi::Token>::iterator, // The start token
-  bool, // Whether this term is the top-level group
   std::shared_ptr<poi::Term> // The `application_prior` term
 >;
 
@@ -148,18 +147,16 @@ using MemoMap = std::unordered_map<
 #define MEMO_KEY_GENERAL( \
   memo_type, \
   begin, \
-  top_level, \
   application_prior \
 ) \
   make_tuple( \
     MemoType::memo_type, \
     (begin), \
-    (top_level), \
     (application_prior) \
   )
 
 #define MEMO_KEY_SIMPLE(memo_type, begin) \
-  MEMO_KEY_GENERAL(memo_type, (begin), false, std::shared_ptr<poi::Term>())
+  MEMO_KEY_GENERAL(memo_type, (begin), std::shared_ptr<poi::Term>())
 
 #define MEMO_CHECK(memo, key, return_type, next) do { \
   auto &m = (memo); \
@@ -276,8 +273,7 @@ std::shared_ptr<poi::Term> parse_group(
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
   std::unordered_set<size_t> &environment,
-  poi::StringPool &pool,
-  bool top_level
+  poi::StringPool &pool
 );
 
 std::shared_ptr<poi::Term> parse_term(
@@ -341,7 +337,7 @@ std::shared_ptr<poi::Term> parse_term(
     begin,
     next,
     term,
-    parse_group(memo, tokens, next, environment, pool, false)
+    parse_group(memo, tokens, next, environment, pool)
   );
 
   // Memoize whatever we parsed and return it.
@@ -479,7 +475,6 @@ std::shared_ptr<poi::Application> parse_application(
   auto memo_key = MEMO_KEY_GENERAL(
     APPLICATION,
     begin,
-    false,
     application_prior
   );
   MEMO_CHECK(memo, memo_key, Application, next);
@@ -509,7 +504,7 @@ std::shared_ptr<poi::Application> parse_application(
     left_term_begin,
     next,
     left_term,
-    parse_group(memo, tokens, next, environment, pool, false)
+    parse_group(memo, tokens, next, environment, pool)
   );
   if (!left_term) {
     MEMOIZE_AND_FAIL(memo_key, Application, begin, next);
@@ -540,7 +535,7 @@ std::shared_ptr<poi::Application> parse_application(
     right_term_begin,
     next,
     right_term,
-    parse_group(memo, tokens, next, environment, pool, false)
+    parse_group(memo, tokens, next, environment, pool)
   );
   std::shared_ptr<poi::Application> right_application;
   if (application_prior) {
@@ -893,7 +888,7 @@ std::shared_ptr<poi::Member> parse_member(
     begin,
     next,
     object,
-    parse_group(memo, tokens, next, environment, pool, false)
+    parse_group(memo, tokens, next, environment, pool)
   );
   if (!object) {
     MEMOIZE_AND_FAIL(memo_key, Member, begin, next);
@@ -974,29 +969,21 @@ std::shared_ptr<poi::Term> parse_group(
   std::vector<poi::Token> &tokens,
   std::vector<poi::Token>::iterator &next,
   std::unordered_set<size_t> &environment,
-  poi::StringPool &pool,
-  bool top_level
+  poi::StringPool &pool
 ) {
   // Check if we can reuse a memoized result.
   auto begin = next;
-  auto memo_key = MEMO_KEY_GENERAL(
+  auto memo_key = MEMO_KEY_SIMPLE(
     GROUP,
-    begin,
-    top_level,
-    std::shared_ptr<poi::Term>()
+    begin
   );
   MEMO_CHECK(memo, memo_key, Term, next);
 
-  // Parse the LEFT_PAREN, if applicable.
-  if (next == tokens.end()) {
+  // Skip the LEFT_PAREN.
+  if (next == tokens.end() || next->type != poi::TokenType::LEFT_PAREN) {
     MEMOIZE_AND_FAIL(memo_key, Term, begin, next);
   }
-  if (!top_level) {
-    if (next->type != poi::TokenType::LEFT_PAREN) {
-      MEMOIZE_AND_FAIL(memo_key, Term, begin, next);
-    }
-    ++next;
-  }
+  ++next;
 
   // Parse the body.
   auto body = parse_term(
@@ -1014,17 +1001,15 @@ std::shared_ptr<poi::Term> parse_group(
     );
   }
 
-  // Skip the RIGHT_PAREN, if applicable.
-  if (!top_level) {
-    if (next == tokens.end() || next->type != poi::TokenType::RIGHT_PAREN) {
-      throw poi::Error(
-        "This group needs to be closed with a ')'.",
-        pool.find(begin->source), pool.find(begin->source_name),
-        begin->start_pos, (next - 1)->end_pos
-      );
-    }
-    ++next;
+  // Skip the RIGHT_PAREN.
+  if (next == tokens.end() || next->type != poi::TokenType::RIGHT_PAREN) {
+    throw poi::Error(
+      "This group needs to be closed with a ')'.",
+      pool.find(begin->source), pool.find(begin->source_name),
+      begin->start_pos, (next - 1)->end_pos
+    );
   }
+  ++next;
 
   // Memoize whatever we parsed and return it.
   MEMOIZE_AND_RETURN(memo_key, body, next);
@@ -1047,8 +1032,7 @@ std::shared_ptr<poi::Term> poi::parse(
     // Unpack the tuple.
     auto memo_type = std::get<0>(key);
     auto begin = std::get<1>(key);
-    auto top_level = std::get<2>(key);
-    auto application_prior = std::get<3>(key);
+    auto application_prior = std::get<2>(key);
 
     // Get the hash of each component.
     size_t memo_type_hash =
@@ -1057,7 +1041,6 @@ std::shared_ptr<poi::Term> poi::parse(
     if (begin != tokens.end()) {
       begin_hash = reinterpret_cast<size_t>(&(*begin));
     }
-    size_t top_level_hash = top_level ? 1 : 0;
     size_t application_prior_hash = 0;
     if (application_prior) {
       application_prior_hash = reinterpret_cast<size_t>(&(*application_prior));
@@ -1068,21 +1051,18 @@ std::shared_ptr<poi::Term> poi::parse(
     combined_hash ^= 0x9e3779b9 +
       (combined_hash << 6) + (combined_hash >> 2) + begin_hash;
     combined_hash ^= 0x9e3779b9 +
-      (combined_hash << 6) + (combined_hash >> 2) + top_level_hash;
-    combined_hash ^= 0x9e3779b9 +
       (combined_hash << 6) + (combined_hash >> 2) + application_prior_hash;
     return combined_hash;
   });
 
   // Let the helper do all the work.
   std::vector<poi::Token>::iterator next = tokens.begin();
-  std::shared_ptr<poi::Term> term = parse_group(
+  std::shared_ptr<poi::Term> term = parse_term(
     memo,
     tokens,
     next,
     environment,
-    pool,
-    true
+    pool
   );
 
   // Make sure we parsed the whole file.
