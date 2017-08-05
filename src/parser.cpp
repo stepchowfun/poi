@@ -12,107 +12,40 @@
   In the following grammars, nonterminals are written in UpperCamelCase and
   terminals (tokens) are written in MACRO_CASE.
 
-  We start with a grammar which formalizes the language constructs, but without
-  concerning ourselves with precedence and associativity. The grammar below is
-  ambiguous, and below we will resolve ambiguities by encoding precedence and
-  associativity into the production rules.
-
     Term =
-      Variable | Abstraction | Application | Let | DataType | Member | Group
+      Variable | Abstraction | Application | Let
+      | DataType | Member | Group | Match
     Variable = IDENTIFIER
-    Abstraction = IDENTIFIER ARROW Term
-    Application = Term Term
-    Let = Pattern EQUALS Term SEPARATOR Term
-    DataType = DATA LEFT_PAREN DataConstructorList RIGHT_PAREN
-    DataConstructorList = | DataConstructor DataConstructorTail
-    DataConstructorTail = | SEPARATOR DataConstructor DataConstructorTail
-    DataConstructor = IDENTIFIER DataConstructorParams
-    DataConstructorParams = | IDENTIFIER DataConstructorParams
-    Member = Term DOT IDENTIFIER
-    Group = LEFT_PAREN Term RIGHT_PAREN
-    Pattern =
-      VariablePattern | ConstructorPattern | LEFT_PAREN Pattern RIGHT_PAREN
-    VariablePattern = IDENTIFIER
-    ConstructorPattern = Term DOT IDENTIFIER PatternList
-    PatternList = PatternInList | PatternInList PatternList
-    PatternInList = VariablePattern | LEFT_PAREN ConstructorPattern RIGHT_PAREN
-    Match = MATCH Term LEFT_PAREN CaseList RIGHT_PAREN
-    CaseList = | Case CaseTail
-    CaseTail = | SEPARATOR Case CaseTail
-    Case = Pattern FATARROW Term
-
-  We note the following ambiguities, and the chosen resolutions:
-
-    # Resolution: Application has higher precedence than Abstraction.
-    x -> (t t)
-    (x -> t) t
-
-    # Resolution: Member has higher precedence than Abstraction.
-    x -> (t . x)
-    (x -> t) . x
-
-    # Resolution: Application is left-associative.
-    (t x) t
-    t (x t)
-
-    # Resolution: Application has higher precedence than Let.
-    p = t, (x t)
-    (p = t, x) t
-
-    # Resolution: Member has higher precedence than Application.
-    t (x . x)
-    (t x) . x
-
-    # Resolution: Member has higher precedence than Let.
-    p = t, (x . x)
-    (p = t, x) . x
-
-    # Resolution: Let has higher precedence than Abstraction.
-    (x -> t) . x p = t, t
-    x -> (t . x p = t, t)
-
-    # Resolution: The right side of an Application cannot be a Let.
-    (x . x) (p = t, t)
-    x . x p = t, t
-
-    # Resolution: The right side of an Application cannot be an Abstraction.
-    (t (x -> x)) t
-    t (x -> (x t))
-
-    # Resolution: The term of a ConstructorPattern cannot be a Let.
-    p = t, (x . x p = t, t)
-    (p = t, x) . x p = t, t
-
-  We can resolve the ambiguities in the grammar by expanding definitions and
-  eliminating alternatives:
-
-    Term =
-      Variable | Abstraction | Application | Let | DataType | Member | Group
-    Variable = IDENTIFIER
-    Abstraction = IDENTIFIER ARROW Term
+    Abstraction = Pattern ARROW Term
     Application =
-      (Variable | Application | DataType | Member | Group)
-      (Variable | DataType | Member | Group)
+      (Variable | Application | DataType | Member | Group | Match)
+      (Variable | DataType | Member | Group | Match)
     Let = Pattern EQUALS Term SEPARATOR Term
     DataType = DATA LEFT_PAREN DataConstructorList RIGHT_PAREN
     DataConstructorList = | DataConstructor DataConstructorTail
     DataConstructorTail = | SEPARATOR DataConstructor DataConstructorTail
     DataConstructor = IDENTIFIER DataConstructorParams
     DataConstructorParams = | IDENTIFIER DataConstructorParams
-    Member = (Variable | DataType | Member | Group) DOT IDENTIFIER
+    Member = (Variable | DataType | Member | Group | Match) DOT IDENTIFIER
     Group = LEFT_PAREN Term RIGHT_PAREN
     Pattern =
       VariablePattern | ConstructorPattern | LEFT_PAREN Pattern RIGHT_PAREN
     VariablePattern = IDENTIFIER
     ConstructorPattern =
-      (Variable | Application | DataType | Member | Group)
+      ConstructorPatternWithParams | ConstructorPatternWithoutParams
+    ConstructorPatternWithParams =
+      (Variable | Application | DataType | Member | Group | Match)
       DOT IDENTIFIER PatternList
+    ConstructorPatternWithoutParams =
+      (Variable | Application | DataType | Member | Group | Match)
+      DOT IDENTIFIER
     PatternList = PatternInList | PatternInList PatternList
-    PatternInList = VariablePattern | LEFT_PAREN ConstructorPattern RIGHT_PAREN
+    PatternInList =
+      VariablePattern | ConstructorPatternWithoutParams
+      | LEFT_PAREN ConstructorPatternWithParams RIGHT_PAREN
     Match = MATCH Term LEFT_PAREN CaseList RIGHT_PAREN
-    CaseList = | Case CaseTail
-    CaseTail = | SEPARATOR Case CaseTail
-    Case = Pattern FATARROW Term
+    CaseList = | Abstraction CaseTail
+    CaseTail = | SEPARATOR Abstraction CaseTail
 
   There are still two problems with this grammar: the Application and Member
   rules are left-recursive, and packrat parsers can't handle left-recursion:
