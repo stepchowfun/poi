@@ -12,34 +12,53 @@
   MACRO_CASE.
 
     Term =
-      Variable | Abstraction | Application | Let | DataType | Member | Group
+      Variable | Abstraction | Application | Let
+      | DataType | Member | Group | Match
     Variable = IDENTIFIER
-    Abstraction = IDENTIFIER ARROW Term
+    Abstraction = Pattern ARROW Term
     Application =
-      (Variable | Application | DataType | Member | Group)
-      (Variable | DataType | Member | Group)
-    Let = IDENTIFIER EQUALS Term SEPARATOR Term
+      (Variable | Application | DataType | Member | Group | Match)
+      (Variable | DataType | Member | Group | Match)
+    Let = Pattern EQUALS Term SEPARATOR Term
     DataType = DATA LEFT_PAREN DataConstructorList RIGHT_PAREN
     DataConstructorList = | DataConstructor DataConstructorTail
     DataConstructorTail = | SEPARATOR DataConstructor DataConstructorTail
     DataConstructor = IDENTIFIER DataConstructorParams
     DataConstructorParams = | IDENTIFIER DataConstructorParams
-    Member = (Variable | DataType | Member | Group) DOT IDENTIFIER
+    Member = (Variable | DataType | Member | Group | Match) DOT IDENTIFIER
     Group = LEFT_PAREN Term RIGHT_PAREN
+    Pattern =
+      VariablePattern | ConstructorPattern | LEFT_PAREN Pattern RIGHT_PAREN
+    VariablePattern = IDENTIFIER
+    ConstructorPattern =
+      ConstructorPatternWithParams | ConstructorPatternWithoutParams
+    ConstructorPatternWithParams =
+      (Variable | Application | DataType | Member | Group | Match)
+      DOT IDENTIFIER PatternList
+    ConstructorPatternWithoutParams =
+      (Variable | Application | DataType | Member | Group | Match)
+      DOT IDENTIFIER
+    PatternList = PatternInList | PatternInList PatternList
+    PatternInList =
+      VariablePattern | ConstructorPatternWithoutParams
+      | LEFT_PAREN ConstructorPatternWithParams RIGHT_PAREN
+    Match = MATCH Term LEFT_PAREN CaseList RIGHT_PAREN
+    CaseList = | Abstraction CaseTail
+    CaseTail = | SEPARATOR Abstraction CaseTail
 
   There are two problems with the grammar above: the Application and Member
   rules are left-recursive, and packrat parsers can't handle left-recursion:
 
     Application =
-      (Variable | Application | DataType | Member | Group)
-      (Variable | DataType | Member | Group)
-    Member = (Variable | DataType | Member | Group) DOT IDENTIFIER
+      (Variable | Application | DataType | Member | Group | Match)
+      (Variable | DataType | Member | Group | Match)
+    Member = (Variable | DataType | Member | Group | Match) DOT IDENTIFIER
 
   To fix Application, we rewrite the rule to use right-recursion instead:
 
     Application =
-      (Variable | DataType | Member | Group)
-      (Variable | Application | DataType | Member | Group)
+      (Variable | DataType | Member | Group | Match)
+      (Variable | Application | DataType | Member | Group | Match)
 
   This makes Application have right-associativity, which is not what we want.
   In the parsing rule for Application, we use a special trick to flip the
@@ -50,7 +69,7 @@
 
   To fix Member, we rewrite the rule to eliminate the left recursion:
 
-    Member = (Variable | DataType | Group) DOT IDENTIFIER MemberSuffix
+    Member = (Variable | DataType | Group | Match) DOT IDENTIFIER MemberSuffix
     MemberSuffix = | DOT IDENTIFIER
 
 */
