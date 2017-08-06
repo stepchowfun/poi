@@ -51,15 +51,15 @@
   rules are left-recursive, and packrat parsers can't handle left-recursion:
 
     Application =
-      (Variable | Application | DataType | Member | Group)
-      (Variable | DataType | Member | Group)
-    Member = (Variable | DataType | Member | Group) DOT IDENTIFIER
+      (Variable | Application | DataType | Member | Group | Match)
+      (Variable | DataType | Member | Group | Match)
+    Member = (Variable | DataType | Member | Group | Match) DOT IDENTIFIER
 
   To fix Application, we rewrite the rule to use right-recursion instead:
 
     Application =
-      (Variable | DataType | Member | Group)
-      (Variable | Application | DataType | Member | Group)
+      (Variable | DataType | Member | Group | Match)
+      (Variable | Application | DataType | Member | Group | Match)
 
   This makes Application have right-associativity, which is not what we want.
   In the parsing rule for Application, we use a special trick to flip the
@@ -70,7 +70,7 @@
 
   To fix Member, we rewrite the rule to eliminate the left recursion:
 
-    Member = (Variable | DataType | Group) DOT IDENTIFIER MemberSuffix
+    Member = (Variable | DataType | Group | Match) DOT IDENTIFIER MemberSuffix
     MemberSuffix = | DOT IDENTIFIER
 
 */
