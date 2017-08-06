@@ -3,10 +3,10 @@
 #include <poi/value.h>
 
 ///////////////////////////////////////////////////////////////////////////////
-// Term                                                                      //
+// Node                                                                      //
 ///////////////////////////////////////////////////////////////////////////////
 
-poi::Term::Term(
+poi::Node::Node(
   size_t source_name,
   size_t source,
   size_t start_pos,
@@ -18,6 +18,28 @@ poi::Term::Term(
   start_pos(start_pos),
   end_pos(end_pos),
   free_variables(free_variables) {
+}
+
+poi::Node::~Node() {
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Term                                                                      //
+///////////////////////////////////////////////////////////////////////////////
+
+poi::Term::Term(
+  size_t source_name,
+  size_t source,
+  size_t start_pos,
+  size_t end_pos,
+  std::shared_ptr<std::unordered_set<size_t>> free_variables
+) : Node(
+    source_name,
+    source,
+    start_pos,
+    end_pos,
+    free_variables
+  ) {
 }
 
 poi::Term::~Term() {

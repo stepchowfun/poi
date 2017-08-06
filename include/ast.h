@@ -17,7 +17,7 @@ namespace poi {
   class Value; // Declared in poi/value.h
   class DataTypeValue; // Declared in poi/value.h
 
-  class Term {
+  class Node {
   public:
     size_t source_name;
     size_t source;
@@ -25,7 +25,20 @@ namespace poi {
     size_t end_pos; // Exclusive
     std::shared_ptr<std::unordered_set<size_t>> free_variables;
 
-    Term(
+    explicit Node(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables
+    );
+    virtual ~Node();
+    virtual std::string show(poi::StringPool &pool) = 0;
+  };
+
+  class Term : public Node {
+  public:
+    explicit Term(
       size_t source_name,
       size_t source,
       size_t start_pos,
