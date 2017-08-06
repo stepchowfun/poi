@@ -7,11 +7,11 @@ set -eu -o pipefail
 # Usage:
 #   ./check-line-lengths.sh file1 file2 ...
 
-LINE_LENGTH_VIOLATIONS="$( \
+VIOLATIONS="$( \
   awk '{ if (length > 79) { print length, FILENAME, "@", FNR }}' "$@" \
 )"
 
-if ! test -z "$LINE_LENGTH_VIOLATIONS"; then
-  echo "$LINE_LENGTH_VIOLATIONS"
+if test -n "$VIOLATIONS"; then
+  echo "$VIOLATIONS"
   exit 1
 fi
