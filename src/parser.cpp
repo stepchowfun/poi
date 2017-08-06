@@ -134,8 +134,8 @@ using MemoKey = std::tuple<
 >;
 
 using MemoValue = std::tuple<
-  std::shared_ptr<poi::Term>, // The returned term
-  std::vector<poi::Token>::iterator // The token after the returned term
+  std::shared_ptr<poi::Node>, // The returned node
+  std::vector<poi::Token>::iterator // The token after the returned node
 >;
 
 using MemoMap = std::unordered_map<
@@ -161,7 +161,7 @@ using MemoMap = std::unordered_map<
 #define MEMOIZE_AND_RETURN(memo_key, term, next) do { \
   auto n = (term); \
   memo.insert({(memo_key), make_tuple( \
-    std::static_pointer_cast<poi::Term>(n), \
+    std::static_pointer_cast<poi::Node>(n), \
     (next) \
   )}); \
   return n; \
@@ -171,7 +171,7 @@ using MemoMap = std::unordered_map<
   auto n = std::shared_ptr<poi::type>(); \
   (next) = (begin); \
   memo.insert({(memo_key), make_tuple( \
-    std::static_pointer_cast<poi::Term>(n), \
+    std::static_pointer_cast<poi::Node>(n), \
     (next) \
   )}); \
   return n; \
