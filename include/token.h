@@ -17,6 +17,7 @@ namespace poi {
     EQUALS,
     IDENTIFIER,
     LEFT_PAREN,
+    MATCH,
     RIGHT_PAREN,
     SEPARATOR
   };
@@ -28,6 +29,7 @@ namespace poi {
     "EQUALS",
     "IDENTIFIER",
     "LEFT_PAREN",
+    "MATCH",
     "RIGHT_PAREN",
     "SEPARATOR"
   };

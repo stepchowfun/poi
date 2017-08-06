@@ -128,6 +128,13 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
           source_name, source,
           pos, end_pos
         ));
+      } else if (literal == "match") {
+        tokens.push_back(Token(
+          TokenType::MATCH,
+          pool.insert(literal),
+          source_name, source,
+          pos, end_pos
+        ));
       } else {
         tokens.push_back(Token(
           TokenType::IDENTIFIER,
