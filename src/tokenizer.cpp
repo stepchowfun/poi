@@ -129,6 +129,14 @@ Poi::TokenStream Poi::tokenize(
           pos, end_pos,
           false
         ));
+      } else if (literal == "match") {
+        tokens.push_back(Token(
+          TokenType::MATCH,
+          pool.insert(literal),
+          source_name, source,
+          pos, end_pos,
+          false
+        ));
       } else {
         tokens.push_back(Token(
           TokenType::IDENTIFIER,

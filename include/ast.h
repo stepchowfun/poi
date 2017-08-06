@@ -16,6 +16,7 @@ namespace Poi {
   // Forward declarations to avoid mutually recursive headers
   class Value; // Declared in poi/value.h
   class DataTypeValue; // Declared in poi/value.h
+  class Member;
 
   class Node {
   public:
@@ -34,6 +35,54 @@ namespace Poi {
     );
     virtual ~Node();
     virtual std::string show(const Poi::StringPool &pool) const = 0;
+  };
+
+  class Pattern : public Node {
+  public:
+    explicit Pattern(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables
+    );
+    virtual ~Pattern();
+  };
+
+  class VariablePattern : public Pattern {
+  public:
+    const size_t variable;
+
+    explicit VariablePattern(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables,
+      size_t variable
+    );
+    std::string show(const Poi::StringPool &pool) const override;
+  };
+
+  class ConstructorPattern : public Pattern {
+  public:
+    const std::shared_ptr<Poi::Member> constructor;
+    const std::shared_ptr<
+      std::vector<std::shared_ptr<Poi::Pattern>>
+    > parameters;
+
+    explicit ConstructorPattern(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables,
+      std::shared_ptr<Poi::Member> constructor,
+      std::shared_ptr<
+        std::vector<std::shared_ptr<Poi::Pattern>>
+      > parameters
+    );
+    std::string show(const Poi::StringPool &pool) const override;
   };
 
   class Term : public Node {
@@ -217,6 +266,35 @@ namespace Poi {
       std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
       Poi::StringPool &pool
     ) const override;
+  };
+
+  // A Match term consists of a term to match on and a vector of abstractions.
+  // Match takes the first abstraction whose argument pattern matches the term,
+  // and applies it to the term.
+  class Match : public Term {
+  public:
+    const std::shared_ptr<Poi::Term> term;
+    const std::shared_ptr<
+      std::vector<std::shared_ptr<Poi::Abstraction>>
+    > cases;
+
+    explicit Match(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables,
+      std::shared_ptr<Poi::Term> term,
+      std::shared_ptr<
+        std::vector<std::shared_ptr<Poi::Abstraction>>
+      > cases
+    );
+    std::string show(const Poi::StringPool &pool) const override;
+    std::shared_ptr<Poi::Value> eval(
+      std::shared_ptr<Poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+      Poi::StringPool &pool
+    ) override;
   };
 
 }
