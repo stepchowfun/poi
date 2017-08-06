@@ -46,7 +46,6 @@ namespace poi {
       std::shared_ptr<std::unordered_set<size_t>> free_variables
     );
     virtual ~Term();
-    virtual std::string show(poi::StringPool &pool) = 0;
     virtual std::shared_ptr<poi::Value> eval(
       std::shared_ptr<poi::Term> term,
       std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
