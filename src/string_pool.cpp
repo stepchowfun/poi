@@ -1,11 +1,11 @@
 #include <poi/error.h>
 #include <poi/string_pool.h>
 
-poi::StringPool::StringPool() {
+Poi::StringPool::StringPool() {
   counter = 0;
 }
 
-size_t poi::StringPool::insert(std::string &s) {
+size_t Poi::StringPool::insert(const std::string &s) {
   auto iter = forward_pool.find(s);
   if (iter == forward_pool.end()) {
     auto index = counter;
@@ -18,10 +18,10 @@ size_t poi::StringPool::insert(std::string &s) {
   }
 }
 
-std::string poi::StringPool::find(size_t id) {
+std::string Poi::StringPool::find(size_t id) const {
   auto iter = reverse_pool.find(id);
   if (iter == reverse_pool.end()) {
-    throw poi::Error(
+    throw Poi::Error(
       "'" + std::to_string(id) + "' is not in the string pool."
     );
   } else {

@@ -6,7 +6,7 @@
 // Node                                                                      //
 ///////////////////////////////////////////////////////////////////////////////
 
-poi::Node::Node(
+Poi::Node::Node(
   size_t source_name,
   size_t source,
   size_t start_pos,
@@ -20,14 +20,14 @@ poi::Node::Node(
   free_variables(free_variables) {
 }
 
-poi::Node::~Node() {
+Poi::Node::~Node() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Term                                                                      //
 ///////////////////////////////////////////////////////////////////////////////
 
-poi::Term::Term(
+Poi::Term::Term(
   size_t source_name,
   size_t source,
   size_t start_pos,
@@ -42,14 +42,14 @@ poi::Term::Term(
   ) {
 }
 
-poi::Term::~Term() {
+Poi::Term::~Term() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Variable                                                                  //
 ///////////////////////////////////////////////////////////////////////////////
 
-poi::Variable::Variable(
+Poi::Variable::Variable(
   size_t source_name,
   size_t source,
   size_t start_pos,
@@ -65,14 +65,14 @@ poi::Variable::Variable(
   ), variable(variable) {
 }
 
-std::string poi::Variable::show(poi::StringPool &pool) {
+std::string Poi::Variable::show(const Poi::StringPool &pool) const {
   return pool.find(variable);
 }
 
-std::shared_ptr<poi::Value> poi::Variable::eval(
-  std::shared_ptr<poi::Term> term,
-  std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-  poi::StringPool &pool
+std::shared_ptr<Poi::Value> Poi::Variable::eval(
+  std::shared_ptr<Poi::Term> term,
+  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+  Poi::StringPool &pool
 ) {
   return environment.at(variable);
 }
@@ -81,14 +81,14 @@ std::shared_ptr<poi::Value> poi::Variable::eval(
 // Abstraction                                                               //
 ///////////////////////////////////////////////////////////////////////////////
 
-poi::Abstraction::Abstraction(
+Poi::Abstraction::Abstraction(
   size_t source_name,
   size_t source,
   size_t start_pos,
   size_t end_pos,
   std::shared_ptr<std::unordered_set<size_t>> free_variables,
   size_t variable,
-  std::shared_ptr<poi::Term> body
+  std::shared_ptr<Poi::Term> body
 ) : Term(
     source_name,
     source,
@@ -98,23 +98,23 @@ poi::Abstraction::Abstraction(
   ), variable(variable), body(body) {
 }
 
-std::string poi::Abstraction::show(poi::StringPool &pool) {
+std::string Poi::Abstraction::show(const Poi::StringPool &pool) const {
   return "(" + pool.find(variable) + " -> " + body->show(pool) + ")";
 }
 
-std::shared_ptr<poi::Value> poi::Abstraction::eval(
-  std::shared_ptr<poi::Term> term,
-  std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-  poi::StringPool &pool
+std::shared_ptr<Poi::Value> Poi::Abstraction::eval(
+  std::shared_ptr<Poi::Term> term,
+  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+  Poi::StringPool &pool
 ) {
   auto captures = std::make_shared<
-    std::unordered_map<size_t, std::shared_ptr<poi::Value>>
+    std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
   >();
   for (auto iter : *free_variables) {
     captures->insert({ iter, environment.at(iter) });
   }
-  return std::make_shared<poi::FunctionValue>(
-    std::dynamic_pointer_cast<poi::Abstraction>(term),
+  return std::make_shared<Poi::FunctionValue>(
+    std::dynamic_pointer_cast<Poi::Abstraction>(term),
     captures
   );
 }
@@ -123,14 +123,14 @@ std::shared_ptr<poi::Value> poi::Abstraction::eval(
 // Application                                                               //
 ///////////////////////////////////////////////////////////////////////////////
 
-poi::Application::Application(
+Poi::Application::Application(
   size_t source_name,
   size_t source,
   size_t start_pos,
   size_t end_pos,
   std::shared_ptr<std::unordered_set<size_t>> free_variables,
-  std::shared_ptr<poi::Term> abstraction,
-  std::shared_ptr<poi::Term> operand
+  std::shared_ptr<Poi::Term> abstraction,
+  std::shared_ptr<Poi::Term> operand
 ) : Term(
     source_name,
     source,
@@ -140,30 +140,30 @@ poi::Application::Application(
 ), abstraction(abstraction), operand(operand) {
 }
 
-std::string poi::Application::show(poi::StringPool &pool) {
+std::string Poi::Application::show(const Poi::StringPool &pool) const {
   return "(" + abstraction->show(pool) + " " + operand->show(pool) + ")";
 }
 
-std::shared_ptr<poi::Value> poi::Application::eval(
-  std::shared_ptr<poi::Term> term,
-  std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-  poi::StringPool &pool
+std::shared_ptr<Poi::Value> Poi::Application::eval(
+  std::shared_ptr<Poi::Term> term,
+  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+  Poi::StringPool &pool
 ) {
   auto abstraction_value = abstraction->eval(abstraction, environment, pool);
   auto operand_value = operand->eval(operand, environment, pool);
-  auto abstraction_value_fun = std::dynamic_pointer_cast<poi::FunctionValue>(
+  auto abstraction_value_fun = std::dynamic_pointer_cast<Poi::FunctionValue>(
     abstraction_value
   );
   if (!abstraction_value_fun) {
-    throw poi::Error(
+    throw Poi::Error(
       abstraction_value->show(pool) + " is not a function.",
-      pool.find(source), pool.find(source_name),
+      pool.find(source_name), pool.find(source),
       start_pos, end_pos
     );
   }
   std::unordered_map<
     size_t,
-    std::shared_ptr<poi::Value>
+    std::shared_ptr<Poi::Value>
   > new_environment;
   for (auto iter : *(abstraction_value_fun->captures)) {
     new_environment.insert(iter);
@@ -183,15 +183,15 @@ std::shared_ptr<poi::Value> poi::Application::eval(
 // Let                                                                       //
 ///////////////////////////////////////////////////////////////////////////////
 
-poi::Let::Let(
+Poi::Let::Let(
   size_t source_name,
   size_t source,
   size_t start_pos,
   size_t end_pos,
   std::shared_ptr<std::unordered_set<size_t>> free_variables,
   size_t variable,
-  std::shared_ptr<poi::Term> definition,
-  std::shared_ptr<poi::Term> body
+  std::shared_ptr<Poi::Term> definition,
+  std::shared_ptr<Poi::Term> body
 ) : Term(
     source_name,
     source,
@@ -201,7 +201,7 @@ poi::Let::Let(
 ), variable(variable), definition(definition), body(body) {
 }
 
-std::string poi::Let::show(poi::StringPool &pool) {
+std::string Poi::Let::show(const Poi::StringPool &pool) const {
   return
     "(" +
     pool.find(variable) +
@@ -212,10 +212,10 @@ std::string poi::Let::show(poi::StringPool &pool) {
     ")";
 }
 
-std::shared_ptr<poi::Value> poi::Let::eval(
-  std::shared_ptr<poi::Term> term,
-  std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-  poi::StringPool &pool
+std::shared_ptr<Poi::Value> Poi::Let::eval(
+  std::shared_ptr<Poi::Term> term,
+  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+  Poi::StringPool &pool
 ) {
   auto definition_value = definition->eval(definition, environment, pool);
   auto new_environment = environment;
@@ -230,7 +230,7 @@ std::shared_ptr<poi::Value> poi::Let::eval(
 // DataType                                                                  //
 ///////////////////////////////////////////////////////////////////////////////
 
-poi::DataType::DataType(
+Poi::DataType::DataType(
   size_t source_name,
   size_t source,
   size_t start_pos,
@@ -251,7 +251,7 @@ poi::DataType::DataType(
   constructor_params(constructor_params) {
 }
 
-std::string poi::DataType::show(poi::StringPool &pool) {
+std::string Poi::DataType::show(const Poi::StringPool &pool) const {
   std::string result = "data (";
   for (
     auto iter = constructor_names->begin();
@@ -270,13 +270,13 @@ std::string poi::DataType::show(poi::StringPool &pool) {
   return result;
 }
 
-std::shared_ptr<poi::Value> poi::DataType::eval(
-  std::shared_ptr<poi::Term> term,
-  std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-  poi::StringPool &pool
+std::shared_ptr<Poi::Value> Poi::DataType::eval(
+  std::shared_ptr<Poi::Term> term,
+  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+  Poi::StringPool &pool
 ) {
-  return std::make_shared<poi::DataTypeValue>(
-    std::dynamic_pointer_cast<poi::DataType>(term)
+  return std::make_shared<Poi::DataTypeValue>(
+    std::dynamic_pointer_cast<Poi::DataType>(term)
   );
 }
 
@@ -284,13 +284,13 @@ std::shared_ptr<poi::Value> poi::DataType::eval(
 // Member                                                                    //
 ///////////////////////////////////////////////////////////////////////////////
 
-poi::Member::Member(
+Poi::Member::Member(
   size_t source_name,
   size_t source,
   size_t start_pos,
   size_t end_pos,
   std::shared_ptr<std::unordered_set<size_t>> free_variables,
-  std::shared_ptr<poi::Term> object,
+  std::shared_ptr<Poi::Term> object,
   size_t field
 ) : Term(
     source_name,
@@ -301,17 +301,17 @@ poi::Member::Member(
 ), object(object), field(field) {
 }
 
-std::string poi::Member::show(poi::StringPool &pool) {
+std::string Poi::Member::show(const Poi::StringPool &pool) const {
   return "(" + object->show(pool) + "." + pool.find(field) + ")";
 }
 
-std::shared_ptr<poi::Value> poi::Member::eval(
-  std::shared_ptr<poi::Term> term,
-  std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-  poi::StringPool &pool
+std::shared_ptr<Poi::Value> Poi::Member::eval(
+  std::shared_ptr<Poi::Term> term,
+  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+  Poi::StringPool &pool
 ) {
   auto object_value = object->eval(object, environment, pool);
-  auto data_type_value = std::dynamic_pointer_cast<poi::DataTypeValue>(
+  auto data_type_value = std::dynamic_pointer_cast<Poi::DataTypeValue>(
     object_value
   );
   if (data_type_value) {
@@ -320,21 +320,21 @@ std::shared_ptr<poi::Value> poi::Member::eval(
     auto constructor_names = data_type_value->data_type->constructor_names;
     auto constructor = constructor_params->find(field);
     if (constructor == constructor_params->end()) {
-      throw poi::Error(
+      throw Poi::Error(
         "'" + pool.find(field) + "' is not a constructor of " +
           data_type_value->show(pool),
-        pool.find(source), pool.find(source_name),
+        pool.find(source_name), pool.find(source),
         start_pos, end_pos
       );
     }
 
     if (constructor_params->at(field).empty()) {
       // The constructor has no parameters. Instantiate immediately.
-      return std::make_shared<poi::DataValue>(
+      return std::make_shared<Poi::DataValue>(
         data_type_value,
         field,
         std::make_shared<
-          std::unordered_map<size_t, std::shared_ptr<poi::Value>>
+          std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
         >()
       );
     } else {
@@ -344,7 +344,7 @@ std::shared_ptr<poi::Value> poi::Member::eval(
         constructor->second.begin(),
         constructor->second.end()
       );
-      auto data = std::make_shared<poi::Data>(
+      auto data = std::make_shared<Poi::Data>(
         term->source_name,
         term->source,
         term->start_pos,
@@ -354,7 +354,7 @@ std::shared_ptr<poi::Value> poi::Member::eval(
         field
       );
 
-      auto abstraction = std::static_pointer_cast<poi::Term>(data);
+      auto abstraction = std::static_pointer_cast<Poi::Term>(data);
       for (
         auto iter = constructor->second.rbegin();
         iter != constructor->second.rend();
@@ -366,7 +366,7 @@ std::shared_ptr<poi::Value> poi::Member::eval(
           abstraction->free_variables->end()
         );
         free_variables->erase(*iter);
-        abstraction = std::make_shared<poi::Abstraction>(
+        abstraction = std::make_shared<Poi::Abstraction>(
           abstraction->source_name,
           abstraction->source,
           abstraction->start_pos,
@@ -378,34 +378,34 @@ std::shared_ptr<poi::Value> poi::Member::eval(
       }
 
       auto captures = std::make_shared<
-        std::unordered_map<size_t, std::shared_ptr<poi::Value>>
+        std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
       >();
-      return std::make_shared<poi::FunctionValue>(
-        std::dynamic_pointer_cast<poi::Abstraction>(abstraction),
+      return std::make_shared<Poi::FunctionValue>(
+        std::dynamic_pointer_cast<Poi::Abstraction>(abstraction),
         captures
       );
     }
   } else {
-    auto data_value = std::dynamic_pointer_cast<poi::DataValue>(
+    auto data_value = std::dynamic_pointer_cast<Poi::DataValue>(
       object_value
     );
     if (data_value) {
       auto captures = data_value->captures;
       auto capture = captures->find(field);
       if (capture == captures->end()) {
-        throw poi::Error(
+        throw Poi::Error(
           object_value->show(pool) +
             " has no member '" + pool.find(field) + "'",
-          pool.find(source), pool.find(source_name),
+          pool.find(source_name), pool.find(source),
           start_pos, end_pos
         );
       } else {
         return capture->second;
       }
     } else {
-      throw poi::Error(
+      throw Poi::Error(
         object_value->show(pool) + " has no member '" + pool.find(field) + "'",
-        pool.find(source), pool.find(source_name),
+        pool.find(source_name), pool.find(source),
         start_pos, end_pos
       );
     }
@@ -416,13 +416,13 @@ std::shared_ptr<poi::Value> poi::Member::eval(
 // Data                                                                      //
 ///////////////////////////////////////////////////////////////////////////////
 
-poi::Data::Data(
+Poi::Data::Data(
   size_t source_name,
   size_t source,
   size_t start_pos,
   size_t end_pos,
   std::shared_ptr<std::unordered_set<size_t>> free_variables,
-  std::shared_ptr<poi::DataTypeValue> type, size_t constructor
+  std::shared_ptr<Poi::DataTypeValue> type, size_t constructor
 ) : Term(
     source_name,
     source,
@@ -432,20 +432,20 @@ poi::Data::Data(
 ), type(type), constructor(constructor) {
 }
 
-std::string poi::Data::show(poi::StringPool &pool) {
+std::string Poi::Data::show(const Poi::StringPool &pool) const {
   return "<" + type->show(pool) + "." + pool.find(constructor) + ">";
 }
 
-std::shared_ptr<poi::Value> poi::Data::eval(
-  std::shared_ptr<poi::Term> term,
-  std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-  poi::StringPool &pool
+std::shared_ptr<Poi::Value> Poi::Data::eval(
+  std::shared_ptr<Poi::Term> term,
+  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+  Poi::StringPool &pool
 ) {
   auto captures = std::make_shared<
-    std::unordered_map<size_t, std::shared_ptr<poi::Value>>
+    std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
   >();
   for (auto iter : *free_variables) {
     captures->insert({ iter, environment.at(iter) });
   }
-  return std::make_shared<poi::DataValue>(type, constructor, captures);
+  return std::make_shared<Poi::DataValue>(type, constructor, captures);
 }

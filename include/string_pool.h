@@ -8,15 +8,15 @@
 #include <string>
 #include <unordered_map>
 
-namespace poi {
+namespace Poi {
 
   // A StringPool assigns an ID to every string. Two strings will have the
   // same ID if and only if they are equal.
   class StringPool {
   public:
     explicit StringPool();
-    size_t insert(std::string &s);
-    std::string find(size_t id);
+    size_t insert(const std::string &s);
+    std::string find(size_t id) const;
 
   private:
     std::unordered_map<std::string, size_t> forward_pool;

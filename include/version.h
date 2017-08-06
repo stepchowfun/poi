@@ -5,7 +5,7 @@
 #ifndef POI_VERSION_H
 #define POI_VERSION_H
 
-namespace poi {
+namespace Poi {
 
   // The version string
   extern const char * const VERSION;

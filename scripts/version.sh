@@ -31,9 +31,9 @@ fi
 cat <<-ENDOFMESSAGE
 #include <poi/version.h>
 
-const char * const poi::VERSION = "$VERSION";
-const char * const poi::COMMIT_HASH = $(
+const char * const Poi::VERSION = "$VERSION";
+const char * const Poi::COMMIT_HASH = $(
   [ -z "$COMMIT_HASH" ] && echo 'nullptr' || echo "\"$COMMIT_HASH\""
 );
-const char * const poi::BUILD_TYPE = "$BUILD_TYPE";
+const char * const Poi::BUILD_TYPE = "$BUILD_TYPE";
 ENDOFMESSAGE

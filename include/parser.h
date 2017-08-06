@@ -7,15 +7,15 @@
 
 #include <memory>
 #include <poi/ast.h>
+#include <poi/string_pool.h>
 #include <poi/token.h>
-#include <vector>
 
-namespace poi {
+namespace Poi {
 
   // Parse a stream of tokens.
-  std::shared_ptr<poi::Term> parse(
-    std::vector<poi::Token> &tokens,
-    poi::StringPool &pool
+  std::shared_ptr<Poi::Term> parse(
+    const Poi::TokenStream &token_stream,
+    Poi::StringPool &pool
   );
 
 }

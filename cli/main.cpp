@@ -48,11 +48,11 @@ int main(int argc, char *argv[]) {
   if (argc == 2 && (
     std::string(argv[1]) == "-v" || std::string(argv[1]) == "--version")
   ) {
-    std::cout << "Version: " << poi::VERSION << "\n";
-    if (poi::COMMIT_HASH) {
-      std::cout << "Commit: " << poi::COMMIT_HASH << "\n";
+    std::cout << "Version: " << Poi::VERSION << "\n";
+    if (Poi::COMMIT_HASH) {
+      std::cout << "Commit: " << Poi::COMMIT_HASH << "\n";
     }
-    std::cout << "Build type: " << poi::BUILD_TYPE << "\n";
+    std::cout << "Build type: " << Poi::BUILD_TYPE << "\n";
     return 0;
   }
 
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Create a string pool to improve performance.
-  poi::StringPool pool;
+  Poi::StringPool pool;
 
   // Read the source file.
   std::ifstream input_file(input_path);
@@ -93,22 +93,22 @@ int main(int argc, char *argv[]) {
   file_buffer << input_file.rdbuf();
   input_file.close();
   std::string source_str = file_buffer.str();
-  auto source = pool.insert(source_str);
   auto source_name = pool.insert(input_path);
+  auto source = pool.insert(source_str);
 
   // Catch any Poi errors and report them.
   try {
     // Perform lexical analysis.
-    auto tokens = poi::tokenize(source_name, source, pool);
+    auto token_stream = Poi::tokenize(source_name, source, pool);
     if (cli_action == CliAction::EMIT_TOKENS) {
-      for (auto &token : *tokens) {
+      for (auto &token : *(token_stream.tokens)) {
         std::cout << token.show(pool) << "\n";
       }
       return 0;
     }
 
     // Parse the tokens into an AST.
-    auto term = poi::parse(*tokens, pool);
+    auto term = Poi::parse(token_stream, pool);
     if (cli_action == CliAction::EMIT_AST) {
       if (term) {
         std::cout << term->show(pool) << "\n";
@@ -117,10 +117,10 @@ int main(int argc, char *argv[]) {
     }
 
     // Evaluate the program.
-    std::unordered_map<size_t, std::shared_ptr<poi::Value>> environment;
+    std::unordered_map<size_t, std::shared_ptr<Poi::Value>> environment;
     auto value = term->eval(term, environment, pool);
     std::cout << value->show(pool) << "\n";
-  } catch(poi::Error &e) {
+  } catch(Poi::Error &e) {
     // There was an error. Print it and exit.
     std::cout << "Error: " << e.what() << "\n";
     return 1;

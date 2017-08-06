@@ -7,22 +7,30 @@
 
 #include <string>
 
-namespace poi {
+namespace Poi {
 
   class Error {
   private:
     std::string message;
 
   public:
-    explicit Error(std::string message);
     explicit Error(
-      std::string message, // No trailing line break
+      const std::string &message // No trailing line break
+    );
+    explicit Error(
+      const std::string &message, // No trailing line break
+      const std::string &source_name,
+      const std::string &source
+    );
+    explicit Error(
+      const std::string &message, // No trailing line break
+      const std::string &source_name,
       const std::string &source,
-      std::string source_name,
       size_t start_pos, // Inclusive
       size_t end_pos // Exclusive
     );
-    std::string what(); // No trailing line break
+    virtual ~Error();
+    std::string what() const; // No trailing line break
   };
 
 }
