@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 
   // Check that we got the right number of arguments.
   if (argc != 2 && argc != 3) {
-    std::cout << parse_error;
+    std::cerr << parse_error;
     return 1;
   }
 
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
       cli_action = CliAction::EVAL;
     } else {
       // We didn't recognize the syntax.
-      std::cout << parse_error;
+      std::cerr << parse_error;
       return 1;
     }
     input_path = argv[2];
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
   // Read the source file.
   std::ifstream input_file(input_path);
   if (!input_file.is_open()) {
-    std::cout << "Unable to open file '" + std::string(input_path) + "'.\n";
+    std::cerr << "Unable to open file '" + std::string(input_path) + "'.\n";
     return 1;
   }
   std::stringstream file_buffer;
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
     std::cout << value->show(pool) << "\n";
   } catch(Poi::Error &e) {
     // There was an error. Print it and exit.
-    std::cout << "Error: " << e.what() << "\n";
+    std::cerr << "Error: " << e.what() << "\n";
     return 1;
   }
   return 0;
