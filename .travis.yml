@@ -5,6 +5,8 @@ before_install:
       build-essential
       git
       shellcheck
+      ruby
+  - gem install thor colorize
 script:
   - make lint
-  - make && sudo make install && poi --version
+  - make && make test && sudo make install && poi --version

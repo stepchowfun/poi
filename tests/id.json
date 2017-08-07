@@ -1,0 +1,6 @@
+{
+  "source": "x -> x",
+  "stdout": "(x -> x)\n",
+  "stderr": "",
+  "exit_code": 0
+}
