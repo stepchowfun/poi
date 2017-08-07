@@ -342,7 +342,7 @@ Poi::ParseResult<Poi::Term> parse_term(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
-        "Nothing to parse.",
+        "No term to parse.",
         pool.find(token_stream.source_name),
         pool.find(token_stream.source),
         Poi::ErrorConfidence::LOW
@@ -1036,7 +1036,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
-        "Expected the 'data' keyword for this data type.",
+        "Expected 'data' to introduce this data type.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
