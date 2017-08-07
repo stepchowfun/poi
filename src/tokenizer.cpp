@@ -8,10 +8,10 @@ enum class LineContinuationStatus {
   LCS_WAIT_FOR_TOKEN
 };
 
-std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
+Poi::TokenStream Poi::tokenize(
   size_t source_name,
   size_t source,
-  poi::StringPool &pool
+  Poi::StringPool &pool
 ) {
   // For performance, get a local copy of the source name and content.
   std::string source_name_str = pool.find(source_name);
@@ -49,7 +49,7 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
       if (line_continuation_status != LineContinuationStatus::LCS_DEFAULT) {
         throw Error(
           "Duplicate '\\'.",
-          source_str, source_name_str,
+          source_name_str, source_str,
           pos, pos + 1
         );
       }
@@ -67,9 +67,9 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
         tokens.push_back(Token(
           TokenType::SEPARATOR, pool.insert(literal),
           source_name, source,
-          pos, pos
+          pos, pos,
+          false
         ));
-        tokens.back().explicit_separator = false;
       }
       if (
         line_continuation_status ==
@@ -91,7 +91,7 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
     ) {
       throw Error(
         "Unexpected '\\'.",
-        source_str, source_name_str,
+        source_name_str, source_str,
         line_continuation_marker_pos, line_continuation_marker_pos + 1
       );
     }
@@ -126,14 +126,16 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
           TokenType::DATA,
           pool.insert(literal),
           source_name, source,
-          pos, end_pos
+          pos, end_pos,
+          false
         ));
       } else {
         tokens.push_back(Token(
           TokenType::IDENTIFIER,
           pool.insert(literal),
           source_name, source,
-          pos, end_pos
+          pos, end_pos,
+          false
         ));
       }
       pos = end_pos;
@@ -155,13 +157,13 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
           if (grouping_stack.empty()) {
             throw Error(
               "Unmatched '" + literal + "'.",
-              source_str, source_name_str,
+              source_name_str, source_str,
               pos, pos + 1
             );
           } else if (grouping_stack.back().type != opener_type) {
             throw Error(
               "Unmatched '" + pool.find(grouping_stack.back().literal) + "'.",
-              source_str, source_name_str,
+              source_name_str, source_str,
               grouping_stack.back().start_pos, grouping_stack.back().end_pos
             );
           }
@@ -170,7 +172,8 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
         Token token(
           type, pool.insert(literal),
           source_name, source,
-          pos, pos + literal.size()
+          pos, pos + literal.size(),
+          literal == ","
         );
         if (opener) {
           grouping_stack.push_back(token);
@@ -226,7 +229,6 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
     if (parse_symbol(
       TokenType::SEPARATOR, ",", false, false, static_cast<TokenType>(0)
     )) {
-      tokens.back().explicit_separator = true;
       continue;
     }
 
@@ -234,7 +236,7 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
     // should be rejected.
     throw Error(
       "Unexpected character '" + source_str.substr(pos, 1) + "'.",
-      source_str, source_name_str,
+      source_name_str, source_str,
       pos, pos + 1
     );
   }
@@ -243,15 +245,13 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
   if (!grouping_stack.empty()) {
     throw Error(
       "Unmatched '" + pool.find(grouping_stack.back().literal) + "'.",
-      source_str, source_name_str,
+      source_name_str, source_str,
       grouping_stack.back().start_pos, grouping_stack.back().end_pos
     );
   }
 
   // Filter out superfluous implicit SEPARATOR tokens.
-  auto filtered_tokens = std::unique_ptr<std::vector<Token>>(
-    new std::vector<Token>
-  );
+  auto filtered_tokens = std::make_shared<std::vector<Token>>();
   for (auto iter = tokens.begin(); iter != tokens.end(); ++iter) {
     // If we have an implicit SEPARATOR token,
     // do some tests to see if we can skip it.
@@ -298,5 +298,5 @@ std::unique_ptr<std::vector<poi::Token>> poi::tokenize(
   }
 
   // Return an std::unique_ptr to the vector.
-  return filtered_tokens;
+  return TokenStream(source_name, source, filtered_tokens);
 }

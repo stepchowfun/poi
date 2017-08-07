@@ -6,22 +6,22 @@
 // Value                                                                     //
 ///////////////////////////////////////////////////////////////////////////////
 
-poi::Value::~Value() {
+Poi::Value::~Value() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // FunctionValue                                                             //
 ///////////////////////////////////////////////////////////////////////////////
 
-poi::FunctionValue::FunctionValue(
-  std::shared_ptr<poi::Abstraction> abstraction,
+Poi::FunctionValue::FunctionValue(
+  std::shared_ptr<Poi::Abstraction> abstraction,
   std::shared_ptr<
-    std::unordered_map<size_t, std::shared_ptr<poi::Value>>
+    std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
   > captures
 ) : abstraction(abstraction), captures(captures) {
 }
 
-std::string poi::FunctionValue::show(poi::StringPool &pool) {
+std::string Poi::FunctionValue::show(const Poi::StringPool &pool) const {
   return abstraction->show(pool);
 }
 
@@ -29,12 +29,12 @@ std::string poi::FunctionValue::show(poi::StringPool &pool) {
 // DataTypeValue                                                             //
 ///////////////////////////////////////////////////////////////////////////////
 
-poi::DataTypeValue::DataTypeValue(
-  std::shared_ptr<poi::DataType> data_type
+Poi::DataTypeValue::DataTypeValue(
+  std::shared_ptr<Poi::DataType> data_type
 ) : data_type(data_type) {
 }
 
-std::string poi::DataTypeValue::show(poi::StringPool &pool) {
+std::string Poi::DataTypeValue::show(const Poi::StringPool &pool) const {
   return data_type->show(pool);
 }
 
@@ -42,16 +42,16 @@ std::string poi::DataTypeValue::show(poi::StringPool &pool) {
 // DataValue                                                                 //
 ///////////////////////////////////////////////////////////////////////////////
 
-poi::DataValue::DataValue(
-  std::shared_ptr<poi::DataTypeValue> type,
+Poi::DataValue::DataValue(
+  std::shared_ptr<Poi::DataTypeValue> type,
   std::size_t constructor,
   std::shared_ptr<
-    std::unordered_map<size_t, std::shared_ptr<poi::Value>>
+    std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
   > captures
 ) : type(type), constructor(constructor), captures(captures) {
 }
 
-std::string poi::DataValue::show(poi::StringPool &pool) {
+std::string Poi::DataValue::show(const Poi::StringPool &pool) const {
   std::string result = "(" + pool.find(constructor);
   for (auto &capture : *captures) {
     result += " " + capture.second->show(pool);

@@ -11,7 +11,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace poi {
+namespace Poi {
 
   // Forward declarations to avoid mutually recursive headers
   class Value; // Declared in poi/value.h
@@ -19,11 +19,11 @@ namespace poi {
 
   class Node {
   public:
-    size_t source_name;
-    size_t source;
-    size_t start_pos; // Inclusive
-    size_t end_pos; // Exclusive
-    std::shared_ptr<std::unordered_set<size_t>> free_variables;
+    const size_t source_name;
+    const size_t source;
+    const size_t start_pos; // Inclusive
+    const size_t end_pos; // Exclusive
+    const std::shared_ptr<std::unordered_set<size_t>> free_variables;
 
     explicit Node(
       size_t source_name,
@@ -33,7 +33,7 @@ namespace poi {
       std::shared_ptr<std::unordered_set<size_t>> free_variables
     );
     virtual ~Node();
-    virtual std::string show(poi::StringPool &pool) = 0;
+    virtual std::string show(const Poi::StringPool &pool) const = 0;
   };
 
   class Term : public Node {
@@ -46,16 +46,16 @@ namespace poi {
       std::shared_ptr<std::unordered_set<size_t>> free_variables
     );
     virtual ~Term();
-    virtual std::shared_ptr<poi::Value> eval(
-      std::shared_ptr<poi::Term> term,
-      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-      poi::StringPool &pool
+    virtual std::shared_ptr<Poi::Value> eval(
+      std::shared_ptr<Poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+      Poi::StringPool &pool
     ) = 0;
   };
 
   class Variable : public Term {
   public:
-    size_t variable;
+    const size_t variable;
 
     explicit Variable(
       size_t source_name,
@@ -65,18 +65,18 @@ namespace poi {
       std::shared_ptr<std::unordered_set<size_t>> free_variables,
       size_t variable
     );
-    std::string show(poi::StringPool &pool) override;
-    std::shared_ptr<poi::Value> eval(
-      std::shared_ptr<poi::Term> term,
-      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-      poi::StringPool &pool
+    std::string show(const Poi::StringPool &pool) const override;
+    std::shared_ptr<Poi::Value> eval(
+      std::shared_ptr<Poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+      Poi::StringPool &pool
     ) override;
   };
 
   class Abstraction : public Term {
   public:
-    size_t variable;
-    std::shared_ptr<poi::Term> body;
+    const size_t variable;
+    const std::shared_ptr<Poi::Term> body;
 
     explicit Abstraction(
       size_t source_name,
@@ -85,20 +85,20 @@ namespace poi {
       size_t end_pos,
       std::shared_ptr<std::unordered_set<size_t>> free_variables,
       size_t variable,
-      std::shared_ptr<poi::Term> body
+      std::shared_ptr<Poi::Term> body
     );
-    std::string show(poi::StringPool &pool) override;
-    std::shared_ptr<poi::Value> eval(
-      std::shared_ptr<poi::Term> term,
-      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-      poi::StringPool &pool
+    std::string show(const Poi::StringPool &pool) const override;
+    std::shared_ptr<Poi::Value> eval(
+      std::shared_ptr<Poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+      Poi::StringPool &pool
     ) override;
   };
 
   class Application : public Term {
   public:
-    std::shared_ptr<poi::Term> abstraction;
-    std::shared_ptr<poi::Term> operand;
+    const std::shared_ptr<Poi::Term> abstraction;
+    const std::shared_ptr<Poi::Term> operand;
 
     explicit Application(
       size_t source_name,
@@ -106,22 +106,22 @@ namespace poi {
       size_t start_pos,
       size_t end_pos,
       std::shared_ptr<std::unordered_set<size_t>> free_variables,
-      std::shared_ptr<poi::Term> abstraction,
-      std::shared_ptr<poi::Term> operand
+      std::shared_ptr<Poi::Term> abstraction,
+      std::shared_ptr<Poi::Term> operand
     );
-    std::string show(poi::StringPool &pool) override;
-    std::shared_ptr<poi::Value> eval(
-      std::shared_ptr<poi::Term> term,
-      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-      poi::StringPool &pool
+    std::string show(const Poi::StringPool &pool) const override;
+    std::shared_ptr<Poi::Value> eval(
+      std::shared_ptr<Poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+      Poi::StringPool &pool
     ) override;
   };
 
   class Let : public Term {
   public:
-    size_t variable;
-    std::shared_ptr<poi::Term> definition;
-    std::shared_ptr<poi::Term> body;
+    const size_t variable;
+    const std::shared_ptr<Poi::Term> definition;
+    const std::shared_ptr<Poi::Term> body;
 
     explicit Let(
       size_t source_name,
@@ -130,21 +130,21 @@ namespace poi {
       size_t end_pos,
       std::shared_ptr<std::unordered_set<size_t>> free_variables,
       size_t variable,
-      std::shared_ptr<poi::Term> definition,
-      std::shared_ptr<poi::Term> body
+      std::shared_ptr<Poi::Term> definition,
+      std::shared_ptr<Poi::Term> body
     );
-    std::string show(poi::StringPool &pool) override;
-    std::shared_ptr<poi::Value> eval(
-      std::shared_ptr<poi::Term> term,
-      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-      poi::StringPool &pool
+    std::string show(const Poi::StringPool &pool) const override;
+    std::shared_ptr<Poi::Value> eval(
+      std::shared_ptr<Poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+      Poi::StringPool &pool
     ) override;
   };
 
   class DataType : public Term {
   public:
-    std::shared_ptr<std::vector<size_t>> constructor_names;
-    std::shared_ptr<
+    const std::shared_ptr<std::vector<size_t>> constructor_names;
+    const std::shared_ptr<
       std::unordered_map<size_t, std::vector<size_t>>
     > constructor_params;
 
@@ -159,11 +159,11 @@ namespace poi {
         std::unordered_map<size_t, std::vector<size_t>>
       > constructor_params
     );
-    std::string show(poi::StringPool &pool) override;
-    std::shared_ptr<poi::Value> eval(
-      std::shared_ptr<poi::Term> term,
-      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-      poi::StringPool &pool
+    std::string show(const Poi::StringPool &pool) const override;
+    std::shared_ptr<Poi::Value> eval(
+      std::shared_ptr<Poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+      Poi::StringPool &pool
     ) override;
   };
 
@@ -174,8 +174,8 @@ namespace poi {
   //    Example: `person.name`
   class Member : public Term {
   public:
-    std::shared_ptr<poi::Term> object;
-    size_t field;
+    const std::shared_ptr<Poi::Term> object;
+    const size_t field;
 
     explicit Member(
       size_t source_name,
@@ -183,14 +183,14 @@ namespace poi {
       size_t start_pos,
       size_t end_pos,
       std::shared_ptr<std::unordered_set<size_t>> free_variables,
-      std::shared_ptr<poi::Term> object,
+      std::shared_ptr<Poi::Term> object,
       size_t field
     );
-    std::string show(poi::StringPool &pool) override;
-    std::shared_ptr<poi::Value> eval(
-      std::shared_ptr<poi::Term> term,
-      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-      poi::StringPool &pool
+    std::string show(const Poi::StringPool &pool) const override;
+    std::shared_ptr<Poi::Value> eval(
+      std::shared_ptr<Poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+      Poi::StringPool &pool
     ) override;
   };
 
@@ -199,8 +199,8 @@ namespace poi {
   // syntax for Data terms.
   class Data : public Term {
   public:
-    std::shared_ptr<poi::DataTypeValue> type;
-    size_t constructor;
+    const std::shared_ptr<Poi::DataTypeValue> type;
+    const size_t constructor;
 
     explicit Data(
       size_t source_name,
@@ -208,14 +208,14 @@ namespace poi {
       size_t start_pos,
       size_t end_pos,
       std::shared_ptr<std::unordered_set<size_t>> free_variables,
-      std::shared_ptr<poi::DataTypeValue> type,
+      std::shared_ptr<Poi::DataTypeValue> type,
       size_t constructor
     );
-    std::string show(poi::StringPool &pool) override;
-    std::shared_ptr<poi::Value> eval(
-      std::shared_ptr<poi::Term> term,
-      std::unordered_map<size_t, std::shared_ptr<poi::Value>> &environment,
-      poi::StringPool &pool
+    std::string show(const Poi::StringPool &pool) const override;
+    std::shared_ptr<Poi::Value> eval(
+      std::shared_ptr<Poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+      Poi::StringPool &pool
     ) override;
   };
 

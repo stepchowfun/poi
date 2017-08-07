@@ -1,12 +1,23 @@
 #include <poi/error.h>
 
-poi::Error::Error(std::string message) : message(message) {
+Poi::Error::Error(const std::string &message) : message(message) {
 }
 
-poi::Error::Error(
-  std::string message,
-  const std::string &source, std::string source_name,
-  size_t start_pos, size_t end_pos
+Poi::Error::Error(
+  const std::string &message,
+  const std::string &source_name,
+  const std::string &source
+) {
+  // Output the source name and message.
+  this->message = message + "\nLocation: " + source_name;
+}
+
+Poi::Error::Error(
+  const std::string &message,
+  const std::string &source_name,
+  const std::string &source,
+  size_t start_pos,
+  size_t end_pos
 ) {
   // Compute line numbers, column numbers, and context boundaries.
   size_t start_line = 0;
@@ -52,12 +63,12 @@ poi::Error::Error(
   // Output the source name, position, and message.
   if (end_pos == start_pos || end_pos == start_pos + 1) {
     this->message = message +
-      "\n" + source_name +
+      "\nLocation: " + source_name +
       " @ " + std::to_string(start_line + 1) +
       ":" + std::to_string(start_col + 1);
   } else {
     this->message = message +
-      "\n" + source_name +
+      "\nLocation: " + source_name +
       " @ " + std::to_string(start_line + 1) +
       ":" + std::to_string(start_col + 1) +
       " - " + std::to_string(end_line + 1) +
@@ -111,6 +122,9 @@ poi::Error::Error(
   }
 }
 
-std::string poi::Error::what() {
+Poi::Error::~Error() {
+}
+
+std::string Poi::Error::what() const {
   return message;
 }

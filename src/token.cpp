@@ -1,19 +1,31 @@
 #include <poi/token.h>
 #include <type_traits>
 
-poi::Token::Token(
-  poi::TokenType type, size_t literal,
+Poi::Token::Token(
+  Poi::TokenType type, size_t literal,
   size_t source_name, size_t source,
-  size_t start_pos, size_t end_pos) :
+  size_t start_pos, size_t end_pos,
+  bool explicit_separator) :
   type(type), literal(literal),
   source_name(source_name), source(source),
-  start_pos(start_pos), end_pos(end_pos) {
+  start_pos(start_pos), end_pos(end_pos),
+  explicit_separator(explicit_separator) {
 }
 
-std::string poi::Token::show(poi::StringPool &pool) {
+std::string Poi::Token::show(Poi::StringPool &pool) const {
   return std::string(
     TokenTypeName[
       static_cast<typename std::underlying_type<TokenType>::type>(type)
     ]
   ) + ": '" + pool.find(literal) + "'";
+}
+
+Poi::TokenStream::TokenStream(
+  size_t source_name,
+  size_t source,
+  std::shared_ptr<std::vector<Poi::Token>> tokens
+) :
+  source_name(source_name),
+  source(source),
+  tokens(tokens) {
 }

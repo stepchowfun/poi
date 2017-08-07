@@ -69,13 +69,29 @@ The continuous integration system will run these checks on pull requests automat
 
 ### Namespaces
 
-- Define everything in the `poi` namespace, except the `main` function and other code in its translation unit.
+- Define everything in the `Poi` namespace, except the `main` function and other code in its translation unit.
 
   **Rationale:** This is useful for preventing name collisions with other identifiers in the global scope.
 
 - Do not use `using` directives, such as `using namespace std`.
 
   **Rationale:** This directive pollutes the global namespace. It is easier to relax this rule later on than to introduce it retroactively, so it is safer to start with it.
+
+### Immutability
+
+- All public member variables should be declared `const`.
+
+  **Rationale:** We want to discourage mutation to make the code easier to reason about.
+
+- All public member methods should be declared `const` when possible.
+
+  **Rationale:** We want to discourage mutation to make the code easier to reason about.
+
+### Converting constructors
+
+- All constructors must be marked `explicit`.
+
+  **Rationale:** Converting constructors are a form of weak typing, and we want to encourage a strong typing discipline to catch as many errors as possible at compile time.
 
 ## Bash style guide
 
