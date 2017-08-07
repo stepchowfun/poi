@@ -6,10 +6,15 @@ All code must strictly adhere to the appropriate style guide. If a style guide i
 
 All code must pass the following lint checks in order to be accepted:
 
-- All source files are subject to a maximum line length of 80 bytes.
+- Lines should be less than or equal to 80 bytes, including whitespace and newline characters.
+- Lines should not have trailing whitespace.
+- Tabs should not be used anywhere, except in the `Makefile`.
+- Every non-empty file should be terminated with exactly one blank line.
 - Bash scripts must pass the [ShellCheck](http://www.shellcheck.net/) linter.
 
 The continuous integration system will run these checks on pull requests automatically. If you have these tools installed, you can run them yourself with `make lint`.
+
+The continuous integration system also runs an automated test suite, which can be run manually with `make test`. For this to work, you will need Ruby with the [`thor`](https://github.com/erikhuda/thor) and [`colorize`](https://github.com/fazibear/colorize) gems installed. New functionality is expected to be covered by tests where possible. Use the existing tests as a guide for writing new tests.
 
 ## C++ style guide
 

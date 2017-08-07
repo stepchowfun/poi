@@ -24,7 +24,7 @@ override OBJ := \
 
 # These targets do not name actual files.
 # They are just recipes which may be executed by explicit request.
-.PHONY: all lib cli clean lint install uninstall force
+.PHONY: all lib cli clean lint test install uninstall force
 
 # This flag controls whether $(BUILD_PREFIX)/poi/src/version.cpp needs to be
 # rebuilt. Specifically, if scripts/version.sh produces a different output
@@ -80,6 +80,12 @@ lint:
 
 	# Run ShellCheck on any shell scripts.
 	shellcheck scripts/*.sh
+
+# This target runs the test suite on the command line interface for the
+# specified build type.
+test: cli
+	# Run all the tests.
+	scripts/run-tests.rb test --binary $(BUILD_PREFIX)/dist/bin/poi
 
 # This target installs build artifacts to the $(PREFIX) directory.
 # The artifacts will be placed in subdirectories such as $(PREFIX)/bin.
