@@ -29,8 +29,8 @@ Poi::TokenStream Poi::tokenize(
     if (source_str[pos] == '#') {
       while (pos < source_str.size() && source_str[pos] != '\n') {
         ++pos;
-        continue;
       }
+      continue;
     }
 
     // Ignore whitespace except for line feeds;
