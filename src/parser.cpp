@@ -542,7 +542,7 @@ Poi::ParseResult<Poi::Abstraction> parse_abstraction(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
-        "Expected '->' in this abstraction.",
+        "Expected '->' in this function.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
@@ -954,7 +954,7 @@ Poi::ParseResult<Poi::Let> parse_let(
   // Parse the body.
   auto body = Poi::ParseResult<Poi::Term>(
     std::make_shared<Poi::ParseError>(
-      "No body found for this function.",
+      "No body found for this definition.",
       pool.find(start->source_name),
       pool.find(start->source),
       start->start_pos,
