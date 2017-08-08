@@ -294,7 +294,7 @@ namespace Poi {
       std::shared_ptr<Poi::Term> term,
       std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
       Poi::StringPool &pool
-    ) override;
+    ) const override;
   };
 
 }
