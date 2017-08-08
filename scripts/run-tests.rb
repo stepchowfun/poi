@@ -76,19 +76,22 @@ private
     end
     source_file.unlink
     passed = true
-    if stdout != test_info['stdout']
+    if test_info.include?('stdout') && stdout != test_info['stdout']
       puts('')
       puts("Expected STDOUT: #{test_info['stdout'].inspect}".red)
       puts("Got: #{stdout.inspect}".red)
       passed = false
     end
-    if stderr != test_info['stderr']
+    if test_info.include?('stderr') && stderr != test_info['stderr']
       puts('')
       puts("Expected STDERR: #{test_info['stderr'].inspect}".red)
       puts("Got: #{stderr.inspect}".red)
       passed = false
     end
-    if status.exitstatus != test_info['exit_code']
+    if (
+      test_info.include?('exit_code') &&
+      status.exitstatus != test_info['exit_code']
+    )
       puts('')
       puts("Expected exit code: #{test_info['exit_code']}".red)
       puts("Got: #{status.exitstatus}".red)
