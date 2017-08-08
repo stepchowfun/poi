@@ -73,7 +73,7 @@ std::shared_ptr<Poi::Value> Poi::Variable::eval(
   std::shared_ptr<Poi::Term> term,
   std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
   Poi::StringPool &pool
-) {
+) const {
   return environment.at(variable);
 }
 
@@ -106,7 +106,7 @@ std::shared_ptr<Poi::Value> Poi::Abstraction::eval(
   std::shared_ptr<Poi::Term> term,
   std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
   Poi::StringPool &pool
-) {
+) const {
   auto captures = std::make_shared<
     std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
   >();
@@ -148,7 +148,7 @@ std::shared_ptr<Poi::Value> Poi::Application::eval(
   std::shared_ptr<Poi::Term> term,
   std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
   Poi::StringPool &pool
-) {
+) const {
   auto abstraction_value = abstraction->eval(abstraction, environment, pool);
   auto operand_value = operand->eval(operand, environment, pool);
   auto abstraction_value_fun = std::dynamic_pointer_cast<Poi::FunctionValue>(
@@ -216,7 +216,7 @@ std::shared_ptr<Poi::Value> Poi::Let::eval(
   std::shared_ptr<Poi::Term> term,
   std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
   Poi::StringPool &pool
-) {
+) const {
   auto definition_value = definition->eval(definition, environment, pool);
   auto new_environment = environment;
   new_environment.insert({
@@ -274,7 +274,7 @@ std::shared_ptr<Poi::Value> Poi::DataType::eval(
   std::shared_ptr<Poi::Term> term,
   std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
   Poi::StringPool &pool
-) {
+) const {
   return std::make_shared<Poi::DataTypeValue>(
     std::dynamic_pointer_cast<Poi::DataType>(term)
   );
@@ -309,7 +309,7 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
   std::shared_ptr<Poi::Term> term,
   std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
   Poi::StringPool &pool
-) {
+) const {
   auto object_value = object->eval(object, environment, pool);
   auto data_type_value = std::dynamic_pointer_cast<Poi::DataTypeValue>(
     object_value
@@ -440,7 +440,7 @@ std::shared_ptr<Poi::Value> Poi::Data::eval(
   std::shared_ptr<Poi::Term> term,
   std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
   Poi::StringPool &pool
-) {
+) const {
   auto captures = std::make_shared<
     std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
   >();
