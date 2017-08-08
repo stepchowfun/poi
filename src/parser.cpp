@@ -755,16 +755,14 @@ Poi::ParseResult<Poi::Application> parse_application(
   if (right->error) {
     return memo_error<Poi::Application>(memo, key, right->error);
   }
+  bool right_includes_left = right->node->start_pos < iter->start_pos;
   iter = right->next;
 
   // Construct the Application. Special care is taken to construct the tree
   // with left-associativity, even though we are parsing with right-recursion.
   std::shared_ptr<Poi::Application> application;
-  auto right_application = std::dynamic_pointer_cast<Poi::Application>(
-    right->node
-  );
-  if (right_application) {
-    application = right_application;
+  if (right_includes_left) {
+    application = std::dynamic_pointer_cast<Poi::Application>(right->node);
   } else {
     if (application_prior) {
       auto prior_of_left_free_variables = std::make_shared<
