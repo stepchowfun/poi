@@ -50,7 +50,7 @@ namespace Poi {
       std::shared_ptr<Poi::Term> term,
       std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
       Poi::StringPool &pool
-    ) = 0;
+    ) const = 0;
   };
 
   class Variable : public Term {
@@ -70,7 +70,7 @@ namespace Poi {
       std::shared_ptr<Poi::Term> term,
       std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
       Poi::StringPool &pool
-    ) override;
+    ) const override;
   };
 
   class Abstraction : public Term {
@@ -92,7 +92,7 @@ namespace Poi {
       std::shared_ptr<Poi::Term> term,
       std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
       Poi::StringPool &pool
-    ) override;
+    ) const override;
   };
 
   class Application : public Term {
@@ -114,7 +114,7 @@ namespace Poi {
       std::shared_ptr<Poi::Term> term,
       std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
       Poi::StringPool &pool
-    ) override;
+    ) const override;
   };
 
   class Let : public Term {
@@ -138,7 +138,7 @@ namespace Poi {
       std::shared_ptr<Poi::Term> term,
       std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
       Poi::StringPool &pool
-    ) override;
+    ) const override;
   };
 
   class DataType : public Term {
@@ -164,7 +164,7 @@ namespace Poi {
       std::shared_ptr<Poi::Term> term,
       std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
       Poi::StringPool &pool
-    ) override;
+    ) const override;
   };
 
   // A Member `t.x` can refer to one of two things:
@@ -191,7 +191,7 @@ namespace Poi {
       std::shared_ptr<Poi::Term> term,
       std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
       Poi::StringPool &pool
-    ) override;
+    ) const override;
   };
 
   // A Data term evaluates to a DataValue value. These terms show up in the
@@ -216,7 +216,7 @@ namespace Poi {
       std::shared_ptr<Poi::Term> term,
       std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
       Poi::StringPool &pool
-    ) override;
+    ) const override;
   };
 
 }
