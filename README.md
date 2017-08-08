@@ -33,7 +33,7 @@ Algebraic data types:
     true = bool.true
     false = bool.false
 
-    maybe = data (none, just value)
+    option = data (none, some value)
 
     tree = data (
       empty
@@ -44,7 +44,7 @@ Algebraic data types:
       tree.node tree.empty false tree.empty
     )
 
-    something = maybe.just true
+    something = option.some true
     something.value
 
 Grouping:
