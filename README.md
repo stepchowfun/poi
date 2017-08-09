@@ -35,17 +35,17 @@ Algebraic data types:
 
     option = data (none, some value)
 
-    tree = data (
-      empty
-      node left value right
-    )
-
-    subtree = tree.node tree.empty true (
-      tree.node tree.empty false tree.empty
-    )
-
     something = option.some true
     something.value
+
+Pattern matching:
+
+    option = data (none, some value)
+    burrito = option.some (x -> x)
+    {some y} = burrito
+
+    f = {some z} -> z
+    f burrito
 
 Grouping:
 
