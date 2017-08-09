@@ -14,11 +14,11 @@
     Term =
       Variable | Abstraction | Application | Let | DataType | Member | Group
     Variable = IDENTIFIER
-    Abstraction = IDENTIFIER ARROW Term
+    Abstraction = Pattern ARROW Term
     Application =
       (Variable | Application | DataType | Member | Group)
       (Variable | DataType | Member | Group)
-    Let = IDENTIFIER EQUALS Term SEPARATOR Term
+    Let = Pattern EQUALS Term SEPARATOR Term
     DataType = DATA LEFT_PAREN DataConstructorList RIGHT_PAREN
     DataConstructorList = | DataConstructor DataConstructorTail
     DataConstructorTail = | SEPARATOR DataConstructor DataConstructorTail
@@ -26,6 +26,8 @@
     DataConstructorParams = | IDENTIFIER DataConstructorParams
     Member = (Variable | DataType | Member | Group) DOT IDENTIFIER
     Group = LEFT_PAREN Term RIGHT_PAREN
+    Pattern = IDENTIFIER | LEFT_BRACE IDENTIFIER PatternList RIGHT_BRACE
+    PatternList = | Pattern PatternList
 
   There are two problems with the grammar above: the Application and Member
   rules are left-recursive, and packrat parsers can't handle left-recursion:
