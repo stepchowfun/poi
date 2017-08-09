@@ -41,11 +41,11 @@ Algebraic data types:
 Pattern matching:
 
     option = data (none, some value)
-    burrito = option.some (x -> x)
-    {some y} = burrito
+    meal = option.some (option.some (x -> x))
+    {some burrito} = meal
 
-    f = {some z} -> z
-    f burrito
+    f = {some {some z}} -> z
+    f meal
 
 Grouping:
 
