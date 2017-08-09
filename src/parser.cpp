@@ -271,7 +271,7 @@ void variables_from_pattern(
       throw Poi::ParseError(
         "Duplicate variable '" +
           pool.find(variable_pattern->variable) +
-          "' in pattern",
+          "' in pattern.",
         pool.find(pattern->source_name),
         pool.find(pattern->source),
         pattern->start_pos,
@@ -1417,8 +1417,8 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
         key,
         std::make_shared<Poi::ParseError>(
           "Invalid data constructor.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          pool.find(constructor_start->source_name),
+          pool.find(constructor_start->source),
           constructor_start->start_pos,
           iter->end_pos,
           Poi::ErrorConfidence::HIGH
@@ -1440,8 +1440,8 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
           key,
           std::make_shared<Poi::ParseError>(
             "Invalid data constructor.",
-            pool.find(start->source_name),
-            pool.find(start->source),
+            pool.find(constructor_start->source_name),
+            pool.find(constructor_start->source),
             constructor_start->start_pos,
             iter->end_pos,
             Poi::ErrorConfidence::HIGH
@@ -1460,9 +1460,11 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
         memo,
         key,
         std::make_shared<Poi::ParseError>(
-          "Constructors for a data type must be unique.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          "Duplicate constructor '" +
+           pool.find(name) +
+           "' in data type.",
+          pool.find(constructor_start->source_name),
+          pool.find(constructor_start->source),
           constructor_start->start_pos,
           iter->end_pos,
           Poi::ErrorConfidence::HIGH
