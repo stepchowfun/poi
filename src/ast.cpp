@@ -73,9 +73,7 @@ Poi::ConstructorPattern::ConstructorPattern(
   size_t start_pos,
   size_t end_pos,
   size_t constructor,
-  std::shared_ptr<
-    std::vector<std::shared_ptr<Poi::Pattern>>
-  > parameters
+  std::shared_ptr<std::vector<std::shared_ptr<Poi::Pattern>>> parameters
 ) : Pattern(
     source_name,
     source,

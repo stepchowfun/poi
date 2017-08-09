@@ -276,6 +276,14 @@ Poi::ParseResult<Poi::VariablePattern> parse_variable_pattern(
   std::vector<Poi::Token>::const_iterator iter
 );
 
+Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
+  MemoMap &memo,
+  Poi::StringPool &pool,
+  const Poi::TokenStream &token_stream,
+  const std::unordered_set<size_t> &environment,
+  std::vector<Poi::Token>::const_iterator iter
+);
+
 Poi::ParseResult<Poi::Term> parse_term(
   MemoMap &memo,
   Poi::StringPool &pool,
@@ -385,6 +393,10 @@ Poi::ParseResult<Poi::Pattern> parse_pattern(
     parse_variable_pattern(
       memo, pool, token_stream, environment, iter
     ).upcast<Poi::Pattern>()
+  ).choose(
+    parse_constructor_pattern(
+      memo, pool, token_stream, environment, iter
+    ).upcast<Poi::Pattern>()
   );
   if (pattern.error) {
     return memo_error<Poi::Pattern>(memo, key, pattern.error);
@@ -450,6 +462,135 @@ Poi::ParseResult<Poi::VariablePattern> parse_variable_pattern(
 
   // Memoize and return the result.
   return memo_success<Poi::VariablePattern>(memo, key, variable_pattern, iter);
+}
+
+Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
+  MemoMap &memo,
+  Poi::StringPool &pool,
+  const Poi::TokenStream &token_stream,
+  const std::unordered_set<size_t> &environment,
+  std::vector<Poi::Token>::const_iterator iter
+) {
+  // Check if we can reuse a memoized result.
+  auto key = memo_key(MemoType::CONSTRUCTOR_PATTERN, iter);
+  auto memo_result = memo.find(key);
+  if (memo_result != memo.end()) {
+    return memo_result->second.downcast<Poi::ConstructorPattern>();
+  }
+
+  // Mark the beginning of the ConstructorPattern.
+  auto start = iter;
+
+  // Make sure we have some tokens to parse.
+  if (iter == token_stream.tokens->end()) {
+    return memo_error<Poi::ConstructorPattern>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        "No constructor pattern to parse.",
+        pool.find(token_stream.source_name),
+        pool.find(token_stream.source),
+        Poi::ErrorConfidence::LOW
+      )
+    );
+  }
+
+  // Parse the LEFT_BRACE.
+  if (
+    iter == token_stream.tokens->end() ||
+    iter->type != Poi::TokenType::LEFT_BRACE
+  ) {
+    return memo_error<Poi::ConstructorPattern>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        "Expected '{' to introduce this constructor pattern.",
+        pool.find(start->source_name),
+        pool.find(start->source),
+        start->start_pos,
+        iter->end_pos,
+        Poi::ErrorConfidence::LOW
+      )
+    );
+  }
+  ++iter;
+
+  // Parse the IDENTIFIER.
+  if (iter->type != Poi::TokenType::IDENTIFIER) {
+    return memo_error<Poi::ConstructorPattern>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        "A constructor pattern must begin with the name of a constructor.",
+        pool.find(iter->source_name),
+        pool.find(iter->source),
+        iter->start_pos,
+        iter->end_pos,
+        Poi::ErrorConfidence::HIGH
+      )
+    );
+  }
+  auto constructor_name = iter->literal;
+  ++iter;
+
+  // Parse the parameters. Note that the lexical analyzer guarantees
+  // braces are matched.
+  auto parameters = std::make_shared<
+    std::vector<std::shared_ptr<Poi::Pattern>>
+  >();
+  while (iter->type != Poi::TokenType::RIGHT_BRACE) {
+    auto parameter = Poi::ParseResult<Poi::Pattern>(
+      std::make_shared<Poi::ParseError>(
+        "Unexpected token.",
+        pool.find(iter->source_name),
+        pool.find(iter->source),
+        iter->start_pos,
+        iter->end_pos,
+        Poi::ErrorConfidence::LOW
+      )
+    ).choose(
+      parse_pattern(
+        memo,
+        pool,
+        token_stream,
+        environment,
+        iter
+      )
+    );
+    if (parameter.error) {
+      return memo_error<Poi::ConstructorPattern>(
+        memo,
+        key,
+        std::make_shared<Poi::ParseError>(
+          parameter.error->what(),
+          Poi::ErrorConfidence::HIGH
+        )
+      );
+    }
+    iter = parameter.next;
+    parameters->push_back(parameter.node);
+  }
+
+  // Skip the closing RIGHT_BRACE.
+  ++iter;
+
+  // Construct the ConstructorPattern.
+  auto constructor_pattern = std::make_shared<Poi::ConstructorPattern>(
+    start->source_name,
+    start->source,
+    start->start_pos,
+    (iter - 1)->end_pos,
+    constructor_name,
+    parameters
+  );
+
+  // Memoize and return the result.
+  return memo_success<Poi::ConstructorPattern>(
+    memo,
+    key,
+    constructor_pattern,
+    iter
+  );
 }
 
 Poi::ParseResult<Poi::Term> parse_term(
