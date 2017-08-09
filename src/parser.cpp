@@ -1453,6 +1453,23 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
       ++iter;
     }
 
+    // Check whether a constructor of this name already exists.
+    auto existing_constructor = constructors->find(name);
+    if (existing_constructor != constructors->end()) {
+      return memo_error<Poi::DataType>(
+        memo,
+        key,
+        std::make_shared<Poi::ParseError>(
+          "Constructors for a data type must be unique.",
+          pool.find(start->source_name),
+          pool.find(start->source),
+          constructor_start->start_pos,
+          iter->end_pos,
+          Poi::ErrorConfidence::HIGH
+        )
+      );
+    }
+
     // Construct the DataConstructor.
     constructor_names->push_back(name);
     constructors->insert({ name, params });
