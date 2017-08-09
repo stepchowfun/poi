@@ -271,7 +271,7 @@ void variables_from_pattern(
       throw Poi::ParseError(
         "Duplicate variable '" +
           pool.find(variable_pattern->variable) +
-          "' in pattern",
+          "' in pattern.",
         pool.find(pattern->source_name),
         pool.find(pattern->source),
         pattern->start_pos,
@@ -1417,8 +1417,8 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
         key,
         std::make_shared<Poi::ParseError>(
           "Invalid data constructor.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          pool.find(constructor_start->source_name),
+          pool.find(constructor_start->source),
           constructor_start->start_pos,
           iter->end_pos,
           Poi::ErrorConfidence::HIGH
@@ -1440,8 +1440,8 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
           key,
           std::make_shared<Poi::ParseError>(
             "Invalid data constructor.",
-            pool.find(start->source_name),
-            pool.find(start->source),
+            pool.find(constructor_start->source_name),
+            pool.find(constructor_start->source),
             constructor_start->start_pos,
             iter->end_pos,
             Poi::ErrorConfidence::HIGH
@@ -1451,6 +1451,25 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
       auto parameter = iter->literal;
       params.push_back(parameter);
       ++iter;
+    }
+
+    // Check whether a constructor of this name already exists.
+    auto existing_constructor = constructors->find(name);
+    if (existing_constructor != constructors->end()) {
+      return memo_error<Poi::DataType>(
+        memo,
+        key,
+        std::make_shared<Poi::ParseError>(
+          "Duplicate constructor '" +
+           pool.find(name) +
+           "' in data type.",
+          pool.find(constructor_start->source_name),
+          pool.find(constructor_start->source),
+          constructor_start->start_pos,
+          iter->end_pos,
+          Poi::ErrorConfidence::HIGH
+        )
+      );
     }
 
     // Construct the DataConstructor.
