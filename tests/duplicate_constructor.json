@@ -1,0 +1,5 @@
+{
+  "source": "option = data (some, some value), option.some",
+  "stdout": "",
+  "exit_code": 1
+}
