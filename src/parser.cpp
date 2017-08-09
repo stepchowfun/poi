@@ -14,11 +14,11 @@
     Term =
       Variable | Abstraction | Application | Let | DataType | Member | Group
     Variable = IDENTIFIER
-    Abstraction = IDENTIFIER ARROW Term
+    Abstraction = Pattern ARROW Term
     Application =
       (Variable | Application | DataType | Member | Group)
       (Variable | DataType | Member | Group)
-    Let = IDENTIFIER EQUALS Term SEPARATOR Term
+    Let = Pattern EQUALS Term SEPARATOR Term
     DataType = DATA LEFT_PAREN DataConstructorList RIGHT_PAREN
     DataConstructorList = | DataConstructor DataConstructorTail
     DataConstructorTail = | SEPARATOR DataConstructor DataConstructorTail
@@ -252,6 +252,31 @@ template <typename T> Poi::ParseResult<T> memo_error(
   auto parse_result = Poi::ParseResult<T>(error);
   memo.insert({key, parse_result.template upcast<Poi::Node>()});
   return parse_result;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Helpers                                                                   //
+///////////////////////////////////////////////////////////////////////////////
+
+void variables_from_pattern(
+  std::vector<size_t> &variables,
+  std::shared_ptr<Poi::Pattern> pattern
+) {
+  auto variable_pattern = std::dynamic_pointer_cast<Poi::VariablePattern>(
+    pattern
+  );
+  if (variable_pattern) {
+    variables.push_back(variable_pattern->variable);
+  }
+
+  auto constructor_pattern = std::dynamic_pointer_cast<
+    Poi::ConstructorPattern
+  >(pattern);
+  if (constructor_pattern) {
+    for (auto &parameter : *(constructor_pattern->parameters)) {
+      variables_from_pattern(variables, parameter);
+    }
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -786,23 +811,28 @@ Poi::ParseResult<Poi::Abstraction> parse_abstraction(
     );
   }
 
-  // Parse the IDENTIFIER.
-  if (iter->type != Poi::TokenType::IDENTIFIER) {
+  // Parse the Pattern.
+  auto pattern = Poi::ParseResult<Poi::Pattern>(
+    std::make_shared<Poi::ParseError>(
+      "No pattern found for this definition.",
+      pool.find(start->source_name),
+      pool.find(start->source),
+      start->start_pos,
+      iter->end_pos,
+      Poi::ErrorConfidence::LOW
+    )
+  ).choose(parse_pattern(memo, pool, token_stream, environment, iter));
+  if (pattern.error) {
     return memo_error<Poi::Abstraction>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
-        "A function must start with a variable.",
-        pool.find(iter->source_name),
-        pool.find(iter->source),
-        iter->start_pos,
-        iter->end_pos,
+        pattern.error->what(),
         Poi::ErrorConfidence::LOW
       )
     );
   }
-  auto variable_name = iter->literal;
-  ++iter;
+  iter = pattern.next;
 
   // Parse the ARROW.
   if (
@@ -824,9 +854,11 @@ Poi::ParseResult<Poi::Abstraction> parse_abstraction(
   }
   ++iter;
 
-  // Add the variable to the environment.
+  // Add the pattern variables to the environment.
   auto new_environment = environment;
-  new_environment.insert(variable_name);
+  std::vector<size_t> pattern_variables;
+  variables_from_pattern(pattern_variables, pattern.node);
+  new_environment.insert(pattern_variables.begin(), pattern_variables.end());
 
   // Parse the body.
   auto body = Poi::ParseResult<Poi::Term>(
@@ -857,14 +889,16 @@ Poi::ParseResult<Poi::Abstraction> parse_abstraction(
     body.node->free_variables->begin(),
     body.node->free_variables->end()
   );
-  free_variables->erase(variable_name);
+  for (auto &variable : pattern_variables) {
+    free_variables->erase(variable);
+  }
   auto abstraction = std::make_shared<Poi::Abstraction>(
     start->source_name,
     start->source,
     start->start_pos,
     (iter - 1)->end_pos,
     free_variables,
-    variable_name,
+    pattern.node,
     body.node
   );
 
@@ -1135,23 +1169,28 @@ Poi::ParseResult<Poi::Let> parse_let(
     );
   }
 
-  // Parse the IDENTIFIER.
-  if (iter->type != Poi::TokenType::IDENTIFIER) {
+  // Parse the Pattern.
+  auto pattern = Poi::ParseResult<Poi::Pattern>(
+    std::make_shared<Poi::ParseError>(
+      "No pattern found for this definition.",
+      pool.find(start->source_name),
+      pool.find(start->source),
+      start->start_pos,
+      iter->end_pos,
+      Poi::ErrorConfidence::LOW
+    )
+  ).choose(parse_pattern(memo, pool, token_stream, environment, iter));
+  if (pattern.error) {
     return memo_error<Poi::Let>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
-        "A definition must start with a variable.",
-        pool.find(iter->source_name),
-        pool.find(iter->source),
-        iter->start_pos,
-        iter->end_pos,
+        pattern.error->what(),
         Poi::ErrorConfidence::LOW
       )
     );
   }
-  auto variable_name = iter->literal;
-  ++iter;
+  iter = pattern.next;
 
   // Parse the EQUALS.
   if (
@@ -1216,9 +1255,11 @@ Poi::ParseResult<Poi::Let> parse_let(
   }
   ++iter;
 
-  // Add the variable to the environment.
+  // Add the pattern variables to the environment.
   auto new_environment = environment;
-  new_environment.insert(variable_name);
+  std::vector<size_t> pattern_variables;
+  variables_from_pattern(pattern_variables, pattern.node);
+  new_environment.insert(pattern_variables.begin(), pattern_variables.end());
 
   // Parse the body.
   auto body = Poi::ParseResult<Poi::Term>(
@@ -1249,14 +1290,16 @@ Poi::ParseResult<Poi::Let> parse_let(
     body.node->free_variables->begin(),
     body.node->free_variables->end()
   );
-  free_variables->erase(variable_name);
+  for (auto &variable : pattern_variables) {
+    free_variables->erase(variable);
+  }
   auto let = std::make_shared<Poi::Let>(
     start->source_name,
     start->source,
     start->start_pos,
     (iter - 1)->end_pos,
     free_variables,
-    variable_name,
+    pattern.node,
     definition.node,
     body.node
   );
