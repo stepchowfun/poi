@@ -12,36 +12,46 @@
   MACRO_CASE.
 
     Term =
-      Variable | Abstraction | Application | Let | DataType | Member | Group
+      Variable |
+      Abstraction |
+      Application |
+      Let |
+      DataType |
+      Member |
+      Match |
+      Group
     Variable = IDENTIFIER
     Abstraction = Pattern ARROW Term
     Application =
-      (Variable | Application | DataType | Member | Group)
-      (Variable | DataType | Member | Group)
+      (Variable | Application | DataType | Member | Match | Group)
+      (Variable | DataType | Member | Match | Group)
     Let = Pattern EQUALS Term SEPARATOR Term
-    DataType = DATA LEFT_PAREN DataConstructorList RIGHT_PAREN
+    DataType = DATA LEFT_CURLY DataConstructorList RIGHT_CURLY
     DataConstructorList = | DataConstructor DataConstructorTail
     DataConstructorTail = | SEPARATOR DataConstructor DataConstructorTail
     DataConstructor = IDENTIFIER DataConstructorParams
     DataConstructorParams = | IDENTIFIER DataConstructorParams
-    Member = (Variable | DataType | Member | Group) DOT IDENTIFIER
+    Member = (Variable | DataType | Member | Match | Group) DOT IDENTIFIER
     Group = LEFT_PAREN Term RIGHT_PAREN
     Pattern = IDENTIFIER | LEFT_CURLY IDENTIFIER PatternList RIGHT_CURLY
     PatternList = | Pattern PatternList
+    Match = MATCH Term SEPARATOR LEFT_CURLY CaseList RIGHT_CURLY
+    CaseList = | Abstraction CaseListTail
+    CaseListTail = | SEPARATOR Abstraction CaseListTail
 
   There are two problems with the grammar above: the Application and Member
   rules are left-recursive, and packrat parsers can't handle left-recursion:
 
     Application =
-      (Variable | Application | DataType | Member | Group)
-      (Variable | DataType | Member | Group)
+      (Variable | Application | DataType | Member | Match | Group)
+      (Variable | DataType | Member | Match | Group)
     Member = (Variable | DataType | Member | Group) DOT IDENTIFIER
 
   To fix Application, we rewrite the rule to use right-recursion instead:
 
     Application =
-      (Variable | DataType | Member | Group)
-      (Variable | Application | DataType | Member | Group)
+      (Variable | DataType | Member | Match | Group)
+      (Variable | Application | DataType | Member | Match | Group)
 
   This makes Application have right-associativity, which is not what we want.
   In the parsing rule for Application, we use a special trick to flip the
@@ -73,7 +83,7 @@ namespace Poi {
     HIGH
   };
 
-  // This is just like Error, except it also includes a confidence level.
+  // This is just like Poi::Error, except it also includes a confidence level.
   class ParseError : public Error {
   public:
     const Poi::ErrorConfidence confidence;
@@ -205,6 +215,7 @@ enum class MemoType {
   LET,
   DATA_TYPE,
   MEMBER,
+  MATCH,
   GROUP
 };
 
@@ -372,6 +383,14 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
 );
 
 Poi::ParseResult<Poi::Member> parse_member(
+  MemoMap &memo,
+  Poi::StringPool &pool,
+  const Poi::TokenStream &token_stream,
+  const std::unordered_set<size_t> &environment,
+  std::vector<Poi::Token>::const_iterator iter
+);
+
+Poi::ParseResult<Poi::Match> parse_match(
   MemoMap &memo,
   Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -572,7 +591,7 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
   ++iter;
 
   // Parse the parameters. Note that the lexical analyzer guarantees
-  // braces are matched.
+  // curly braces are matched.
   auto parameters = std::make_shared<
     std::vector<std::shared_ptr<Poi::Pattern>>
   >();
@@ -691,6 +710,10 @@ Poi::ParseResult<Poi::Term> parse_term(
     ).upcast<Poi::Term>()
   ).choose(
     parse_member(
+      memo, pool, token_stream, environment, iter
+    ).upcast<Poi::Term>()
+  ).choose(
+    parse_match(
       memo, pool, token_stream, environment, iter
     ).upcast<Poi::Term>()
   ).choose(
@@ -982,6 +1005,10 @@ Poi::ParseResult<Poi::Application> parse_application(
       memo, pool, token_stream, environment, iter
     ).upcast<Poi::Term>()
   ).choose(
+    parse_match(
+      memo, pool, token_stream, environment, iter
+    ).upcast<Poi::Term>()
+  ).choose(
     parse_group(
       memo, pool, token_stream, environment, iter
     )
@@ -1026,6 +1053,10 @@ Poi::ParseResult<Poi::Application> parse_application(
       ).upcast<Poi::Term>()
     ).choose(
       parse_member(
+        memo, pool, token_stream, environment, iter
+      ).upcast<Poi::Term>()
+    ).choose(
+      parse_match(
         memo, pool, token_stream, environment, iter
       ).upcast<Poi::Term>()
     ).choose(
@@ -1394,16 +1425,16 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
   }
   ++iter;
 
-  // Parse the LEFT_PAREN.
+  // Parse the LEFT_CURLY.
   if (
     iter == token_stream.tokens->end() ||
-    iter->type != Poi::TokenType::LEFT_PAREN
+    iter->type != Poi::TokenType::LEFT_CURLY
   ) {
     return memo_error<Poi::DataType>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
-        "Expected '(' after 'data'.",
+        "Expected '{' after 'data'.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
@@ -1420,11 +1451,11 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
   auto constructors = std::make_shared<
     std::unordered_map<size_t, std::vector<size_t>>
   >();
-  bool first_constructor = true;
-  while (iter->type != Poi::TokenType::RIGHT_PAREN) {
+  bool first = true;
+  while (iter->type != Poi::TokenType::RIGHT_CURLY) {
     // Parse the SEPARATOR if applicable.
-    if (first_constructor) {
-      first_constructor = false;
+    if (first) {
+      first = false;
     } else {
       ++iter;
     }
@@ -1455,7 +1486,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
     std::unordered_set<size_t> params_set;
     while (
       iter->type != Poi::TokenType::SEPARATOR &&
-      iter->type != Poi::TokenType::RIGHT_PAREN
+      iter->type != Poi::TokenType::RIGHT_CURLY
     ) {
       if (iter->type != Poi::TokenType::IDENTIFIER) {
         return memo_error<Poi::DataType>(
@@ -1522,7 +1553,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
     constructors->insert({ name, params });
   }
 
-  // Skip the closing RIGHT_PAREN.
+  // Skip the closing RIGHT_CURLY.
   ++iter;
 
   // Construct the DataType.
@@ -1704,6 +1735,184 @@ Poi::ParseResult<Poi::Member> parse_member(
 
   // Memoize and return the result.
   return memo_success<Poi::Member>(memo, key, member, iter);
+}
+
+Poi::ParseResult<Poi::Match> parse_match(
+  MemoMap &memo,
+  Poi::StringPool &pool,
+  const Poi::TokenStream &token_stream,
+  const std::unordered_set<size_t> &environment,
+  std::vector<Poi::Token>::const_iterator iter
+) {
+  // Check if we can reuse a memoized result.
+  auto key = memo_key(MemoType::MATCH, iter);
+  auto memo_result = memo.find(key);
+  if (memo_result != memo.end()) {
+    return memo_result->second.downcast<Poi::Match>();
+  }
+
+  // Mark the beginning of the Match.
+  auto start = iter;
+
+  // Make sure we have some tokens to parse.
+  if (iter == token_stream.tokens->end()) {
+    return memo_error<Poi::Match>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        "No match expression to parse.",
+        pool.find(token_stream.source_name),
+        pool.find(token_stream.source),
+        Poi::ErrorConfidence::LOW
+      )
+    );
+  }
+
+  // Parse the MATCH.
+  if (
+    iter == token_stream.tokens->end() ||
+    iter->type != Poi::TokenType::MATCH
+  ) {
+    return memo_error<Poi::Match>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        "Expected 'match' to start this match expression.",
+        pool.find(start->source_name),
+        pool.find(start->source),
+        start->start_pos,
+        iter->end_pos,
+        Poi::ErrorConfidence::LOW
+      )
+    );
+  }
+  ++iter;
+
+  // Parse the discriminee.
+  auto discriminee = parse_term(
+    memo, pool, token_stream, environment, iter
+  ).choose(
+    Poi::ParseResult<Poi::Term>(
+      std::make_shared<Poi::ParseError>(
+        "No discriminee found for this match expression.",
+        pool.find(start->source_name),
+        pool.find(start->source),
+        start->start_pos,
+        (iter - 1)->end_pos,
+        Poi::ErrorConfidence::LOW
+      )
+    )
+  );
+  if (discriminee.error) {
+    return memo_error<Poi::Match>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        discriminee.error->what(),
+        Poi::ErrorConfidence::HIGH
+      )
+    );
+  }
+  auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+  free_variables->insert(
+    discriminee.node->free_variables->begin(),
+    discriminee.node->free_variables->end()
+  );
+  iter = discriminee.next;
+
+  // Parse the LEFT_CURLY.
+  if (
+    iter == token_stream.tokens->end() ||
+    iter->type != Poi::TokenType::LEFT_CURLY
+  ) {
+    return memo_error<Poi::Match>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        "Expected '{' to begin the cases for this match expression.",
+        pool.find(start->source_name),
+        pool.find(start->source),
+        start->start_pos,
+        (iter - 1)->end_pos,
+        Poi::ErrorConfidence::HIGH
+      )
+    );
+  }
+  ++iter;
+
+  // Parse the cases. Note that the lexical analyzer guarantees
+  // curly braces are matched.
+  auto cases = std::make_shared<
+    std::vector<std::shared_ptr<Poi::Abstraction>>
+  >();
+  bool first = true;
+  while (iter->type != Poi::TokenType::RIGHT_CURLY) {
+    // Parse the SEPARATOR if applicable.
+    if (first) {
+      first = false;
+    } else {
+      if (iter->type != Poi::TokenType::SEPARATOR) {
+        return memo_error<Poi::Match>(
+          memo,
+          key,
+          std::make_shared<Poi::ParseError>(
+            "Invalid case in this match expression.",
+            pool.find(iter->source_name),
+            pool.find(iter->source),
+            iter->start_pos,
+            iter->end_pos,
+            Poi::ErrorConfidence::HIGH
+          )
+        );
+      }
+      ++iter;
+    }
+
+    // Parse the case.
+    auto c = Poi::ParseResult<Poi::Abstraction>(
+      std::make_shared<Poi::ParseError>(
+        "Invalid case in this match expression.",
+        pool.find(iter->source_name),
+        pool.find(iter->source),
+        iter->start_pos,
+        iter->end_pos,
+        Poi::ErrorConfidence::LOW
+      )
+    ).choose(parse_abstraction(memo, pool, token_stream, environment, iter));
+    if (c.error) {
+      return memo_error<Poi::Match>(
+        memo,
+        key,
+        std::make_shared<Poi::ParseError>(
+          c.error->what(),
+          Poi::ErrorConfidence::HIGH
+        )
+      );
+    }
+    free_variables->insert(
+      c.node->free_variables->begin(),
+      c.node->free_variables->end()
+    );
+    cases->push_back(c.node);
+    iter = c.next;
+  }
+
+  // Skip the closing RIGHT_CURLY.
+  ++iter;
+
+  // Construct the Match.
+  auto match = std::make_shared<Poi::Match>(
+    start->source_name,
+    start->source,
+    start->start_pos,
+    (iter - 1)->end_pos,
+    free_variables,
+    discriminee.node,
+    cases
+  );
+
+  // Memoize and return the result.
+  return memo_success<Poi::Match>(memo, key, match, iter);
 }
 
 Poi::ParseResult<Poi::Term> parse_group(

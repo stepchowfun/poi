@@ -20,6 +20,7 @@ namespace Poi {
     IDENTIFIER,
     LEFT_CURLY,
     LEFT_PAREN,
+    MATCH,
     RIGHT_CURLY,
     RIGHT_PAREN,
     SEPARATOR
@@ -33,6 +34,7 @@ namespace Poi {
     "IDENTIFIER",
     "LEFT_CURLY",
     "LEFT_PAREN",
+    "MATCH",
     "RIGHT_CURLY",
     "RIGHT_PAREN",
     "SEPARATOR"
@@ -50,9 +52,12 @@ namespace Poi {
     const bool explicit_separator; // Only used for SEPARATOR tokens
 
     explicit Token(
-      Poi::TokenType type, size_t literal,
-      size_t source_name, size_t source,
-      size_t start_pos, size_t end_pos,
+      Poi::TokenType type,
+      size_t literal,
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
       bool explicit_separator
     );
     std::string show(Poi::StringPool &pool) const;

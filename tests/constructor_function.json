@@ -1,5 +1,5 @@
 {
-  "source": "option = data (none, some value), option.some (x -> x)",
+  "source": "option = data {none, some value}, option.some (x -> x)",
   "stdout": "(some (x -> x))\n",
   "stderr": "",
   "exit_code": 0

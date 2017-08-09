@@ -2,13 +2,19 @@
 #include <type_traits>
 
 Poi::Token::Token(
-  Poi::TokenType type, size_t literal,
-  size_t source_name, size_t source,
-  size_t start_pos, size_t end_pos,
+  Poi::TokenType type,
+  size_t literal,
+  size_t source_name,
+  size_t source,
+  size_t start_pos,
+  size_t end_pos,
   bool explicit_separator) :
-  type(type), literal(literal),
-  source_name(source_name), source(source),
-  start_pos(start_pos), end_pos(end_pos),
+  type(type),
+  literal(literal),
+  source_name(source_name),
+  source(source),
+  start_pos(start_pos),
+  end_pos(end_pos),
   explicit_separator(explicit_separator) {
 }
 

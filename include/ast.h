@@ -264,6 +264,32 @@ namespace Poi {
     ) const override;
   };
 
+  class Match : public Term {
+  public:
+    const std::shared_ptr<Poi::Term> discriminee;
+    const std::shared_ptr<
+      std::vector<std::shared_ptr<Poi::Abstraction>>
+    > cases;
+
+    explicit Match(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables,
+      std::shared_ptr<Poi::Term> discriminee,
+      std::shared_ptr<
+        std::vector<std::shared_ptr<Poi::Abstraction>>
+      > cases
+    );
+    std::string show(const Poi::StringPool &pool) const override;
+    std::shared_ptr<Poi::Value> eval(
+      std::shared_ptr<Poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+      Poi::StringPool &pool
+    ) const override;
+  };
+
 }
 
 #endif

@@ -3,6 +3,39 @@
 #include <poi/value.h>
 
 ///////////////////////////////////////////////////////////////////////////////
+// Error handling                                                            //
+///////////////////////////////////////////////////////////////////////////////
+
+namespace Poi {
+
+  // This is used to signal errors in pattern matching.
+  class MatchError : public Error {
+  public:
+    explicit MatchError(
+      const std::string &message // No trailing line break
+    ) : Error(message) {
+    };
+
+    explicit MatchError(
+      const std::string &message, // No trailing line break
+      const std::string &source_name,
+      const std::string &source
+    ) : Error (message, source_name, source) {
+    };
+
+    explicit MatchError(
+      const std::string &message, // No trailing line break
+      const std::string &source_name,
+      const std::string &source,
+      size_t start_pos, // Inclusive
+      size_t end_pos // Exclusive
+    ) : Error (message, source_name, source, start_pos, end_pos) {
+    };
+  };
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Helpers                                                                   //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -55,10 +88,12 @@ void pattern_match(
         }
       }
     }
-    throw Poi::Error(
+    throw Poi::MatchError(
       "Unable to match " + value->show(pool) + " to this pattern.",
-      pool.find(pattern->source_name), pool.find(pattern->source),
-      pattern->start_pos, pattern->end_pos
+      pool.find(pattern->source_name),
+      pool.find(pattern->source),
+      pattern->start_pos,
+      pattern->end_pos
     );
   }
 }
@@ -291,24 +326,27 @@ std::shared_ptr<Poi::Value> Poi::Application::eval(
   if (!abstraction_value_fun) {
     throw Poi::Error(
       abstraction_value->show(pool) + " is not a function.",
-      pool.find(source_name), pool.find(source),
-      start_pos, end_pos
+      pool.find(source_name),
+      pool.find(source),
+      start_pos,
+      end_pos
     );
   }
-  std::unordered_map<
-    size_t,
-    std::shared_ptr<Poi::Value>
-  > new_environment;
+  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> new_environment;
   for (auto iter : *(abstraction_value_fun->captures)) {
     new_environment.insert(iter);
   }
-  pattern_match(
-    environment,
-    new_environment,
-    pool,
-    abstraction_value_fun->abstraction->pattern,
-    operand_value
-  );
+  try {
+    pattern_match(
+      environment,
+      new_environment,
+      pool,
+      abstraction_value_fun->abstraction->pattern,
+      operand_value
+    );
+  } catch (Poi::MatchError &e) {
+    throw Poi::Error(e.what());
+  }
   return abstraction_value_fun->abstraction->body->eval(
     abstraction_value_fun->abstraction->body,
     new_environment,
@@ -356,7 +394,17 @@ std::shared_ptr<Poi::Value> Poi::Let::eval(
 ) const {
   auto definition_value = definition->eval(definition, environment, pool);
   auto new_environment = environment;
-  pattern_match(environment, new_environment, pool, pattern, definition_value);
+  try {
+    pattern_match(
+      environment,
+      new_environment,
+      pool,
+      pattern,
+      definition_value
+    );
+  } catch (Poi::MatchError &e) {
+    throw Poi::Error(e.what());
+  }
   return body->eval(body, new_environment, pool);
 }
 
@@ -386,7 +434,7 @@ Poi::DataType::DataType(
 }
 
 std::string Poi::DataType::show(const Poi::StringPool &pool) const {
-  std::string result = "data (";
+  std::string result = "data {";
   for (
     auto iter = constructor_names->begin();
     iter != constructor_names->end();
@@ -400,7 +448,7 @@ std::string Poi::DataType::show(const Poi::StringPool &pool) const {
       result += ", ";
     }
   }
-  result += ")";
+  result += "}";
   return result;
 }
 
@@ -457,8 +505,10 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
       throw Poi::Error(
         "'" + pool.find(field) + "' is not a constructor of " +
           data_type_value->show(pool),
-        pool.find(source_name), pool.find(source),
-        start_pos, end_pos
+        pool.find(source_name),
+        pool.find(source),
+        start_pos,
+        end_pos
       );
     }
 
@@ -479,10 +529,10 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
         constructor->second.end()
       );
       auto data = std::make_shared<Poi::Data>(
-        term->source_name,
-        term->source,
-        term->start_pos,
-        term->end_pos,
+        source_name,
+        source,
+        start_pos,
+        end_pos,
         free_variables,
         data_type_value,
         field
@@ -537,8 +587,10 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
         throw Poi::Error(
           object_value->show(pool) +
             " has no member '" + pool.find(field) + "'",
-          pool.find(source_name), pool.find(source),
-          start_pos, end_pos
+          pool.find(source_name),
+          pool.find(source),
+          start_pos,
+          end_pos
         );
       } else {
         return capture->second;
@@ -546,8 +598,10 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
     } else {
       throw Poi::Error(
         object_value->show(pool) + " has no member '" + pool.find(field) + "'",
-        pool.find(source_name), pool.find(source),
-        start_pos, end_pos
+        pool.find(source_name),
+        pool.find(source),
+        start_pos,
+        end_pos
       );
     }
   }
@@ -589,4 +643,81 @@ std::shared_ptr<Poi::Value> Poi::Data::eval(
     captures->insert({ iter, environment.at(iter) });
   }
   return std::make_shared<Poi::DataValue>(type, constructor, captures);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Match                                                                     //
+///////////////////////////////////////////////////////////////////////////////
+
+Poi::Match::Match(
+  size_t source_name,
+  size_t source,
+  size_t start_pos,
+  size_t end_pos,
+  std::shared_ptr<std::unordered_set<size_t>> free_variables,
+  std::shared_ptr<Poi::Term> discriminee,
+  std::shared_ptr<
+    std::vector<std::shared_ptr<Poi::Abstraction>>
+  > cases
+) : Term(
+    source_name,
+    source,
+    start_pos,
+    end_pos,
+    free_variables
+), discriminee(discriminee), cases(cases) {
+}
+
+std::string Poi::Match::show(const Poi::StringPool &pool) const {
+  std::string result = "match " + discriminee->show(pool) + " {";
+  bool first = true;
+  for (auto &c : *cases) {
+    if (!first) {
+      result += ", ";
+    }
+    result += c->show(pool);
+    first = false;
+  }
+  result += "}";
+  return result;
+}
+
+std::shared_ptr<Poi::Value> Poi::Match::eval(
+  std::shared_ptr<Poi::Term> term,
+  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+  Poi::StringPool &pool
+) const {
+  auto discriminee_value = discriminee->eval(discriminee, environment, pool);
+  for (auto &c : *cases) {
+    auto case_fun = std::dynamic_pointer_cast<Poi::FunctionValue>(
+      c->eval(c, environment, pool)
+    );
+    std::unordered_map<size_t, std::shared_ptr<Poi::Value>> new_environment;
+    for (auto iter : *(case_fun->captures)) {
+      new_environment.insert(iter);
+    }
+    try {
+      pattern_match(
+        environment,
+        new_environment,
+        pool,
+        case_fun->abstraction->pattern,
+        discriminee_value
+      );
+    } catch (Poi::MatchError &e) {
+      continue;
+    }
+    return case_fun->abstraction->body->eval(
+      case_fun->abstraction->body,
+      new_environment,
+      pool
+    );
+  }
+  throw Poi::Error(
+    discriminee_value->show(pool) + " didn't match any of the cases here.",
+    pool.find(source_name),
+    pool.find(source),
+    start_pos,
+    end_pos
+  );
 }

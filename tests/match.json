@@ -1,0 +1,6 @@
+{
+  "source": "bool = data {true, false}, not = x -> match x {{true} -> bool.false, {false} -> bool.true}, not bool.false",
+  "stdout": "(true)\n",
+  "stderr": "",
+  "exit_code": 0
+}
