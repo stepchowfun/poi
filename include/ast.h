@@ -23,21 +23,66 @@ namespace Poi {
     const size_t source;
     const size_t start_pos; // Inclusive
     const size_t end_pos; // Exclusive
-    const std::shared_ptr<std::unordered_set<size_t>> free_variables;
 
     explicit Node(
       size_t source_name,
       size_t source,
       size_t start_pos,
-      size_t end_pos,
-      std::shared_ptr<std::unordered_set<size_t>> free_variables
+      size_t end_pos
     );
     virtual ~Node();
     virtual std::string show(const Poi::StringPool &pool) const = 0;
   };
 
+  class Pattern : public Node {
+  public:
+    explicit Pattern(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos
+    );
+    virtual ~Pattern();
+  };
+
+  class VariablePattern : public Pattern {
+  public:
+    const size_t variable;
+
+    explicit VariablePattern(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      size_t variable
+    );
+    std::string show(const Poi::StringPool &pool) const override;
+  };
+
+  class ConstructorPattern : public Pattern {
+  public:
+    const size_t constructor;
+    const std::shared_ptr<
+      std::vector<std::shared_ptr<Poi::Pattern>>
+    > parameters;
+
+    explicit ConstructorPattern(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      size_t constructor,
+      std::shared_ptr<
+        std::vector<std::shared_ptr<Poi::Pattern>>
+      > parameters
+    );
+    std::string show(const Poi::StringPool &pool) const override;
+  };
+
   class Term : public Node {
   public:
+    const std::shared_ptr<std::unordered_set<size_t>> free_variables;
+
     explicit Term(
       size_t source_name,
       size_t source,
