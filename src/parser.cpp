@@ -259,14 +259,27 @@ template <typename T> Poi::ParseResult<T> memo_error(
 ///////////////////////////////////////////////////////////////////////////////
 
 void variables_from_pattern(
-  std::vector<size_t> &variables,
-  std::shared_ptr<Poi::Pattern> pattern
+  std::unordered_set<size_t> &variables,
+  std::shared_ptr<Poi::Pattern> pattern,
+  Poi::StringPool &pool
 ) {
   auto variable_pattern = std::dynamic_pointer_cast<Poi::VariablePattern>(
     pattern
   );
   if (variable_pattern) {
-    variables.push_back(variable_pattern->variable);
+    if (variables.find(variable_pattern->variable) != variables.end()) {
+      throw Poi::ParseError(
+        "Duplicate variable '" +
+          pool.find(variable_pattern->variable) +
+          "' in pattern",
+        pool.find(pattern->source_name),
+        pool.find(pattern->source),
+        pattern->start_pos,
+        pattern->end_pos,
+        Poi::ErrorConfidence::LOW
+      );
+    }
+    variables.insert(variable_pattern->variable);
   }
 
   auto constructor_pattern = std::dynamic_pointer_cast<
@@ -274,7 +287,7 @@ void variables_from_pattern(
   >(pattern);
   if (constructor_pattern) {
     for (auto &parameter : *(constructor_pattern->parameters)) {
-      variables_from_pattern(variables, parameter);
+      variables_from_pattern(variables, parameter, pool);
     }
   }
 }
@@ -856,8 +869,8 @@ Poi::ParseResult<Poi::Abstraction> parse_abstraction(
 
   // Add the pattern variables to the environment.
   auto new_environment = environment;
-  std::vector<size_t> pattern_variables;
-  variables_from_pattern(pattern_variables, pattern.node);
+  std::unordered_set<size_t> pattern_variables;
+  variables_from_pattern(pattern_variables, pattern.node, pool);
   new_environment.insert(pattern_variables.begin(), pattern_variables.end());
 
   // Parse the body.
@@ -1257,8 +1270,8 @@ Poi::ParseResult<Poi::Let> parse_let(
 
   // Add the pattern variables to the environment.
   auto new_environment = environment;
-  std::vector<size_t> pattern_variables;
-  variables_from_pattern(pattern_variables, pattern.node);
+  std::unordered_set<size_t> pattern_variables;
+  variables_from_pattern(pattern_variables, pattern.node, pool);
   new_environment.insert(pattern_variables.begin(), pattern_variables.end());
 
   // Parse the body.
