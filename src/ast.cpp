@@ -221,7 +221,7 @@ Poi::Abstraction::Abstraction(
   size_t start_pos,
   size_t end_pos,
   std::shared_ptr<std::unordered_set<size_t>> free_variables,
-  size_t variable,
+  std::shared_ptr<Poi::Pattern> pattern,
   std::shared_ptr<Poi::Term> body
 ) : Term(
     source_name,
@@ -229,11 +229,11 @@ Poi::Abstraction::Abstraction(
     start_pos,
     end_pos,
     free_variables
-  ), variable(variable), body(body) {
+  ), pattern(pattern), body(body) {
 }
 
 std::string Poi::Abstraction::show(const Poi::StringPool &pool) const {
-  return "(" + pool.find(variable) + " -> " + body->show(pool) + ")";
+  return "(" + pattern->show(pool) + " -> " + body->show(pool) + ")";
 }
 
 std::shared_ptr<Poi::Value> Poi::Abstraction::eval(
@@ -302,10 +302,13 @@ std::shared_ptr<Poi::Value> Poi::Application::eval(
   for (auto iter : *(abstraction_value_fun->captures)) {
     new_environment.insert(iter);
   }
-  new_environment.insert({
-    abstraction_value_fun->abstraction->variable,
+  pattern_match(
+    environment,
+    new_environment,
+    pool,
+    abstraction_value_fun->abstraction->pattern,
     operand_value
-  });
+  );
   return abstraction_value_fun->abstraction->body->eval(
     abstraction_value_fun->abstraction->body,
     new_environment,
@@ -497,13 +500,20 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
           abstraction->free_variables->end()
         );
         free_variables->erase(*iter);
+        auto variable_pattern = std::make_shared<Poi::VariablePattern>(
+          abstraction->source_name,
+          abstraction->source,
+          abstraction->start_pos,
+          abstraction->end_pos,
+          *iter
+        );
         abstraction = std::make_shared<Poi::Abstraction>(
           abstraction->source_name,
           abstraction->source,
           abstraction->start_pos,
           abstraction->end_pos,
           free_variables,
-          *iter,
+          variable_pattern,
           abstraction
         );
       }

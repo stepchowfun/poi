@@ -120,7 +120,7 @@ namespace Poi {
 
   class Abstraction : public Term {
   public:
-    const size_t variable;
+    const std::shared_ptr<Poi::Pattern> pattern;
     const std::shared_ptr<Poi::Term> body;
 
     explicit Abstraction(
@@ -129,7 +129,7 @@ namespace Poi {
       size_t start_pos,
       size_t end_pos,
       std::shared_ptr<std::unordered_set<size_t>> free_variables,
-      size_t variable,
+      std::shared_ptr<Poi::Pattern> pattern,
       std::shared_ptr<Poi::Term> body
     );
     std::string show(const Poi::StringPool &pool) const override;
