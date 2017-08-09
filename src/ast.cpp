@@ -51,27 +51,15 @@ void pattern_match(
             );
             ++member_index;
           }
-        } else {
-          throw Poi::Error(
-            "Unable to match " + value->show(pool) + " to this pattern.",
-            pool.find(pattern->source_name), pool.find(pattern->source),
-            pattern->start_pos, pattern->end_pos
-          );
+          return;
         }
-      } else {
-        throw Poi::Error(
-          "Unable to match " + value->show(pool) + " to this pattern.",
-          pool.find(pattern->source_name), pool.find(pattern->source),
-          pattern->start_pos, pattern->end_pos
-        );
       }
-    } else {
-      throw Poi::Error(
-        "Unable to match " + value->show(pool) + " to this pattern.",
-        pool.find(pattern->source_name), pool.find(pattern->source),
-        pattern->start_pos, pattern->end_pos
-      );
     }
+    throw Poi::Error(
+      "Unable to match " + value->show(pool) + " to this pattern.",
+      pool.find(pattern->source_name), pool.find(pattern->source),
+      pattern->start_pos, pattern->end_pos
+    );
   }
 }
 
