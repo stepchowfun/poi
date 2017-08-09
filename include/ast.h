@@ -274,9 +274,7 @@ namespace Poi {
   class Match : public Term {
   public:
     const std::shared_ptr<Poi::Term> term;
-    const std::shared_ptr<
-      std::vector<std::shared_ptr<Poi::Abstraction>>
-    > cases;
+    const std::shared_ptr<Poi::Abstraction> cases;
 
     explicit Match(
       size_t source_name,
@@ -285,9 +283,7 @@ namespace Poi {
       size_t end_pos,
       std::shared_ptr<std::unordered_set<size_t>> free_variables,
       std::shared_ptr<Poi::Term> term,
-      std::shared_ptr<
-        std::vector<std::shared_ptr<Poi::Abstraction>>
-      > cases
+      std::shared_ptr<Poi::Abstraction> cases
     );
     std::string show(const Poi::StringPool &pool) const override;
     std::shared_ptr<Poi::Value> eval(
