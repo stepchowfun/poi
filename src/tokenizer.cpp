@@ -211,9 +211,9 @@ Poi::TokenStream Poi::tokenize(
       continue;
     }
 
-    // LEFT_BRACE
+    // LEFT_CURLY
     if (parse_symbol(
-      TokenType::LEFT_BRACE, "{", true, false, static_cast<TokenType>(0)
+      TokenType::LEFT_CURLY, "{", true, false, static_cast<TokenType>(0)
     )) {
       continue;
     }
@@ -224,9 +224,9 @@ Poi::TokenStream Poi::tokenize(
       continue;
     }
 
-    // RIGHT_BRACE
+    // RIGHT_CURLY
     if (parse_symbol(
-      TokenType::RIGHT_BRACE, "}", false, true, TokenType::LEFT_BRACE
+      TokenType::RIGHT_CURLY, "}", false, true, TokenType::LEFT_CURLY
     )) {
       continue;
     }

@@ -18,9 +18,9 @@ namespace Poi {
     DOT,
     EQUALS,
     IDENTIFIER,
-    LEFT_BRACE,
+    LEFT_CURLY,
     LEFT_PAREN,
-    RIGHT_BRACE,
+    RIGHT_CURLY,
     RIGHT_PAREN,
     SEPARATOR
   };
@@ -31,9 +31,9 @@ namespace Poi {
     "DOT",
     "EQUALS",
     "IDENTIFIER",
-    "LEFT_BRACE",
+    "LEFT_CURLY",
     "LEFT_PAREN",
-    "RIGHT_BRACE",
+    "RIGHT_CURLY",
     "RIGHT_PAREN",
     "SEPARATOR"
   };

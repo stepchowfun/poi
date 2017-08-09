@@ -26,7 +26,7 @@
     DataConstructorParams = | IDENTIFIER DataConstructorParams
     Member = (Variable | DataType | Member | Group) DOT IDENTIFIER
     Group = LEFT_PAREN Term RIGHT_PAREN
-    Pattern = IDENTIFIER | LEFT_BRACE IDENTIFIER PatternList RIGHT_BRACE
+    Pattern = IDENTIFIER | LEFT_CURLY IDENTIFIER PatternList RIGHT_CURLY
     PatternList = | Pattern PatternList
 
   There are two problems with the grammar above: the Application and Member
@@ -533,10 +533,10 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
     );
   }
 
-  // Parse the LEFT_BRACE.
+  // Parse the LEFT_CURLY.
   if (
     iter == token_stream.tokens->end() ||
-    iter->type != Poi::TokenType::LEFT_BRACE
+    iter->type != Poi::TokenType::LEFT_CURLY
   ) {
     return memo_error<Poi::ConstructorPattern>(
       memo,
@@ -576,7 +576,7 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
   auto parameters = std::make_shared<
     std::vector<std::shared_ptr<Poi::Pattern>>
   >();
-  while (iter->type != Poi::TokenType::RIGHT_BRACE) {
+  while (iter->type != Poi::TokenType::RIGHT_CURLY) {
     auto parameter = Poi::ParseResult<Poi::Pattern>(
       std::make_shared<Poi::ParseError>(
         "Unexpected token.",
@@ -609,7 +609,7 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
     parameters->push_back(parameter.node);
   }
 
-  // Skip the closing RIGHT_BRACE.
+  // Skip the closing RIGHT_CURLY.
   ++iter;
 
   // Construct the ConstructorPattern.
