@@ -10,17 +10,93 @@ Poi::Node::Node(
   size_t source_name,
   size_t source,
   size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<std::unordered_set<size_t>> free_variables
+  size_t end_pos
 ) :
   source_name(source_name),
   source(source),
   start_pos(start_pos),
-  end_pos(end_pos),
-  free_variables(free_variables) {
+  end_pos(end_pos) {
 }
 
 Poi::Node::~Node() {
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Pattern                                                                   //
+///////////////////////////////////////////////////////////////////////////////
+
+Poi::Pattern::Pattern(
+  size_t source_name,
+  size_t source,
+  size_t start_pos,
+  size_t end_pos
+) : Node(
+    source_name,
+    source,
+    start_pos,
+    end_pos
+  ) {
+}
+
+Poi::Pattern::~Pattern() {
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// VariablePattern                                                           //
+///////////////////////////////////////////////////////////////////////////////
+
+Poi::VariablePattern::VariablePattern(
+  size_t source_name,
+  size_t source,
+  size_t start_pos,
+  size_t end_pos,
+  size_t variable
+) : Pattern(
+    source_name,
+    source,
+    start_pos,
+    end_pos
+  ), variable(variable) {
+}
+
+std::string Poi::VariablePattern::show(const Poi::StringPool &pool) const {
+  return pool.find(variable);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// ConstructorPattern                                                        //
+///////////////////////////////////////////////////////////////////////////////
+
+Poi::ConstructorPattern::ConstructorPattern(
+  size_t source_name,
+  size_t source,
+  size_t start_pos,
+  size_t end_pos,
+  size_t constructor,
+  std::shared_ptr<
+    std::vector<std::shared_ptr<Poi::Pattern>>
+  > parameters
+) : Pattern(
+    source_name,
+    source,
+    start_pos,
+    end_pos
+  ),
+  constructor(constructor),
+  parameters(parameters) {
+}
+
+std::string Poi::ConstructorPattern::show(const Poi::StringPool &pool) const {
+  std::string result = "(" + pool.find(constructor);
+  for (
+    auto iter = parameters->begin();
+    iter != parameters->end();
+    ++iter
+  ) {
+    result += " " + (*iter)->show(pool);
+  }
+  result += ")";
+  return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -37,9 +113,8 @@ Poi::Term::Term(
     source_name,
     source,
     start_pos,
-    end_pos,
-    free_variables
-  ) {
+    end_pos
+  ), free_variables(free_variables) {
 }
 
 Poi::Term::~Term() {
