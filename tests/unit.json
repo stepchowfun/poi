@@ -1,6 +1,6 @@
 {
-  "source": "data (unit)",
-  "stdout": "data (unit)\n",
+  "source": "data {unit}",
+  "stdout": "data {unit}\n",
   "stderr": "",
   "exit_code": 0
 }

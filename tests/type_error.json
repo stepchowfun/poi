@@ -1,5 +1,5 @@
 {
-  "source": "bool = data (true, false), bool bool",
+  "source": "bool = data {true, false}, bool bool",
   "stdout": "",
   "exit_code": 1
 }

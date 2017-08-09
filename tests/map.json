@@ -1,0 +1,6 @@
+{
+  "source": "bool = data {true, false}, not = x -> match x {{true} -> bool.false, {false} -> bool.true}, option = data {none, some value}, map = f -> x -> match x {{none} -> option.none, {some value} -> option.some (f value)}, map not (option.some bool.false)",
+  "stdout": "(some (true))\n",
+  "stderr": "",
+  "exit_code": 0
+}

@@ -1,5 +1,5 @@
 {
-  "source": "data (some, some value)",
+  "source": "data {some, some value}",
   "stdout": "",
   "exit_code": 1
 }

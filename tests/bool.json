@@ -1,6 +1,6 @@
 {
-  "source": "data (true, false)",
-  "stdout": "data (true, false)\n",
+  "source": "data {true, false}",
+  "stdout": "data {true, false}\n",
   "stderr": "",
   "exit_code": 0
 }

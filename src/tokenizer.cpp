@@ -49,8 +49,10 @@ Poi::TokenStream Poi::tokenize(
       if (line_continuation_status != LineContinuationStatus::LCS_DEFAULT) {
         throw Error(
           "Duplicate '\\'.",
-          source_name_str, source_str,
-          pos, pos + 1
+          source_name_str,
+          source_str,
+          pos,
+          pos + 1
         );
       }
       line_continuation_status = LineContinuationStatus::LCS_WAIT_FOR_NEWLINE;
@@ -65,9 +67,12 @@ Poi::TokenStream Poi::tokenize(
       if (line_continuation_status == LineContinuationStatus::LCS_DEFAULT) {
         std::string literal("");
         tokens.push_back(Token(
-          TokenType::SEPARATOR, pool.insert(literal),
-          source_name, source,
-          pos, pos,
+          TokenType::SEPARATOR,
+          pool.insert(literal),
+          source_name,
+          source,
+          pos,
+          pos,
           false
         ));
       }
@@ -91,8 +96,10 @@ Poi::TokenStream Poi::tokenize(
     ) {
       throw Error(
         "Unexpected '\\'.",
-        source_name_str, source_str,
-        line_continuation_marker_pos, line_continuation_marker_pos + 1
+        source_name_str,
+        source_str,
+        line_continuation_marker_pos,
+        line_continuation_marker_pos + 1
       );
     }
 
@@ -125,16 +132,30 @@ Poi::TokenStream Poi::tokenize(
         tokens.push_back(Token(
           TokenType::DATA,
           pool.insert(literal),
-          source_name, source,
-          pos, end_pos,
+          source_name,
+          source,
+          pos,
+          end_pos,
+          false
+        ));
+      } else if (literal == "match") {
+        tokens.push_back(Token(
+          TokenType::MATCH,
+          pool.insert(literal),
+          source_name,
+          source,
+          pos,
+          end_pos,
           false
         ));
       } else {
         tokens.push_back(Token(
           TokenType::IDENTIFIER,
           pool.insert(literal),
-          source_name, source,
-          pos, end_pos,
+          source_name,
+          source,
+          pos,
+          end_pos,
           false
         ));
       }
@@ -157,22 +178,29 @@ Poi::TokenStream Poi::tokenize(
           if (grouping_stack.empty()) {
             throw Error(
               "Unmatched '" + literal + "'.",
-              source_name_str, source_str,
-              pos, pos + 1
+              source_name_str,
+              source_str,
+              pos,
+              pos + 1
             );
           } else if (grouping_stack.back().type != opener_type) {
             throw Error(
               "Unmatched '" + pool.find(grouping_stack.back().literal) + "'.",
-              source_name_str, source_str,
-              grouping_stack.back().start_pos, grouping_stack.back().end_pos
+              source_name_str,
+              source_str,
+              grouping_stack.back().start_pos,
+              grouping_stack.back().end_pos
             );
           }
           grouping_stack.pop_back();
         }
         Token token(
-          type, pool.insert(literal),
-          source_name, source,
-          pos, pos + literal.size(),
+          type,
+          pool.insert(literal),
+          source_name,
+          source,
+          pos,
+          pos + literal.size(),
           literal == ","
         );
         if (opener) {
@@ -249,8 +277,10 @@ Poi::TokenStream Poi::tokenize(
     // should be rejected.
     throw Error(
       "Unexpected character '" + source_str.substr(pos, 1) + "'.",
-      source_name_str, source_str,
-      pos, pos + 1
+      source_name_str,
+      source_str,
+      pos,
+      pos + 1
     );
   }
 
@@ -258,8 +288,10 @@ Poi::TokenStream Poi::tokenize(
   if (!grouping_stack.empty()) {
     throw Error(
       "Unmatched '" + pool.find(grouping_stack.back().literal) + "'.",
-      source_name_str, source_str,
-      grouping_stack.back().start_pos, grouping_stack.back().end_pos
+      source_name_str,
+      source_str,
+      grouping_stack.back().start_pos,
+      grouping_stack.back().end_pos
     );
   }
 
@@ -293,15 +325,21 @@ Poi::TokenStream Poi::tokenize(
         continue;
       }
 
-      // Don't add SEPARATOR tokens after a group opener.
+      // Don't add SEPARATOR tokens after an opener.
       auto next_token = *std::next(iter);
-      if (next_token.type == TokenType::RIGHT_PAREN) {
+      if (
+        next_token.type == TokenType::RIGHT_CURLY ||
+        next_token.type == TokenType::RIGHT_PAREN
+      ) {
         continue;
       }
 
-      // Don't add SEPARATOR tokens before a group closer.
+      // Don't add SEPARATOR tokens before a closer.
       auto prev_token = filtered_tokens->back();
-      if (prev_token.type == TokenType::LEFT_PAREN) {
+      if (
+        prev_token.type == TokenType::LEFT_CURLY ||
+        prev_token.type == TokenType::LEFT_PAREN
+      ) {
         continue;
       }
     }

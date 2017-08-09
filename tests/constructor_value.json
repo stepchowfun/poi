@@ -1,5 +1,5 @@
 {
-  "source": "option = data (none, some value), option.none",
+  "source": "option = data {none, some value}, option.none",
   "stdout": "(none)\n",
   "stderr": "",
   "exit_code": 0

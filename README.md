@@ -27,25 +27,21 @@ Let bindings:
     id = x -> x
     id
 
-Algebraic data types:
+Algebraic data types and pattern matching:
 
-    bool = data (true, false)
-    true = bool.true
-    false = bool.false
+    bool = data {true, false}
+    not = x -> match x {
+      {true} -> bool.false
+      {false} -> bool.true
+    }
 
-    option = data (none, some value)
+    option = data {none, some value}
+    map = f -> x -> match x {
+      {none} -> option.none
+      {some value} -> option.some (f value)
+    }
 
-    something = option.some true
-    something.value
-
-Pattern matching:
-
-    option = data (none, some value)
-    meal = option.some (option.some (x -> x))
-    {some burrito} = meal
-
-    f = {some {some z}} -> z
-    f meal
+    map not (option.some bool.false)
 
 Grouping:
 
