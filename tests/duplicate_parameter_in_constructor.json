@@ -1,0 +1,5 @@
+{
+  "source": "data (foo x x)",
+  "stdout": "",
+  "exit_code": 1
+}

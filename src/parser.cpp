@@ -870,7 +870,18 @@ Poi::ParseResult<Poi::Abstraction> parse_abstraction(
   // Add the pattern variables to the environment.
   auto new_environment = environment;
   std::unordered_set<size_t> pattern_variables;
-  variables_from_pattern(pattern_variables, pattern.node, pool);
+  try {
+    variables_from_pattern(pattern_variables, pattern.node, pool);
+  } catch (Poi::ParseError &e) {
+    return memo_error<Poi::Abstraction>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        e.what(),
+        Poi::ErrorConfidence::HIGH
+      )
+    );
+  }
   new_environment.insert(pattern_variables.begin(), pattern_variables.end());
 
   // Parse the body.
@@ -1271,7 +1282,18 @@ Poi::ParseResult<Poi::Let> parse_let(
   // Add the pattern variables to the environment.
   auto new_environment = environment;
   std::unordered_set<size_t> pattern_variables;
-  variables_from_pattern(pattern_variables, pattern.node, pool);
+  try {
+    variables_from_pattern(pattern_variables, pattern.node, pool);
+  } catch (Poi::ParseError &e) {
+    return memo_error<Poi::Let>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        e.what(),
+        Poi::ErrorConfidence::HIGH
+      )
+    );
+  }
   new_environment.insert(pattern_variables.begin(), pattern_variables.end());
 
   // Parse the body.
@@ -1430,6 +1452,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
 
     // Parse the parameters.
     std::vector<size_t> params;
+    std::unordered_set<size_t> params_set;
     while (
       iter->type != Poi::TokenType::SEPARATOR &&
       iter->type != Poi::TokenType::RIGHT_PAREN
@@ -1449,7 +1472,29 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
         );
       }
       auto parameter = iter->literal;
+
+      // Check whether a parameter of this name already exists.
+      if (params_set.find(parameter) != params_set.end()) {
+        return memo_error<Poi::DataType>(
+          memo,
+          key,
+          std::make_shared<Poi::ParseError>(
+            "Duplicate parameter '" +
+               pool.find(parameter) +
+               "' in data constructor '" +
+               pool.find(name) +
+               "'.",
+            pool.find(iter->source_name),
+            pool.find(iter->source),
+            iter->start_pos,
+            iter->end_pos,
+            Poi::ErrorConfidence::HIGH
+          )
+        );
+      }
+
       params.push_back(parameter);
+      params_set.insert(parameter);
       ++iter;
     }
 
@@ -1466,7 +1511,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
           pool.find(constructor_start->source_name),
           pool.find(constructor_start->source),
           constructor_start->start_pos,
-          iter->end_pos,
+          (iter - 1)->end_pos,
           Poi::ErrorConfidence::HIGH
         )
       );
