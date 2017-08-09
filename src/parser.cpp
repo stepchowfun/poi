@@ -14,11 +14,11 @@
     Term =
       Variable | Abstraction | Application | Let | DataType | Member | Group
     Variable = IDENTIFIER
-    Abstraction = Pattern ARROW Term
+    Abstraction = IDENTIFIER ARROW Term
     Application =
       (Variable | Application | DataType | Member | Group)
       (Variable | DataType | Member | Group)
-    Let = Pattern EQUALS Term SEPARATOR Term
+    Let = IDENTIFIER EQUALS Term SEPARATOR Term
     DataType = DATA LEFT_PAREN DataConstructorList RIGHT_PAREN
     DataConstructorList = | DataConstructor DataConstructorTail
     DataConstructorTail = | SEPARATOR DataConstructor DataConstructorTail
