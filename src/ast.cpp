@@ -3,6 +3,79 @@
 #include <poi/value.h>
 
 ///////////////////////////////////////////////////////////////////////////////
+// Helpers                                                                   //
+///////////////////////////////////////////////////////////////////////////////
+
+// Note: current_environment and new_environment must not point to the same
+// environment.
+void pattern_match(
+  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &current_environment,
+  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &new_environment,
+  Poi::StringPool &pool,
+  std::shared_ptr<Poi::Pattern> pattern,
+  std::shared_ptr<Poi::Value> value
+) {
+  auto variable_pattern = std::dynamic_pointer_cast<Poi::VariablePattern>(
+    pattern
+  );
+  if (variable_pattern) {
+    new_environment.insert({ variable_pattern->variable, value });
+    return;
+  }
+
+  auto constructor_pattern = std::dynamic_pointer_cast<
+    Poi::ConstructorPattern
+  >(pattern);
+  if (constructor_pattern) {
+    auto value_data = std::dynamic_pointer_cast<Poi::DataValue>(value);
+    if (value_data) {
+      if (constructor_pattern->constructor == value_data->constructor) {
+        if (
+          constructor_pattern->parameters->size() ==
+          value_data->type->data_type->constructor_params->at(
+            value_data->constructor
+          ).size()
+        ) {
+          size_t member_index = 0;
+          for (auto &parameter : *(constructor_pattern->parameters)) {
+            pattern_match(
+              current_environment,
+              new_environment,
+              pool,
+              parameter,
+              value_data->captures->at(
+                value_data->type->data_type->constructor_params->at(
+                  value_data->constructor
+                ).at(member_index)
+              )
+            );
+            ++member_index;
+          }
+        } else {
+          throw Poi::Error(
+            "Unable to match " + value->show(pool) + " to this pattern.",
+            pool.find(pattern->source_name), pool.find(pattern->source),
+            pattern->start_pos, pattern->end_pos
+          );
+        }
+      } else {
+        throw Poi::Error(
+          "Unable to match " + value->show(pool) + " to this pattern.",
+          pool.find(pattern->source_name), pool.find(pattern->source),
+          pattern->start_pos, pattern->end_pos
+        );
+      }
+    } else {
+      throw Poi::Error(
+        "Unable to match " + value->show(pool) + " to this pattern.",
+        pool.find(pattern->source_name), pool.find(pattern->source),
+        pattern->start_pos, pattern->end_pos
+      );
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Node                                                                      //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -292,6 +365,7 @@ std::shared_ptr<Poi::Value> Poi::Let::eval(
 ) const {
   auto definition_value = definition->eval(definition, environment, pool);
   auto new_environment = environment;
+  pattern_match(environment, new_environment, pool, pattern, definition_value);
   return body->eval(body, new_environment, pool);
 }
 
