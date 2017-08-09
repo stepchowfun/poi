@@ -85,7 +85,7 @@ Poi::ConstructorPattern::ConstructorPattern(
 }
 
 std::string Poi::ConstructorPattern::show(const Poi::StringPool &pool) const {
-  std::string result = "(" + pool.find(constructor);
+  std::string result = "{" + pool.find(constructor);
   for (
     auto iter = parameters->begin();
     iter != parameters->end();
@@ -93,7 +93,7 @@ std::string Poi::ConstructorPattern::show(const Poi::StringPool &pool) const {
   ) {
     result += " " + (*iter)->show(pool);
   }
-  result += ")";
+  result += "}";
   return result;
 }
 
@@ -262,7 +262,7 @@ Poi::Let::Let(
   size_t start_pos,
   size_t end_pos,
   std::shared_ptr<std::unordered_set<size_t>> free_variables,
-  size_t variable,
+  std::shared_ptr<Poi::Pattern> pattern,
   std::shared_ptr<Poi::Term> definition,
   std::shared_ptr<Poi::Term> body
 ) : Term(
@@ -271,13 +271,13 @@ Poi::Let::Let(
     start_pos,
     end_pos,
     free_variables
-), variable(variable), definition(definition), body(body) {
+), pattern(pattern), definition(definition), body(body) {
 }
 
 std::string Poi::Let::show(const Poi::StringPool &pool) const {
   return
     "(" +
-    pool.find(variable) +
+    pattern->show(pool) +
     " = " +
     definition->show(pool) +
     ", " +
@@ -292,10 +292,6 @@ std::shared_ptr<Poi::Value> Poi::Let::eval(
 ) const {
   auto definition_value = definition->eval(definition, environment, pool);
   auto new_environment = environment;
-  new_environment.insert({
-    variable,
-    definition_value
-  });
   return body->eval(body, new_environment, pool);
 }
 
