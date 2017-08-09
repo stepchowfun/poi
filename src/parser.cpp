@@ -12,34 +12,53 @@
   MACRO_CASE.
 
     Term =
-      Variable | Abstraction | Application | Let | DataType | Member | Group
+      Variable | Abstraction | Application | Let
+      | DataType | Member | Group | Match
     Variable = IDENTIFIER
-    Abstraction = IDENTIFIER ARROW Term
+    Abstraction = Pattern ARROW Term
     Application =
-      (Variable | Application | DataType | Member | Group)
-      (Variable | DataType | Member | Group)
-    Let = IDENTIFIER EQUALS Term SEPARATOR Term
+      (Variable | Application | DataType | Member | Group | Match)
+      (Variable | DataType | Member | Group | Match)
+    Let = Pattern EQUALS Term SEPARATOR Term
     DataType = DATA LEFT_PAREN DataConstructorList RIGHT_PAREN
     DataConstructorList = | DataConstructor DataConstructorTail
     DataConstructorTail = | SEPARATOR DataConstructor DataConstructorTail
     DataConstructor = IDENTIFIER DataConstructorParams
     DataConstructorParams = | IDENTIFIER DataConstructorParams
-    Member = (Variable | DataType | Member | Group) DOT IDENTIFIER
+    Member = (Variable | DataType | Member | Group | Match) DOT IDENTIFIER
     Group = LEFT_PAREN Term RIGHT_PAREN
+    Pattern =
+      VariablePattern | ConstructorPattern
+    VariablePattern = IDENTIFIER
+    ConstructorPattern =
+      ConstructorPatternWithParams | ConstructorPatternWithoutParams
+    ConstructorPatternWithParams =
+      (Variable | Application | DataType | Member | Group | Match)
+      DOT IDENTIFIER PatternList
+    ConstructorPatternWithoutParams =
+      (Variable | Application | DataType | Member | Group | Match)
+      DOT IDENTIFIER
+    PatternList = PatternInList | PatternInList PatternList
+    PatternInList =
+      VariablePattern | ConstructorPatternWithoutParams
+      | LEFT_PAREN ConstructorPatternWithParams RIGHT_PAREN
+    Match = MATCH Term LEFT_PAREN CaseList RIGHT_PAREN
+    CaseList = | Abstraction CaseTail
+    CaseTail = | SEPARATOR Abstraction CaseTail
 
   There are two problems with the grammar above: the Application and Member
   rules are left-recursive, and packrat parsers can't handle left-recursion:
 
     Application =
-      (Variable | Application | DataType | Member | Group)
-      (Variable | DataType | Member | Group)
-    Member = (Variable | DataType | Member | Group) DOT IDENTIFIER
+      (Variable | Application | DataType | Member | Group | Match)
+      (Variable | DataType | Member | Group | Match)
+    Member = (Variable | DataType | Member | Group | Match) DOT IDENTIFIER
 
   To fix Application, we rewrite the rule to use right-recursion instead:
 
     Application =
-      (Variable | DataType | Member | Group)
-      (Variable | Application | DataType | Member | Group)
+      (Variable | DataType | Member | Group | Match)
+      (Variable | Application | DataType | Member | Group | Match)
 
   This makes Application have right-associativity, which is not what we want.
   In the parsing rule for Application, we use a special trick to flip the
@@ -50,7 +69,7 @@
 
   To fix Member, we rewrite the rule to eliminate the left recursion:
 
-    Member = (Variable | DataType | Group) DOT IDENTIFIER MemberSuffix
+    Member = (Variable | DataType | Group | Match) DOT IDENTIFIER MemberSuffix
     MemberSuffix = | DOT IDENTIFIER
 
 */
@@ -193,6 +212,9 @@ namespace Poi {
 
 // This enum represents the set of functions which memoize their result.
 enum class MemoType {
+  PATTERN,
+  VARIABLE_PATTERN,
+  CONSTRUCTOR_PATTERN,
   TERM,
   VARIABLE,
   ABSTRACTION,
@@ -254,6 +276,30 @@ template <typename T> Poi::ParseResult<T> memo_error(
 ///////////////////////////////////////////////////////////////////////////////
 
 // Forward declarations necessary for mutual recursion
+
+Poi::ParseResult<Poi::Pattern> parse_pattern(
+  MemoMap &memo,
+  Poi::StringPool &pool,
+  const Poi::TokenStream &token_stream,
+  const std::unordered_set<size_t> &environment,
+  std::vector<Poi::Token>::const_iterator iter
+);
+
+Poi::ParseResult<Poi::VariablePattern> parse_variable_pattern(
+  MemoMap &memo,
+  Poi::StringPool &pool,
+  const Poi::TokenStream &token_stream,
+  const std::unordered_set<size_t> &environment,
+  std::vector<Poi::Token>::const_iterator iter
+);
+
+Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
+  MemoMap &memo,
+  Poi::StringPool &pool,
+  const Poi::TokenStream &token_stream,
+  const std::unordered_set<size_t> &environment,
+  std::vector<Poi::Token>::const_iterator iter
+);
 
 Poi::ParseResult<Poi::Term> parse_term(
   MemoMap &memo,
@@ -321,6 +367,244 @@ Poi::ParseResult<Poi::Term> parse_group(
 );
 
 // The definitions of the parsing functions
+
+Poi::ParseResult<Poi::Pattern> parse_pattern(
+  MemoMap &memo,
+  Poi::StringPool &pool,
+  const Poi::TokenStream &token_stream,
+  const std::unordered_set<size_t> &environment,
+  std::vector<Poi::Token>::const_iterator iter
+) {
+  // Check if we can reuse a memoized result.
+  auto key = memo_key(MemoType::PATTERN, iter);
+  auto memo_result = memo.find(key);
+  if (memo_result != memo.end()) {
+    return memo_result->second.downcast<Poi::Pattern>();
+  }
+
+  // Make sure we have some tokens to parse.
+  if (iter == token_stream.tokens->end()) {
+    return memo_error<Poi::Pattern>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        "Nothing to parse.",
+        pool.find(token_stream.source_name),
+        pool.find(token_stream.source),
+        Poi::ErrorConfidence::LOW
+      )
+    );
+  }
+
+  // A pattern is one of the following constructs.
+  auto pattern = Poi::ParseResult<Poi::Pattern>(
+    std::make_shared<Poi::ParseError>(
+      "Unexpected token.",
+      pool.find(iter->source_name),
+      pool.find(iter->source),
+      iter->start_pos,
+      iter->end_pos,
+      Poi::ErrorConfidence::LOW
+    )
+  ).choose(
+    parse_variable_pattern(
+      memo, pool, token_stream, environment, iter
+    ).upcast<Poi::Pattern>()
+  ).choose(
+    parse_constructor_pattern(
+      memo, pool, token_stream, environment, iter
+    ).upcast<Poi::Pattern>()
+  );
+  if (pattern.error) {
+    return memo_error<Poi::Pattern>(memo, key, pattern.error);
+  }
+
+  // Memoize and return the result.
+  return memo_success<Poi::Pattern>(memo, key, pattern.node, pattern.next);
+}
+
+Poi::ParseResult<Poi::VariablePattern> parse_variable_pattern(
+  MemoMap &memo,
+  Poi::StringPool &pool,
+  const Poi::TokenStream &token_stream,
+  const std::unordered_set<size_t> &environment,
+  std::vector<Poi::Token>::const_iterator iter
+) {
+  // Check if we can reuse a memoized result.
+  auto key = memo_key(MemoType::VARIABLE_PATTERN, iter);
+  auto memo_result = memo.find(key);
+  if (memo_result != memo.end()) {
+    return memo_result->second.downcast<Poi::VariablePattern>();
+  }
+
+  // Make sure we have some tokens to parse.
+  if (iter == token_stream.tokens->end()) {
+    return memo_error<Poi::VariablePattern>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        "No variable pattern to parse.",
+        pool.find(token_stream.source_name),
+        pool.find(token_stream.source),
+        Poi::ErrorConfidence::LOW
+      )
+    );
+  }
+
+  // Check whether the current token is an identifier.
+  if (iter->type != Poi::TokenType::IDENTIFIER) {
+    return memo_error<Poi::VariablePattern>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        "A variable pattern must be an identifier.",
+        pool.find(iter->source_name),
+        pool.find(iter->source),
+        iter->start_pos,
+        iter->end_pos,
+        Poi::ErrorConfidence::LOW
+      )
+    );
+  }
+
+  // Construct the VariablePattern.
+  auto variable_pattern = std::make_shared<Poi::VariablePattern>(
+    iter->source_name,
+    iter->source,
+    iter->start_pos,
+    iter->end_pos,
+    std::make_shared<std::unordered_set<size_t>>(),
+    iter->literal
+  );
+  ++iter;
+
+  // Memoize and return the result.
+  return memo_success<Poi::VariablePattern>(memo, key, variable_pattern, iter);
+}
+
+Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
+  MemoMap &memo,
+  Poi::StringPool &pool,
+  const Poi::TokenStream &token_stream,
+  const std::unordered_set<size_t> &environment,
+  std::vector<Poi::Token>::const_iterator iter
+) {
+  // Check if we can reuse a memoized result.
+  auto key = memo_key(MemoType::CONSTRUCTOR_PATTERN, iter);
+  auto memo_result = memo.find(key);
+  if (memo_result != memo.end()) {
+    return memo_result->second.downcast<Poi::ConstructorPattern>();
+  }
+
+  auto start = iter;
+
+  // Make sure we have some tokens to parse.
+  if (iter == token_stream.tokens->end()) {
+    return memo_error<Poi::ConstructorPattern>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        "No constructor pattern to parse.",
+        pool.find(token_stream.source_name),
+        pool.find(token_stream.source),
+        Poi::ErrorConfidence::LOW
+      )
+    );
+  }
+
+  // Parse the constructor.
+  auto constructor = parse_member(memo, pool, token_stream, environment, iter);
+  if (constructor.error) {
+    return memo_error<Poi::ConstructorPattern>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        "No constructor found for this constructor pattern.",
+        pool.find(iter->source_name),
+        pool.find(iter->source),
+        iter->start_pos,
+        iter->end_pos,
+        Poi::ErrorConfidence::LOW
+      )
+    );
+  }
+  iter = constructor.next;
+
+  // Remember the free variables in the pattern.
+  auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+  free_variables->insert(
+    constructor.node->free_variables->begin(),
+    constructor.node->free_variables->end()
+  );
+
+  // Parse the pattern parameters.
+  auto parameters = std::make_shared<
+    std::vector<std::shared_ptr<Poi::Pattern>>
+  >();
+  while (iter != token_stream.tokens->end()) {
+    auto pattern_start = iter;
+
+    // Parse the LEFT_PAREN, if there is one.
+    bool has_open_paren = false;
+    if (iter->type == Poi::TokenType::LEFT_PAREN) {
+      ++iter;
+      has_open_paren = true;
+    }
+
+    // Parse the parameter.
+    auto parameter = parse_pattern(
+      memo, pool, token_stream, environment, iter
+    );
+    if (parameter.error) {
+      if (has_open_paren) {
+        --iter;
+      }
+      break;
+    }
+    iter = parameter.next;
+    parameters->push_back(parameter.node);
+
+    // Store the free variables from the parameter.
+    free_variables->insert(
+      parameter.node->free_variables->begin(),
+      parameter.node->free_variables->end()
+    );
+
+    // Parse the RIGHT_PAREN, if applicable.
+    if (has_open_paren) {
+      if (iter->type == Poi::TokenType::RIGHT_PAREN) {
+        ++iter;
+      } else {
+        return memo_error<Poi::ConstructorPattern>(
+          memo,
+          key,
+          std::make_shared<Poi::ParseError>(
+            "Invalid pattern in constructor pattern.",
+            pool.find(pattern_start->source_name),
+            pool.find(pattern_start->source),
+            Poi::ErrorConfidence::HIGH
+          )
+        );
+      }
+    }
+  }
+
+  // Construct the ConstructorPattern.
+  auto constructor_pattern = std::make_shared<Poi::ConstructorPattern>(
+    start->source_name,
+    start->source,
+    start->start_pos,
+    (iter-1)->end_pos,
+    free_variables,
+    constructor.node,
+    parameters
+  );
+
+  // Memoize and return the result.
+  return memo_success<Poi::ConstructorPattern>(
+    memo, key, constructor_pattern, iter
+  );
+}
 
 Poi::ParseResult<Poi::Term> parse_term(
   MemoMap &memo,
