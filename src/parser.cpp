@@ -62,7 +62,7 @@
 
   To fix Member, we rewrite the rule to eliminate the left recursion:
 
-    Member = (Variable | DataType | Group) DOT IDENTIFIER MemberSuffix
+    Member = (Variable | DataType | Match | Group) DOT IDENTIFIER MemberSuffix
     MemberSuffix = | DOT IDENTIFIER
 
 */
