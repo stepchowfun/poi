@@ -13,19 +13,19 @@
 
     Term =
       Variable |
-      Abstraction |
+      Function |
       Application |
-      Let |
+      Binding |
       DataType |
       Member |
       Match |
       Group
     Variable = IDENTIFIER
-    Abstraction = Pattern ARROW Term
+    Function = Pattern ARROW Term
     Application =
       (Variable | Application | DataType | Member | Match | Group)
       (Variable | DataType | Member | Match | Group)
-    Let = Pattern EQUALS Term SEPARATOR Term
+    Binding = Pattern EQUALS Term SEPARATOR Term
     DataType = DATA LEFT_CURLY DataConstructorList RIGHT_CURLY
     DataConstructorList = | DataConstructor DataConstructorTail
     DataConstructorTail = | SEPARATOR DataConstructor DataConstructorTail
@@ -36,8 +36,8 @@
     Pattern = IDENTIFIER | LEFT_CURLY IDENTIFIER PatternList RIGHT_CURLY
     PatternList = | Pattern PatternList
     Match = MATCH Term SEPARATOR LEFT_CURLY CaseList RIGHT_CURLY
-    CaseList = | Abstraction CaseListTail
-    CaseListTail = | SEPARATOR Abstraction CaseListTail
+    CaseList = | Function CaseListTail
+    CaseListTail = | SEPARATOR Function CaseListTail
 
   There are two problems with the grammar above: the Application and Member
   rules are left-recursive, and packrat parsers can't handle left-recursion:
@@ -210,9 +210,9 @@ enum class MemoType {
   CONSTRUCTOR_PATTERN,
   TERM,
   VARIABLE,
-  ABSTRACTION,
+  FUNCTION,
   APPLICATION,
-  LET,
+  BINDING,
   DATA_TYPE,
   MEMBER,
   MATCH,
@@ -349,7 +349,7 @@ Poi::ParseResult<Poi::Variable> parse_variable(
   std::vector<Poi::Token>::const_iterator iter
 );
 
-Poi::ParseResult<Poi::Abstraction> parse_abstraction(
+Poi::ParseResult<Poi::Function> parse_function(
   MemoMap &memo,
   Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -366,7 +366,7 @@ Poi::ParseResult<Poi::Application> parse_application(
   std::shared_ptr<Poi::Term> application_prior
 );
 
-Poi::ParseResult<Poi::Let> parse_let(
+Poi::ParseResult<Poi::Binding> parse_binding(
   MemoMap &memo,
   Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -693,7 +693,7 @@ Poi::ParseResult<Poi::Term> parse_term(
       memo, pool, token_stream, environment, iter
     ).upcast<Poi::Term>()
   ).choose(
-    parse_abstraction(
+    parse_function(
       memo, pool, token_stream, environment, iter
     ).upcast<Poi::Term>()
   ).choose(
@@ -701,7 +701,7 @@ Poi::ParseResult<Poi::Term> parse_term(
       memo, pool, token_stream, environment, iter, nullptr
     ).upcast<Poi::Term>()
   ).choose(
-    parse_let(
+    parse_binding(
       memo, pool, token_stream, environment, iter
     ).upcast<Poi::Term>()
   ).choose(
@@ -816,7 +816,7 @@ Poi::ParseResult<Poi::Variable> parse_variable(
   return memo_success<Poi::Variable>(memo, key, variable, iter);
 }
 
-Poi::ParseResult<Poi::Abstraction> parse_abstraction(
+Poi::ParseResult<Poi::Function> parse_function(
   MemoMap &memo,
   Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -824,18 +824,18 @@ Poi::ParseResult<Poi::Abstraction> parse_abstraction(
   std::vector<Poi::Token>::const_iterator iter
 ) {
   // Check if we can reuse a memoized result.
-  auto key = memo_key(MemoType::ABSTRACTION, iter);
+  auto key = memo_key(MemoType::FUNCTION, iter);
   auto memo_result = memo.find(key);
   if (memo_result != memo.end()) {
-    return memo_result->second.downcast<Poi::Abstraction>();
+    return memo_result->second.downcast<Poi::Function>();
   }
 
-  // Mark the beginning of the Abstraction.
+  // Mark the beginning of the Function.
   auto start = iter;
 
   // Make sure we have some tokens to parse.
   if (iter == token_stream.tokens->end()) {
-    return memo_error<Poi::Abstraction>(
+    return memo_error<Poi::Function>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
@@ -850,7 +850,7 @@ Poi::ParseResult<Poi::Abstraction> parse_abstraction(
   // Parse the Pattern.
   auto pattern = Poi::ParseResult<Poi::Pattern>(
     std::make_shared<Poi::ParseError>(
-      "No pattern found for this definition.",
+      "No pattern found for this binding.",
       pool.find(start->source_name),
       pool.find(start->source),
       start->start_pos,
@@ -859,7 +859,7 @@ Poi::ParseResult<Poi::Abstraction> parse_abstraction(
     )
   ).choose(parse_pattern(memo, pool, token_stream, environment, iter));
   if (pattern.error) {
-    return memo_error<Poi::Abstraction>(
+    return memo_error<Poi::Function>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
@@ -875,7 +875,7 @@ Poi::ParseResult<Poi::Abstraction> parse_abstraction(
     iter == token_stream.tokens->end() ||
     iter->type != Poi::TokenType::ARROW
   ) {
-    return memo_error<Poi::Abstraction>(
+    return memo_error<Poi::Function>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
@@ -896,7 +896,7 @@ Poi::ParseResult<Poi::Abstraction> parse_abstraction(
   try {
     variables_from_pattern(pattern_variables, pattern.node, pool);
   } catch (Poi::ParseError &e) {
-    return memo_error<Poi::Abstraction>(
+    return memo_error<Poi::Function>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
@@ -919,7 +919,7 @@ Poi::ParseResult<Poi::Abstraction> parse_abstraction(
     )
   ).choose(parse_term(memo, pool, token_stream, new_environment, iter));
   if (body.error) {
-    return memo_error<Poi::Abstraction>(
+    return memo_error<Poi::Function>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
@@ -930,7 +930,7 @@ Poi::ParseResult<Poi::Abstraction> parse_abstraction(
   }
   iter = body.next;
 
-  // Construct the Abstraction.
+  // Construct the Function.
   auto free_variables = std::make_shared<std::unordered_set<size_t>>();
   free_variables->insert(
     body.node->free_variables->begin(),
@@ -939,7 +939,7 @@ Poi::ParseResult<Poi::Abstraction> parse_abstraction(
   for (auto &variable : pattern_variables) {
     free_variables->erase(variable);
   }
-  auto abstraction = std::make_shared<Poi::Abstraction>(
+  auto function = std::make_shared<Poi::Function>(
     start->source_name,
     start->source,
     start->start_pos,
@@ -950,7 +950,7 @@ Poi::ParseResult<Poi::Abstraction> parse_abstraction(
   );
 
   // Memoize and return the result.
-  return memo_success<Poi::Abstraction>(memo, key, abstraction, iter);
+  return memo_success<Poi::Function>(memo, key, function, iter);
 }
 
 Poi::ParseResult<Poi::Application> parse_application(
@@ -1193,7 +1193,7 @@ Poi::ParseResult<Poi::Application> parse_application(
   return memo_success<Poi::Application>(memo, key, application, iter);
 }
 
-Poi::ParseResult<Poi::Let> parse_let(
+Poi::ParseResult<Poi::Binding> parse_binding(
   MemoMap &memo,
   Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -1201,22 +1201,22 @@ Poi::ParseResult<Poi::Let> parse_let(
   std::vector<Poi::Token>::const_iterator iter
 ) {
   // Check if we can reuse a memoized result.
-  auto key = memo_key(MemoType::LET, iter);
+  auto key = memo_key(MemoType::BINDING, iter);
   auto memo_result = memo.find(key);
   if (memo_result != memo.end()) {
-    return memo_result->second.downcast<Poi::Let>();
+    return memo_result->second.downcast<Poi::Binding>();
   }
 
-  // Mark the beginning of the Let.
+  // Mark the beginning of the Binding.
   auto start = iter;
 
   // Make sure we have some tokens to parse.
   if (iter == token_stream.tokens->end()) {
-    return memo_error<Poi::Let>(
+    return memo_error<Poi::Binding>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
-        "No definition to parse.",
+        "No binding to parse.",
         pool.find(token_stream.source_name),
         pool.find(token_stream.source),
         Poi::ErrorConfidence::LOW
@@ -1227,7 +1227,7 @@ Poi::ParseResult<Poi::Let> parse_let(
   // Parse the Pattern.
   auto pattern = Poi::ParseResult<Poi::Pattern>(
     std::make_shared<Poi::ParseError>(
-      "No pattern found for this definition.",
+      "No pattern found for this binding.",
       pool.find(start->source_name),
       pool.find(start->source),
       start->start_pos,
@@ -1236,7 +1236,7 @@ Poi::ParseResult<Poi::Let> parse_let(
     )
   ).choose(parse_pattern(memo, pool, token_stream, environment, iter));
   if (pattern.error) {
-    return memo_error<Poi::Let>(
+    return memo_error<Poi::Binding>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
@@ -1252,11 +1252,11 @@ Poi::ParseResult<Poi::Let> parse_let(
     iter == token_stream.tokens->end() ||
     iter->type != Poi::TokenType::EQUALS
   ) {
-    return memo_error<Poi::Let>(
+    return memo_error<Poi::Binding>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
-        "Expected '=' in this definition.",
+        "Expected '=' in this binding.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
@@ -1270,7 +1270,7 @@ Poi::ParseResult<Poi::Let> parse_let(
   // Parse the definition.
   auto definition = Poi::ParseResult<Poi::Term>(
     std::make_shared<Poi::ParseError>(
-      "No definition found for this variable.",
+      "No definition found for this binding.",
       pool.find(start->source_name),
       pool.find(start->source),
       start->start_pos,
@@ -1279,7 +1279,7 @@ Poi::ParseResult<Poi::Let> parse_let(
     )
   ).choose(parse_term(memo, pool, token_stream, environment, iter));
   if (definition.error) {
-    return memo_error<Poi::Let>(
+    return memo_error<Poi::Binding>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
@@ -1295,11 +1295,11 @@ Poi::ParseResult<Poi::Let> parse_let(
     iter == token_stream.tokens->end() ||
     iter->type != Poi::TokenType::SEPARATOR
   ) {
-    return memo_error<Poi::Let>(
+    return memo_error<Poi::Binding>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
-        "Expected a body for this definition.",
+        "Expected a body for this binding.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
@@ -1316,7 +1316,7 @@ Poi::ParseResult<Poi::Let> parse_let(
   try {
     variables_from_pattern(pattern_variables, pattern.node, pool);
   } catch (Poi::ParseError &e) {
-    return memo_error<Poi::Let>(
+    return memo_error<Poi::Binding>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
@@ -1330,7 +1330,7 @@ Poi::ParseResult<Poi::Let> parse_let(
   // Parse the body.
   auto body = Poi::ParseResult<Poi::Term>(
     std::make_shared<Poi::ParseError>(
-      "No body found for this definition.",
+      "No body found for this binding.",
       pool.find(start->source_name),
       pool.find(start->source),
       start->start_pos,
@@ -1339,7 +1339,7 @@ Poi::ParseResult<Poi::Let> parse_let(
     )
   ).choose(parse_term(memo, pool, token_stream, new_environment, iter));
   if (body.error) {
-    return memo_error<Poi::Let>(
+    return memo_error<Poi::Binding>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
@@ -1350,7 +1350,7 @@ Poi::ParseResult<Poi::Let> parse_let(
   }
   iter = body.next;
 
-  // Construct the Let.
+  // Construct the Binding.
   auto free_variables = std::make_shared<std::unordered_set<size_t>>();
   free_variables->insert(
     body.node->free_variables->begin(),
@@ -1359,7 +1359,7 @@ Poi::ParseResult<Poi::Let> parse_let(
   for (auto &variable : pattern_variables) {
     free_variables->erase(variable);
   }
-  auto let = std::make_shared<Poi::Let>(
+  auto binding = std::make_shared<Poi::Binding>(
     start->source_name,
     start->source,
     start->start_pos,
@@ -1371,7 +1371,7 @@ Poi::ParseResult<Poi::Let> parse_let(
   );
 
   // Memoize and return the result.
-  return memo_success<Poi::Let>(memo, key, let, iter);
+  return memo_success<Poi::Binding>(memo, key, binding, iter);
 }
 
 Poi::ParseResult<Poi::DataType> parse_data_type(
@@ -1843,7 +1843,7 @@ Poi::ParseResult<Poi::Match> parse_match(
   // Parse the cases. Note that the lexical analyzer guarantees
   // curly braces are matched.
   auto cases = std::make_shared<
-    std::vector<std::shared_ptr<Poi::Abstraction>>
+    std::vector<std::shared_ptr<Poi::Function>>
   >();
   bool first = true;
   while (iter->type != Poi::TokenType::RIGHT_CURLY) {
@@ -1869,7 +1869,7 @@ Poi::ParseResult<Poi::Match> parse_match(
     }
 
     // Parse the case.
-    auto c = Poi::ParseResult<Poi::Abstraction>(
+    auto c = Poi::ParseResult<Poi::Function>(
       std::make_shared<Poi::ParseError>(
         "Invalid case in this match expression.",
         pool.find(iter->source_name),
@@ -1878,7 +1878,7 @@ Poi::ParseResult<Poi::Match> parse_match(
         iter->end_pos,
         Poi::ErrorConfidence::LOW
       )
-    ).choose(parse_abstraction(memo, pool, token_stream, environment, iter));
+    ).choose(parse_function(memo, pool, token_stream, environment, iter));
     if (c.error) {
       return memo_error<Poi::Match>(
         memo,

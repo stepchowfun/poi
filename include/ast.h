@@ -118,12 +118,12 @@ namespace Poi {
     ) const override;
   };
 
-  class Abstraction : public Term {
+  class Function : public Term {
   public:
     const std::shared_ptr<Poi::Pattern> pattern;
     const std::shared_ptr<Poi::Term> body;
 
-    explicit Abstraction(
+    explicit Function(
       size_t source_name,
       size_t source,
       size_t start_pos,
@@ -142,7 +142,7 @@ namespace Poi {
 
   class Application : public Term {
   public:
-    const std::shared_ptr<Poi::Term> abstraction;
+    const std::shared_ptr<Poi::Term> function;
     const std::shared_ptr<Poi::Term> operand;
 
     explicit Application(
@@ -151,7 +151,7 @@ namespace Poi {
       size_t start_pos,
       size_t end_pos,
       std::shared_ptr<std::unordered_set<size_t>> free_variables,
-      std::shared_ptr<Poi::Term> abstraction,
+      std::shared_ptr<Poi::Term> function,
       std::shared_ptr<Poi::Term> operand
     );
     std::string show(const Poi::StringPool &pool) const override;
@@ -162,13 +162,13 @@ namespace Poi {
     ) const override;
   };
 
-  class Let : public Term {
+  class Binding : public Term {
   public:
     const std::shared_ptr<Poi::Pattern> pattern;
     const std::shared_ptr<Poi::Term> definition;
     const std::shared_ptr<Poi::Term> body;
 
-    explicit Let(
+    explicit Binding(
       size_t source_name,
       size_t source,
       size_t start_pos,
@@ -268,7 +268,7 @@ namespace Poi {
   public:
     const std::shared_ptr<Poi::Term> discriminee;
     const std::shared_ptr<
-      std::vector<std::shared_ptr<Poi::Abstraction>>
+      std::vector<std::shared_ptr<Poi::Function>>
     > cases;
 
     explicit Match(
@@ -279,7 +279,7 @@ namespace Poi {
       std::shared_ptr<std::unordered_set<size_t>> free_variables,
       std::shared_ptr<Poi::Term> discriminee,
       std::shared_ptr<
-        std::vector<std::shared_ptr<Poi::Abstraction>>
+        std::vector<std::shared_ptr<Poi::Function>>
       > cases
     );
     std::string show(const Poi::StringPool &pool) const override;

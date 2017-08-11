@@ -13,7 +13,7 @@
 namespace Poi {
 
   // Forward declarations to avoid mutually recursive headers
-  class Abstraction; // Declared in poi/ast.h
+  class Function; // Declared in poi/ast.h
   class DataType; // Declared in poi/ast.h
 
   class Value {
@@ -24,13 +24,13 @@ namespace Poi {
 
   class FunctionValue : public Value {
   public:
-    const std::shared_ptr<Poi::Abstraction> abstraction;
+    const std::shared_ptr<Poi::Function> function;
     const std::shared_ptr<
       std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
     > captures;
 
     explicit FunctionValue(
-      std::shared_ptr<Poi::Abstraction> abstraction,
+      std::shared_ptr<Poi::Function> function,
       std::shared_ptr<
         std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
       > captures

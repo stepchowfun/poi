@@ -22,7 +22,7 @@ Application:
 
     x -> x x
 
-Let bindings:
+Bindings:
 
     id = x -> x
     id
