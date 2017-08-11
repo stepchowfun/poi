@@ -699,42 +699,32 @@ std::shared_ptr<Poi::Value> Poi::Match::eval(
   Poi::StringPool &pool
 ) const {
   auto discriminee_value = discriminee->eval(discriminee, environment, pool);
+
   std::shared_ptr<Poi::Value> result;
   for (auto &c : *cases) {
-    auto case_fun = std::dynamic_pointer_cast<Poi::FunctionValue>(
-      c->eval(c, environment, pool)
-    );
-    std::unordered_map<size_t, std::shared_ptr<Poi::Value>> new_environment;
-    for (auto iter : *(case_fun->captures)) {
-      new_environment.insert(iter);
-    }
+    auto new_environment = environment;
     try {
       pattern_match(
         new_environment,
         pool,
-        case_fun->abstraction->pattern,
+        c->pattern,
         discriminee_value
       );
     } catch (Poi::MatchError &e) {
       continue;
     }
     if (!result) {
-      result = case_fun->abstraction->body->eval(
-        case_fun->abstraction->body,
-        new_environment,
-        pool
-      );
+      result = c->body->eval(c->body, new_environment, pool);
     }
   }
   if (result) {
     return result;
-  } else {
-    throw Poi::Error(
-      discriminee_value->show(pool) + " didn't match any of the cases here.",
-      pool.find(source_name),
-      pool.find(source),
-      start_pos,
-      end_pos
-    );
   }
+  throw Poi::Error(
+    discriminee_value->show(pool) + " didn't match any of the cases here.",
+    pool.find(source_name),
+    pool.find(source),
+    start_pos,
+    end_pos
+  );
 }
