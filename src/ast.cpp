@@ -1,5 +1,6 @@
 #include <poi/ast.h>
 #include <poi/error.h>
+#include <poi/util.h>
 #include <poi/value.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -49,8 +50,15 @@ void pattern_match(
     pattern
   );
   if (variable_pattern) {
-    if (environment.find(variable_pattern->variable) != environment.end()) {
-      environment.erase(variable_pattern->variable);
+    auto iter = environment.find(variable_pattern->variable);
+    if (iter != environment.end()) {
+      auto proxy_value = std::dynamic_pointer_cast<Poi::ProxyValue>(
+        iter->second
+      );
+      if (proxy_value) {
+        proxy_value->value = value;
+      }
+      environment.erase(iter);
     }
     environment.insert({ variable_pattern->variable, value });
     return;
@@ -256,7 +264,25 @@ std::shared_ptr<Poi::Value> Poi::Variable::eval(
   std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
   Poi::StringPool &pool
 ) const {
-  return environment.at(variable);
+  auto value = environment.at(variable);
+  while (true) {
+    auto proxy_value = std::dynamic_pointer_cast<Poi::ProxyValue>(value);
+    if (proxy_value) {
+      value = proxy_value->value;
+      if (!value) {
+        throw Poi::Error(
+          "Recursive references must occur in function bodies.",
+          pool.find(source_name),
+          pool.find(source),
+          start_pos,
+          end_pos
+        );
+      }
+    } else {
+      break;
+    }
+  }
+  return value;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -404,8 +430,18 @@ std::shared_ptr<Poi::Value> Poi::Binding::eval(
   std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
   Poi::StringPool &pool
 ) const {
-  auto definition_value = definition->eval(definition, environment, pool);
+  std::unordered_set<size_t> variables;
+  Poi::variables_from_pattern(variables, pattern, pool);
   auto new_environment = environment;
+  for (auto &variable : variables) {
+    new_environment.insert({
+      variable,
+      std::static_pointer_cast<Poi::Value>(
+        std::make_shared<Poi::ProxyValue>(nullptr)
+      )
+    });
+  }
+  auto definition_value = definition->eval(definition, new_environment, pool);
   try {
     pattern_match(
       new_environment,
