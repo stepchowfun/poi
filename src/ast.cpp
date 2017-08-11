@@ -62,6 +62,20 @@ void pattern_match(
   if (constructor_pattern) {
     auto value_data = std::dynamic_pointer_cast<Poi::DataValue>(value);
     if (value_data) {
+      if (
+        value_data->type->data_type->constructor_params->find(
+          constructor_pattern->constructor
+        ) == value_data->type->data_type->constructor_params->end()
+      ) {
+        throw Poi::Error(
+          "'" + pool.find(constructor_pattern->constructor) +
+            "' is not a constructor of " + value_data->type->show(pool) + ".",
+          pool.find(pattern->source_name),
+          pool.find(pattern->source),
+          pattern->start_pos,
+          pattern->end_pos
+        );
+      }
       if (constructor_pattern->constructor == value_data->constructor) {
         if (
           constructor_pattern->parameters->size() ==
@@ -688,6 +702,7 @@ std::shared_ptr<Poi::Value> Poi::Match::eval(
   Poi::StringPool &pool
 ) const {
   auto discriminee_value = discriminee->eval(discriminee, environment, pool);
+  std::shared_ptr<Poi::Value> result;
   for (auto &c : *cases) {
     auto case_fun = std::dynamic_pointer_cast<Poi::FunctionValue>(
       c->eval(c, environment, pool)
@@ -707,17 +722,23 @@ std::shared_ptr<Poi::Value> Poi::Match::eval(
     } catch (Poi::MatchError &e) {
       continue;
     }
-    return case_fun->abstraction->body->eval(
-      case_fun->abstraction->body,
-      new_environment,
-      pool
+    if (!result) {
+      result = case_fun->abstraction->body->eval(
+        case_fun->abstraction->body,
+        new_environment,
+        pool
+      );
+    }
+  }
+  if (result) {
+    return result;
+  } else {
+    throw Poi::Error(
+      discriminee_value->show(pool) + " didn't match any of the cases here.",
+      pool.find(source_name),
+      pool.find(source),
+      start_pos,
+      end_pos
     );
   }
-  throw Poi::Error(
-    discriminee_value->show(pool) + " didn't match any of the cases here.",
-    pool.find(source_name),
-    pool.find(source),
-    start_pos,
-    end_pos
-  );
 }
