@@ -260,10 +260,10 @@ std::shared_ptr<Poi::Value> Poi::Variable::eval(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Abstraction                                                               //
+// Function                                                               //
 ///////////////////////////////////////////////////////////////////////////////
 
-Poi::Abstraction::Abstraction(
+Poi::Function::Function(
   size_t source_name,
   size_t source,
   size_t start_pos,
@@ -280,11 +280,11 @@ Poi::Abstraction::Abstraction(
   ), pattern(pattern), body(body) {
 }
 
-std::string Poi::Abstraction::show(const Poi::StringPool &pool) const {
+std::string Poi::Function::show(const Poi::StringPool &pool) const {
   return "(" + pattern->show(pool) + " -> " + body->show(pool) + ")";
 }
 
-std::shared_ptr<Poi::Value> Poi::Abstraction::eval(
+std::shared_ptr<Poi::Value> Poi::Function::eval(
   std::shared_ptr<Poi::Term> term,
   std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
   Poi::StringPool &pool
@@ -296,7 +296,7 @@ std::shared_ptr<Poi::Value> Poi::Abstraction::eval(
     captures->insert({ iter, environment.at(iter) });
   }
   return std::make_shared<Poi::FunctionValue>(
-    std::dynamic_pointer_cast<Poi::Abstraction>(term),
+    std::dynamic_pointer_cast<Poi::Function>(term),
     captures
   );
 }
@@ -311,7 +311,7 @@ Poi::Application::Application(
   size_t start_pos,
   size_t end_pos,
   std::shared_ptr<std::unordered_set<size_t>> free_variables,
-  std::shared_ptr<Poi::Term> abstraction,
+  std::shared_ptr<Poi::Term> function,
   std::shared_ptr<Poi::Term> operand
 ) : Term(
     source_name,
@@ -319,11 +319,11 @@ Poi::Application::Application(
     start_pos,
     end_pos,
     free_variables
-), abstraction(abstraction), operand(operand) {
+), function(function), operand(operand) {
 }
 
 std::string Poi::Application::show(const Poi::StringPool &pool) const {
-  return "(" + abstraction->show(pool) + " " + operand->show(pool) + ")";
+  return "(" + function->show(pool) + " " + operand->show(pool) + ")";
 }
 
 std::shared_ptr<Poi::Value> Poi::Application::eval(
@@ -331,14 +331,14 @@ std::shared_ptr<Poi::Value> Poi::Application::eval(
   std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
   Poi::StringPool &pool
 ) const {
-  auto abstraction_value = abstraction->eval(abstraction, environment, pool);
+  auto function_value = function->eval(function, environment, pool);
   auto operand_value = operand->eval(operand, environment, pool);
-  auto abstraction_value_fun = std::dynamic_pointer_cast<Poi::FunctionValue>(
-    abstraction_value
+  auto function_value_fun = std::dynamic_pointer_cast<Poi::FunctionValue>(
+    function_value
   );
-  if (!abstraction_value_fun) {
+  if (!function_value_fun) {
     throw Poi::Error(
-      abstraction_value->show(pool) + " is not a function.",
+      function_value->show(pool) + " is not a function.",
       pool.find(source_name),
       pool.find(source),
       start_pos,
@@ -346,31 +346,31 @@ std::shared_ptr<Poi::Value> Poi::Application::eval(
     );
   }
   std::unordered_map<size_t, std::shared_ptr<Poi::Value>> new_environment;
-  for (auto iter : *(abstraction_value_fun->captures)) {
+  for (auto iter : *(function_value_fun->captures)) {
     new_environment.insert(iter);
   }
   try {
     pattern_match(
       new_environment,
       pool,
-      abstraction_value_fun->abstraction->pattern,
+      function_value_fun->function->pattern,
       operand_value
     );
   } catch (Poi::MatchError &e) {
     throw Poi::Error(e.what());
   }
-  return abstraction_value_fun->abstraction->body->eval(
-    abstraction_value_fun->abstraction->body,
+  return function_value_fun->function->body->eval(
+    function_value_fun->function->body,
     new_environment,
     pool
   );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Let                                                                       //
+// Binding                                                                //
 ///////////////////////////////////////////////////////////////////////////////
 
-Poi::Let::Let(
+Poi::Binding::Binding(
   size_t source_name,
   size_t source,
   size_t start_pos,
@@ -388,7 +388,7 @@ Poi::Let::Let(
 ), pattern(pattern), definition(definition), body(body) {
 }
 
-std::string Poi::Let::show(const Poi::StringPool &pool) const {
+std::string Poi::Binding::show(const Poi::StringPool &pool) const {
   return
     "(" +
     pattern->show(pool) +
@@ -399,7 +399,7 @@ std::string Poi::Let::show(const Poi::StringPool &pool) const {
     ")";
 }
 
-std::shared_ptr<Poi::Value> Poi::Let::eval(
+std::shared_ptr<Poi::Value> Poi::Binding::eval(
   std::shared_ptr<Poi::Term> term,
   std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
   Poi::StringPool &pool
@@ -533,7 +533,7 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
         >()
       );
     } else {
-      // The constructor has some parameters. Return an abstraction.
+      // The constructor has some parameters. Return a function.
       auto free_variables = std::make_shared<std::unordered_set<size_t>>();
       free_variables->insert(
         constructor->second.begin(),
@@ -549,7 +549,7 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
         field
       );
 
-      auto abstraction = std::static_pointer_cast<Poi::Term>(data);
+      auto function = std::static_pointer_cast<Poi::Term>(data);
       for (
         auto iter = constructor->second.rbegin();
         iter != constructor->second.rend();
@@ -557,25 +557,25 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
       ) {
         free_variables = std::make_shared<std::unordered_set<size_t>>();
         free_variables->insert(
-          abstraction->free_variables->begin(),
-          abstraction->free_variables->end()
+          function->free_variables->begin(),
+          function->free_variables->end()
         );
         free_variables->erase(*iter);
         auto variable_pattern = std::make_shared<Poi::VariablePattern>(
-          abstraction->source_name,
-          abstraction->source,
-          abstraction->start_pos,
-          abstraction->end_pos,
+          function->source_name,
+          function->source,
+          function->start_pos,
+          function->end_pos,
           *iter
         );
-        abstraction = std::make_shared<Poi::Abstraction>(
-          abstraction->source_name,
-          abstraction->source,
-          abstraction->start_pos,
-          abstraction->end_pos,
+        function = std::make_shared<Poi::Function>(
+          function->source_name,
+          function->source,
+          function->start_pos,
+          function->end_pos,
           free_variables,
           variable_pattern,
-          abstraction
+          function
         );
       }
 
@@ -583,7 +583,7 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
         std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
       >();
       return std::make_shared<Poi::FunctionValue>(
-        std::dynamic_pointer_cast<Poi::Abstraction>(abstraction),
+        std::dynamic_pointer_cast<Poi::Function>(function),
         captures
       );
     }
@@ -668,7 +668,7 @@ Poi::Match::Match(
   std::shared_ptr<std::unordered_set<size_t>> free_variables,
   std::shared_ptr<Poi::Term> discriminee,
   std::shared_ptr<
-    std::vector<std::shared_ptr<Poi::Abstraction>>
+    std::vector<std::shared_ptr<Poi::Function>>
   > cases
 ) : Term(
     source_name,

@@ -14,15 +14,15 @@ Poi::Value::~Value() {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::FunctionValue::FunctionValue(
-  std::shared_ptr<Poi::Abstraction> abstraction,
+  std::shared_ptr<Poi::Function> function,
   std::shared_ptr<
     std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
   > captures
-) : abstraction(abstraction), captures(captures) {
+) : function(function), captures(captures) {
 }
 
 std::string Poi::FunctionValue::show(const Poi::StringPool &pool) const {
-  return abstraction->show(pool);
+  return function->show(pool);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
