@@ -1,6 +1,7 @@
 #include <functional>
 #include <poi/error.h>
 #include <poi/parser.h>
+#include <poi/util.h>
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
@@ -263,44 +264,6 @@ template <typename T> Poi::ParseResult<T> memo_error(
   auto parse_result = Poi::ParseResult<T>(error);
   memo.insert({key, parse_result.template upcast<Poi::Node>()});
   return parse_result;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Helpers                                                                   //
-///////////////////////////////////////////////////////////////////////////////
-
-void variables_from_pattern(
-  std::unordered_set<size_t> &variables,
-  std::shared_ptr<Poi::Pattern> pattern,
-  Poi::StringPool &pool
-) {
-  auto variable_pattern = std::dynamic_pointer_cast<Poi::VariablePattern>(
-    pattern
-  );
-  if (variable_pattern) {
-    if (variables.find(variable_pattern->variable) != variables.end()) {
-      throw Poi::ParseError(
-        "Duplicate variable '" +
-          pool.find(variable_pattern->variable) +
-          "' in pattern.",
-        pool.find(pattern->source_name),
-        pool.find(pattern->source),
-        pattern->start_pos,
-        pattern->end_pos,
-        Poi::ErrorConfidence::LOW
-      );
-    }
-    variables.insert(variable_pattern->variable);
-  }
-
-  auto constructor_pattern = std::dynamic_pointer_cast<
-    Poi::ConstructorPattern
-  >(pattern);
-  if (constructor_pattern) {
-    for (auto &parameter : *(constructor_pattern->parameters)) {
-      variables_from_pattern(variables, parameter, pool);
-    }
-  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -895,7 +858,7 @@ Poi::ParseResult<Poi::Function> parse_function(
   std::unordered_set<size_t> pattern_variables;
   try {
     variables_from_pattern(pattern_variables, pattern.node, pool);
-  } catch (Poi::ParseError &e) {
+  } catch (Poi::Error &e) {
     return memo_error<Poi::Function>(
       memo,
       key,
@@ -1267,6 +1230,23 @@ Poi::ParseResult<Poi::Binding> parse_binding(
   }
   ++iter;
 
+  // Add the pattern variables to the environment.
+  auto new_environment = environment;
+  std::unordered_set<size_t> pattern_variables;
+  try {
+    variables_from_pattern(pattern_variables, pattern.node, pool);
+  } catch (Poi::Error &e) {
+    return memo_error<Poi::Binding>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        e.what(),
+        Poi::ErrorConfidence::HIGH
+      )
+    );
+  }
+  new_environment.insert(pattern_variables.begin(), pattern_variables.end());
+
   // Parse the definition.
   auto definition = Poi::ParseResult<Poi::Term>(
     std::make_shared<Poi::ParseError>(
@@ -1277,7 +1257,7 @@ Poi::ParseResult<Poi::Binding> parse_binding(
       (iter - 1)->end_pos,
       Poi::ErrorConfidence::LOW
     )
-  ).choose(parse_term(memo, pool, token_stream, environment, iter));
+  ).choose(parse_term(memo, pool, token_stream, new_environment, iter));
   if (definition.error) {
     return memo_error<Poi::Binding>(
       memo,
@@ -1309,23 +1289,6 @@ Poi::ParseResult<Poi::Binding> parse_binding(
     );
   }
   ++iter;
-
-  // Add the pattern variables to the environment.
-  auto new_environment = environment;
-  std::unordered_set<size_t> pattern_variables;
-  try {
-    variables_from_pattern(pattern_variables, pattern.node, pool);
-  } catch (Poi::ParseError &e) {
-    return memo_error<Poi::Binding>(
-      memo,
-      key,
-      std::make_shared<Poi::ParseError>(
-        e.what(),
-        Poi::ErrorConfidence::HIGH
-      )
-    );
-  }
-  new_environment.insert(pattern_variables.begin(), pattern_variables.end());
 
   // Parse the body.
   auto body = Poi::ParseResult<Poi::Term>(

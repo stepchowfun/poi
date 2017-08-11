@@ -59,3 +59,20 @@ std::string Poi::DataValue::show(const Poi::StringPool &pool) const {
   result += ")";
   return result;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// ProxyValue                                                                //
+///////////////////////////////////////////////////////////////////////////////
+
+Poi::ProxyValue::ProxyValue(
+  std::shared_ptr<Poi::Value> value
+) : value(value) {
+}
+
+std::string Poi::ProxyValue::show(const Poi::StringPool &pool) const {
+  if (value) {
+    return value->show(pool);
+  } else {
+    throw Poi::Error("Undefined.");
+  }
+}

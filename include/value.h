@@ -66,6 +66,17 @@ namespace Poi {
     std::string show(const Poi::StringPool &pool) const override;
   };
 
+  // Used to "tie the knot" for recursive bindings
+  class ProxyValue : public Value {
+  public:
+    std::shared_ptr<Poi::Value> value;
+
+    explicit ProxyValue(
+      std::shared_ptr<Poi::Value> value
+    );
+    std::string show(const Poi::StringPool &pool) const override;
+  };
+
 }
 
 #endif
