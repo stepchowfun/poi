@@ -39,11 +39,8 @@ namespace Poi {
 // Helpers                                                                   //
 ///////////////////////////////////////////////////////////////////////////////
 
-// Note: current_environment and new_environment must not point to the same
-// environment.
 void pattern_match(
-  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &current_environment,
-  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &new_environment,
+  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
   Poi::StringPool &pool,
   std::shared_ptr<Poi::Pattern> pattern,
   std::shared_ptr<Poi::Value> value
@@ -52,7 +49,10 @@ void pattern_match(
     pattern
   );
   if (variable_pattern) {
-    new_environment.insert({ variable_pattern->variable, value });
+    if (environment.find(variable_pattern->variable) != environment.end()) {
+      environment.erase(variable_pattern->variable);
+    }
+    environment.insert({ variable_pattern->variable, value });
     return;
   }
 
@@ -86,8 +86,7 @@ void pattern_match(
           size_t member_index = 0;
           for (auto &parameter : *(constructor_pattern->parameters)) {
             pattern_match(
-              current_environment,
-              new_environment,
+              environment,
               pool,
               parameter,
               value_data->captures->at(
@@ -352,7 +351,6 @@ std::shared_ptr<Poi::Value> Poi::Application::eval(
   }
   try {
     pattern_match(
-      environment,
       new_environment,
       pool,
       abstraction_value_fun->abstraction->pattern,
@@ -410,7 +408,6 @@ std::shared_ptr<Poi::Value> Poi::Let::eval(
   auto new_environment = environment;
   try {
     pattern_match(
-      environment,
       new_environment,
       pool,
       pattern,
@@ -713,7 +710,6 @@ std::shared_ptr<Poi::Value> Poi::Match::eval(
     }
     try {
       pattern_match(
-        environment,
         new_environment,
         pool,
         case_fun->abstraction->pattern,
