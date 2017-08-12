@@ -9,7 +9,6 @@
 #include <poi/token.h>
 
 namespace Poi {
-
   // Perform lexical analysis. The tokenizer guarantees that all LEFT_*/RIGHT_*
   // tokens will be matched in the returned stream.
   Poi::TokenStream tokenize(
@@ -17,7 +16,6 @@ namespace Poi {
     size_t source,
     Poi::StringPool &pool
   );
-
 }
 
 #endif

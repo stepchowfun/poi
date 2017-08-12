@@ -11,13 +11,11 @@
 #include <poi/token.h>
 
 namespace Poi {
-
   // Parse a stream of tokens.
   std::shared_ptr<Poi::Term> parse(
     const Poi::TokenStream &token_stream,
     Poi::StringPool &pool
   );
-
 }
 
 #endif
