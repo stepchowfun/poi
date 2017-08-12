@@ -11,7 +11,6 @@
 #include <vector>
 
 namespace Poi {
-
   enum class TokenType {
     ARROW,
     DATA,
@@ -75,7 +74,6 @@ namespace Poi {
       std::shared_ptr<std::vector<Poi::Token>> tokens
     );
   };
-
 }
 
 #endif

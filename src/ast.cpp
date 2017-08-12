@@ -8,7 +8,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 namespace Poi {
-
   // This is used to signal errors in pattern matching.
   class MatchError : public Error {
   public:
@@ -33,7 +32,6 @@ namespace Poi {
     ) : Error (message, source_name, source, start_pos, end_pos) {
     };
   };
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////

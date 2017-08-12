@@ -11,7 +11,6 @@
 #include <unordered_map>
 
 namespace Poi {
-
   // Forward declarations to avoid mutually recursive headers
   class Function; // Declared in poi/ast.h
   class DataType; // Declared in poi/ast.h
@@ -76,7 +75,6 @@ namespace Poi {
     );
     std::string show(const Poi::StringPool &pool) const override;
   };
-
 }
 
 #endif

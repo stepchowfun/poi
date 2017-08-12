@@ -73,7 +73,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 namespace Poi {
-
   // If we encounter an error while parsing, we may backtrack and try a
   // different branch of execution. This may lead to more errors. If all the
   // branches lead to an error, we need to choose one of the errors to show
@@ -197,7 +196,6 @@ namespace Poi {
       }
     }
   };
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////

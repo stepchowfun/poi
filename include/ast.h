@@ -12,7 +12,6 @@
 #include <vector>
 
 namespace Poi {
-
   // Forward declarations to avoid mutually recursive headers
   class Value; // Declared in poi/value.h
   class DataTypeValue; // Declared in poi/value.h
@@ -289,7 +288,6 @@ namespace Poi {
       Poi::StringPool &pool
     ) const override;
   };
-
 }
 
 #endif

@@ -9,7 +9,6 @@
 #include <unordered_map>
 
 namespace Poi {
-
   // A StringPool assigns an ID to every string. Two strings will have the
   // same ID if and only if they are equal.
   class StringPool {
@@ -23,7 +22,6 @@ namespace Poi {
     std::unordered_map<size_t, std::string> reverse_pool;
     size_t counter;
   };
-
 }
 
 #endif

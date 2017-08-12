@@ -8,7 +8,6 @@
 #include <string>
 
 namespace Poi {
-
   class Error {
   private:
     std::string message;
@@ -32,7 +31,6 @@ namespace Poi {
     virtual ~Error();
     std::string what() const; // No trailing line break
   };
-
 }
 
 #endif

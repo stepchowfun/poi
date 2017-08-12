@@ -6,7 +6,6 @@
 #define POI_VERSION_H
 
 namespace Poi {
-
   // The version string
   extern const char * const VERSION;
 
@@ -15,7 +14,6 @@ namespace Poi {
 
   // 'release' or 'debug'
   extern const char * const BUILD_TYPE;
-
 }
 
 #endif
