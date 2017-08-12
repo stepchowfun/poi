@@ -1314,6 +1314,10 @@ Poi::ParseResult<Poi::Binding> parse_binding(
   // Construct the Binding.
   auto free_variables = std::make_shared<std::unordered_set<size_t>>();
   free_variables->insert(
+    definition.node->free_variables->begin(),
+    definition.node->free_variables->end()
+  );
+  free_variables->insert(
     body.node->free_variables->begin(),
     body.node->free_variables->end()
   );
