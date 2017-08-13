@@ -49,14 +49,14 @@ namespace Poi {
 
   class DataValue : public Value {
   public:
-    const std::shared_ptr<Poi::DataTypeValue> type;
+    const std::shared_ptr<Poi::DataType> type;
     const std::size_t constructor;
     const std::shared_ptr<
       std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
     > captures;
 
     explicit DataValue(
-      std::shared_ptr<Poi::DataTypeValue> type,
+      std::shared_ptr<Poi::DataType> type,
       std::size_t constructor,
       std::shared_ptr<
         std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
