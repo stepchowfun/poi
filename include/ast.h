@@ -190,6 +190,9 @@ namespace Poi {
     const std::shared_ptr<
       std::unordered_map<size_t, std::vector<size_t>>
     > constructor_params;
+    const std::shared_ptr<
+      std::unordered_map<size_t, std::shared_ptr<Poi::Term>>
+    > constructors;
 
     explicit DataType(
       size_t source_name,
@@ -200,7 +203,10 @@ namespace Poi {
       std::shared_ptr<std::vector<size_t>> constructor_names,
       std::shared_ptr<
         std::unordered_map<size_t, std::vector<size_t>>
-      > constructor_params
+      > constructor_params,
+      std::shared_ptr<
+        std::unordered_map<size_t, std::shared_ptr<Poi::Term>>
+      > constructors
     );
     std::string show(const Poi::StringPool &pool) const override;
     std::shared_ptr<Poi::Value> eval(
@@ -242,7 +248,7 @@ namespace Poi {
   // syntax for Data terms.
   class Data : public Term {
   public:
-    const std::shared_ptr<Poi::DataType> type;
+    const std::weak_ptr<Poi::DataType> type;
     const size_t constructor;
 
     explicit Data(
@@ -251,7 +257,7 @@ namespace Poi {
       size_t start_pos,
       size_t end_pos,
       std::shared_ptr<std::unordered_set<size_t>> free_variables,
-      std::shared_ptr<Poi::DataType> type,
+      std::weak_ptr<Poi::DataType> type,
       size_t constructor
     );
     std::string show(const Poi::StringPool &pool) const override;
