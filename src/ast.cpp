@@ -544,7 +544,6 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
   if (data_type_value) {
     // Make sure the constructor exists.
     auto constructor_params = data_type_value->data_type->constructor_params;
-    auto constructor_names = data_type_value->data_type->constructor_names;
     auto constructor = constructor_params->find(field);
     if (constructor == constructor_params->end()) {
       throw Poi::Error(
