@@ -69,9 +69,9 @@ void pattern_match(
     auto value_data = std::dynamic_pointer_cast<Poi::DataValue>(value);
     if (value_data) {
       if (
-        value_data->type->data_type->constructor_params->find(
+        value_data->type->constructor_params->find(
           constructor_pattern->constructor
-        ) == value_data->type->data_type->constructor_params->end()
+        ) == value_data->type->constructor_params->end()
       ) {
         throw Poi::Error(
           "'" + pool.find(constructor_pattern->constructor) +
@@ -85,7 +85,7 @@ void pattern_match(
       if (constructor_pattern->constructor == value_data->constructor) {
         if (
           constructor_pattern->parameters->size() ==
-          value_data->type->data_type->constructor_params->at(
+          value_data->type->constructor_params->at(
             value_data->constructor
           ).size()
         ) {
@@ -96,7 +96,7 @@ void pattern_match(
               pool,
               parameter,
               value_data->captures->at(
-                value_data->type->data_type->constructor_params->at(
+                value_data->type->constructor_params->at(
                   value_data->constructor
                 ).at(member_index)
               )
@@ -560,7 +560,7 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
     if (constructor_params->at(field).empty()) {
       // The constructor has no parameters. Instantiate immediately.
       return std::make_shared<Poi::DataValue>(
-        data_type_value,
+        data_type_value->data_type,
         field,
         std::make_shared<
           std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
@@ -687,7 +687,11 @@ std::shared_ptr<Poi::Value> Poi::Data::eval(
   for (auto iter : *free_variables) {
     captures->insert({ iter, environment.at(iter) });
   }
-  return std::make_shared<Poi::DataValue>(type, constructor, captures);
+  return std::make_shared<Poi::DataValue>(
+    type->data_type,
+    constructor,
+    captures
+  );
 }
 
 ///////////////////////////////////////////////////////////////////////////////

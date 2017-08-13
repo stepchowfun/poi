@@ -43,7 +43,7 @@ std::string Poi::DataTypeValue::show(const Poi::StringPool &pool) const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::DataValue::DataValue(
-  std::shared_ptr<Poi::DataTypeValue> type,
+  std::shared_ptr<Poi::DataType> type,
   std::size_t constructor,
   std::shared_ptr<
     std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
