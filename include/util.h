@@ -13,8 +13,8 @@
 namespace Poi {
   void variables_from_pattern(
     std::unordered_set<size_t> &variables,
-    std::shared_ptr<Poi::Pattern> pattern,
-    Poi::StringPool &pool
+    std::shared_ptr<const Poi::Pattern> pattern,
+    const Poi::StringPool &pool
   );
 }
 

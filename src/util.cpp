@@ -3,12 +3,12 @@
 
 void Poi::variables_from_pattern(
   std::unordered_set<size_t> &variables,
-  std::shared_ptr<Poi::Pattern> pattern,
-  Poi::StringPool &pool
+  std::shared_ptr<const Poi::Pattern> pattern,
+  const Poi::StringPool &pool
 ) {
-  auto variable_pattern = std::dynamic_pointer_cast<Poi::VariablePattern>(
-    pattern
-  );
+  auto variable_pattern = std::dynamic_pointer_cast<
+    const Poi::VariablePattern
+  >(pattern);
   if (variable_pattern) {
     if (variables.find(variable_pattern->variable) != variables.end()) {
       throw Poi::Error(
@@ -25,7 +25,7 @@ void Poi::variables_from_pattern(
   }
 
   auto constructor_pattern = std::dynamic_pointer_cast<
-    Poi::ConstructorPattern
+    const Poi::ConstructorPattern
   >(pattern);
   if (constructor_pattern) {
     for (auto &parameter : *(constructor_pattern->parameters)) {
