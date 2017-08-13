@@ -512,6 +512,45 @@ std::shared_ptr<Poi::Value> Poi::DataType::eval(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Data                                                                      //
+///////////////////////////////////////////////////////////////////////////////
+
+Poi::Data::Data(
+  size_t source_name,
+  size_t source,
+  size_t start_pos,
+  size_t end_pos,
+  std::shared_ptr<std::unordered_set<size_t>> free_variables,
+  std::weak_ptr<Poi::DataType> type,
+  size_t constructor
+) : Term(
+    source_name,
+    source,
+    start_pos,
+    end_pos,
+    free_variables
+), type(type), constructor(constructor) {
+}
+
+std::string Poi::Data::show(const Poi::StringPool &pool) const {
+  return "<" + type.lock()->show(pool) + "." + pool.find(constructor) + ">";
+}
+
+std::shared_ptr<Poi::Value> Poi::Data::eval(
+  std::shared_ptr<Poi::Term> term,
+  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+  Poi::StringPool &pool
+) const {
+  auto captures = std::make_shared<
+    std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
+  >();
+  for (auto iter : *free_variables) {
+    captures->insert({ iter, environment.at(iter) });
+  }
+  return std::make_shared<Poi::DataValue>(type.lock(), constructor, captures);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Member                                                                    //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -608,45 +647,6 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
       );
     }
   }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Data                                                                      //
-///////////////////////////////////////////////////////////////////////////////
-
-Poi::Data::Data(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<std::unordered_set<size_t>> free_variables,
-  std::weak_ptr<Poi::DataType> type,
-  size_t constructor
-) : Term(
-    source_name,
-    source,
-    start_pos,
-    end_pos,
-    free_variables
-), type(type), constructor(constructor) {
-}
-
-std::string Poi::Data::show(const Poi::StringPool &pool) const {
-  return "<" + type.lock()->show(pool) + "." + pool.find(constructor) + ">";
-}
-
-std::shared_ptr<Poi::Value> Poi::Data::eval(
-  std::shared_ptr<Poi::Term> term,
-  std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
-  Poi::StringPool &pool
-) const {
-  auto captures = std::make_shared<
-    std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
-  >();
-  for (auto iter : *free_variables) {
-    captures->insert({ iter, environment.at(iter) });
-  }
-  return std::make_shared<Poi::DataValue>(type.lock(), constructor, captures);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

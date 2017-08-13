@@ -216,6 +216,31 @@ namespace Poi {
     ) const override;
   };
 
+  // A Data term evaluates to a DataValue value. These terms show up in the
+  // automatically generated constructor functions. There is no concrete
+  // syntax for Data terms.
+  class Data : public Term {
+  public:
+    const std::weak_ptr<Poi::DataType> type;
+    const size_t constructor;
+
+    explicit Data(
+      size_t source_name,
+      size_t source,
+      size_t start_pos,
+      size_t end_pos,
+      std::shared_ptr<std::unordered_set<size_t>> free_variables,
+      std::weak_ptr<Poi::DataType> type,
+      size_t constructor
+    );
+    std::string show(const Poi::StringPool &pool) const override;
+    std::shared_ptr<Poi::Value> eval(
+      std::shared_ptr<Poi::Term> term,
+      std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
+      Poi::StringPool &pool
+    ) const override;
+  };
+
   // A Member `t.x` can refer to one of two things:
   // a) If `t` is a data type, then `t.x` refers to one of its constructors.
   //    Example: `bool.true`
@@ -234,31 +259,6 @@ namespace Poi {
       std::shared_ptr<std::unordered_set<size_t>> free_variables,
       std::shared_ptr<Poi::Term> object,
       size_t field
-    );
-    std::string show(const Poi::StringPool &pool) const override;
-    std::shared_ptr<Poi::Value> eval(
-      std::shared_ptr<Poi::Term> term,
-      std::unordered_map<size_t, std::shared_ptr<Poi::Value>> &environment,
-      Poi::StringPool &pool
-    ) const override;
-  };
-
-  // A Data term evaluates to a DataValue value. These terms show up in the
-  // automatically generated constructor functions. There is no concrete
-  // syntax for Data terms.
-  class Data : public Term {
-  public:
-    const std::weak_ptr<Poi::DataType> type;
-    const size_t constructor;
-
-    explicit Data(
-      size_t source_name,
-      size_t source,
-      size_t start_pos,
-      size_t end_pos,
-      std::shared_ptr<std::unordered_set<size_t>> free_variables,
-      std::weak_ptr<Poi::DataType> type,
-      size_t constructor
     );
     std::string show(const Poi::StringPool &pool) const override;
     std::shared_ptr<Poi::Value> eval(
