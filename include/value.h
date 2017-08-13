@@ -6,15 +6,12 @@
 #define POI_VALUE_H
 
 #include <memory>
+#include <poi/ast.h>
 #include <poi/string_pool.h>
 #include <string>
 #include <unordered_map>
 
 namespace Poi {
-  // Forward declarations to avoid mutually recursive headers
-  class Function; // Declared in poi/ast.h
-  class DataType; // Declared in poi/ast.h
-
   class Value {
   public:
     virtual ~Value();
