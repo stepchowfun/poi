@@ -1,6 +1,5 @@
 #include <poi/ast.h>
 #include <poi/error.h>
-#include <poi/util.h>
 #include <poi/value.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -148,13 +147,14 @@ Poi::Pattern::Pattern(
   size_t source_name,
   size_t source,
   size_t start_pos,
-  size_t end_pos
+  size_t end_pos,
+  std::shared_ptr<const std::unordered_set<size_t>> variables
 ) : Node(
     source_name,
     source,
     start_pos,
     end_pos
-  ) {
+  ), variables(variables) {
 }
 
 Poi::Pattern::~Pattern() {
@@ -169,12 +169,14 @@ Poi::VariablePattern::VariablePattern(
   size_t source,
   size_t start_pos,
   size_t end_pos,
-  size_t variable
+  size_t variable,
+  std::shared_ptr<const std::unordered_set<size_t>> variables
 ) : Pattern(
     source_name,
     source,
     start_pos,
-    end_pos
+    end_pos,
+    variables
   ), variable(variable) {
 }
 
@@ -194,12 +196,14 @@ Poi::ConstructorPattern::ConstructorPattern(
   size_t constructor,
   std::shared_ptr<
     const std::vector<std::shared_ptr<const Poi::Pattern>>
-  > parameters
+  > parameters,
+  std::shared_ptr<const std::unordered_set<size_t>> variables
 ) : Pattern(
     source_name,
     source,
     start_pos,
-    end_pos
+    end_pos,
+    variables
   ),
   constructor(constructor),
   parameters(parameters) {
@@ -448,10 +452,8 @@ std::shared_ptr<const Poi::Value> Poi::Binding::eval(
   > &environment,
   const Poi::StringPool &pool
 ) const {
-  std::unordered_set<size_t> variables;
-  Poi::variables_from_pattern(variables, pattern, pool);
   auto new_environment = environment;
-  for (auto &variable : variables) {
+  for (auto &variable : *(pattern->variables)) {
     new_environment.insert({
       variable,
       std::static_pointer_cast<Poi::Value>(

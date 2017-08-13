@@ -34,11 +34,14 @@ namespace Poi {
 
   class Pattern : public Node {
   public:
+    const std::shared_ptr<const std::unordered_set<size_t>> variables;
+
     explicit Pattern(
       size_t source_name,
       size_t source,
       size_t start_pos,
-      size_t end_pos
+      size_t end_pos,
+      std::shared_ptr<const std::unordered_set<size_t>> variables
     );
     virtual ~Pattern();
   };
@@ -52,7 +55,8 @@ namespace Poi {
       size_t source,
       size_t start_pos,
       size_t end_pos,
-      size_t variable
+      size_t variable,
+      std::shared_ptr<const std::unordered_set<size_t>> variables
     );
     std::string show(const Poi::StringPool &pool) const override;
   };
@@ -72,7 +76,8 @@ namespace Poi {
       size_t constructor,
       std::shared_ptr<
         const std::vector<std::shared_ptr<const Poi::Pattern>>
-      > parameters
+      > parameters,
+      std::shared_ptr<const std::unordered_set<size_t>> variables
     );
     std::string show(const Poi::StringPool &pool) const override;
   };
