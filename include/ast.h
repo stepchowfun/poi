@@ -12,9 +12,8 @@
 #include <vector>
 
 namespace Poi {
-  // Forward declarations to avoid mutually recursive headers
+  // A forward declaration to avoid mutually recursive headers
   class Value; // Declared in poi/value.h
-  class DataTypeValue; // Declared in poi/value.h
 
   class Node {
   public:
@@ -243,7 +242,7 @@ namespace Poi {
   // syntax for Data terms.
   class Data : public Term {
   public:
-    const std::shared_ptr<Poi::DataTypeValue> type;
+    const std::shared_ptr<Poi::DataType> type;
     const size_t constructor;
 
     explicit Data(
@@ -252,7 +251,7 @@ namespace Poi {
       size_t start_pos,
       size_t end_pos,
       std::shared_ptr<std::unordered_set<size_t>> free_variables,
-      std::shared_ptr<Poi::DataTypeValue> type,
+      std::shared_ptr<Poi::DataType> type,
       size_t constructor
     );
     std::string show(const Poi::StringPool &pool) const override;

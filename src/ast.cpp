@@ -578,7 +578,7 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
         start_pos,
         end_pos,
         free_variables,
-        data_type_value,
+        data_type_value->data_type,
         field
       );
 
@@ -661,7 +661,7 @@ Poi::Data::Data(
   size_t start_pos,
   size_t end_pos,
   std::shared_ptr<std::unordered_set<size_t>> free_variables,
-  std::shared_ptr<Poi::DataTypeValue> type, size_t constructor
+  std::shared_ptr<Poi::DataType> type, size_t constructor
 ) : Term(
     source_name,
     source,
@@ -686,11 +686,7 @@ std::shared_ptr<Poi::Value> Poi::Data::eval(
   for (auto iter : *free_variables) {
     captures->insert({ iter, environment.at(iter) });
   }
-  return std::make_shared<Poi::DataValue>(
-    type->data_type,
-    constructor,
-    captures
-  );
+  return std::make_shared<Poi::DataValue>(type, constructor, captures);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
