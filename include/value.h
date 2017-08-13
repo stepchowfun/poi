@@ -23,15 +23,15 @@ namespace Poi {
 
   class FunctionValue : public Value {
   public:
-    const std::shared_ptr<Poi::Function> function;
+    const std::shared_ptr<const Poi::Function> function;
     const std::shared_ptr<
-      std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
+      const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
     > captures;
 
     explicit FunctionValue(
-      std::shared_ptr<Poi::Function> function,
+      std::shared_ptr<const Poi::Function> function,
       std::shared_ptr<
-        std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
+        const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
       > captures
     );
     std::string show(const Poi::StringPool &pool) const override;
@@ -39,27 +39,27 @@ namespace Poi {
 
   class DataTypeValue : public Value {
   public:
-    const std::shared_ptr<Poi::DataType> data_type;
+    const std::shared_ptr<const Poi::DataType> data_type;
 
     explicit DataTypeValue(
-      std::shared_ptr<Poi::DataType> data_type
+      std::shared_ptr<const Poi::DataType> data_type
     );
     std::string show(const Poi::StringPool &pool) const override;
   };
 
   class DataValue : public Value {
   public:
-    const std::shared_ptr<Poi::DataType> type;
+    const std::shared_ptr<const Poi::DataType> type;
     const std::size_t constructor;
     const std::shared_ptr<
-      std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
+      const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
     > captures;
 
     explicit DataValue(
-      std::shared_ptr<Poi::DataType> type,
+      std::shared_ptr<const Poi::DataType> type,
       std::size_t constructor,
       std::shared_ptr<
-        std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
+        const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
       > captures
     );
     std::string show(const Poi::StringPool &pool) const override;
@@ -68,10 +68,10 @@ namespace Poi {
   // Used to "tie the knot" for recursive bindings
   class ProxyValue : public Value {
   public:
-    const std::shared_ptr<Poi::Value> value;
+    const std::shared_ptr<const Poi::Value> value;
 
     explicit ProxyValue(
-      std::shared_ptr<Poi::Value> value
+      std::shared_ptr<const Poi::Value> value
     );
     std::string show(const Poi::StringPool &pool) const override;
   };

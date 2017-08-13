@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Evaluate the program.
-    std::unordered_map<size_t, std::shared_ptr<Poi::Value>> environment;
+    std::unordered_map<size_t, std::shared_ptr<const Poi::Value>> environment;
     auto value = term->eval(term, environment, pool);
     std::cout << value->show(pool) << "\n";
   } catch(Poi::Error &e) {

@@ -66,12 +66,12 @@ namespace Poi {
   public:
     const size_t source_name;
     const size_t source;
-    const std::shared_ptr<std::vector<Poi::Token>> tokens;
+    const std::shared_ptr<const std::vector<Poi::Token>> tokens;
 
     explicit TokenStream(
       size_t source_name,
       size_t source,
-      std::shared_ptr<std::vector<Poi::Token>> tokens
+      std::shared_ptr<const std::vector<Poi::Token>> tokens
     );
   };
 }

@@ -14,9 +14,9 @@ Poi::Value::~Value() {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::FunctionValue::FunctionValue(
-  std::shared_ptr<Poi::Function> function,
+  std::shared_ptr<const Poi::Function> function,
   std::shared_ptr<
-    std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
+    const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
   > captures
 ) : function(function), captures(captures) {
 }
@@ -30,7 +30,7 @@ std::string Poi::FunctionValue::show(const Poi::StringPool &pool) const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::DataTypeValue::DataTypeValue(
-  std::shared_ptr<Poi::DataType> data_type
+  std::shared_ptr<const Poi::DataType> data_type
 ) : data_type(data_type) {
 }
 
@@ -43,10 +43,10 @@ std::string Poi::DataTypeValue::show(const Poi::StringPool &pool) const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::DataValue::DataValue(
-  std::shared_ptr<Poi::DataType> type,
+  std::shared_ptr<const Poi::DataType> type,
   std::size_t constructor,
   std::shared_ptr<
-    std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
+    const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
   > captures
 ) : type(type), constructor(constructor), captures(captures) {
 }
@@ -65,7 +65,7 @@ std::string Poi::DataValue::show(const Poi::StringPool &pool) const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::ProxyValue::ProxyValue(
-  std::shared_ptr<Poi::Value> value
+  std::shared_ptr<const Poi::Value> value
 ) : value(value) {
 }
 

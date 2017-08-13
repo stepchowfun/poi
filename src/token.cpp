@@ -29,7 +29,7 @@ std::string Poi::Token::show(Poi::StringPool &pool) const {
 Poi::TokenStream::TokenStream(
   size_t source_name,
   size_t source,
-  std::shared_ptr<std::vector<Poi::Token>> tokens
+  std::shared_ptr<const std::vector<Poi::Token>> tokens
 ) :
   source_name(source_name),
   source(source),

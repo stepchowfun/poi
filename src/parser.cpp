@@ -122,8 +122,8 @@ namespace Poi {
   template <typename T> class ParseResult {
   public:
     // Exactly one of these two should be a null pointer.
-    const std::shared_ptr<T> node;
-    const std::shared_ptr<ParseError> error;
+    const std::shared_ptr<const T> node;
+    const std::shared_ptr<const ParseError> error;
 
     // If `node` is present, this should point to the first token after `node`.
     // Otherwise, its value is unspecified.
@@ -131,21 +131,21 @@ namespace Poi {
 
     // Success constructor
     explicit ParseResult(
-      std::shared_ptr<T> node,
+      std::shared_ptr<const T> node,
       std::vector<Poi::Token>::const_iterator next
     ) : node(node), next(next) {
     }
 
     // Failure constructor
     explicit ParseResult(
-      std::shared_ptr<ParseError> error
+      std::shared_ptr<const ParseError> error
     ) : error(error) {
     }
 
     // Cast a ParseResult<T> to a ParseResult<U>, where T <: U
     template <typename U> ParseResult<U> upcast() const {
       if (node) {
-        return ParseResult<U>(std::static_pointer_cast<U>(node), next);
+        return ParseResult<U>(std::static_pointer_cast<const U>(node), next);
       } else {
         return ParseResult<U>(error);
       }
@@ -154,7 +154,7 @@ namespace Poi {
     // Cast a ParseResult<T> to a ParseResult<U>, where U <: T
     template <typename U> ParseResult<U> downcast() const {
       if (node) {
-        return ParseResult<U>(std::dynamic_pointer_cast<U>(node), next);
+        return ParseResult<U>(std::dynamic_pointer_cast<const U>(node), next);
       } else {
         return ParseResult<U>(error);
       }
@@ -222,7 +222,7 @@ enum class MemoType {
 using MemoKey = std::tuple<
   MemoType, // Represents the function doing the memoizing
   std::vector<Poi::Token>::const_iterator, // The start token
-  std::shared_ptr<Poi::Term> // The `application_prior` term
+  std::shared_ptr<const Poi::Term> // The `application_prior` term
 >;
 
 // The type of the memoization table
@@ -236,7 +236,7 @@ using MemoMap = std::unordered_map<
 MemoKey memo_key(
   MemoType type,
   std::vector<Poi::Token>::const_iterator start,
-  std::shared_ptr<Poi::Term> application_prior = nullptr
+  std::shared_ptr<const Poi::Term> application_prior = nullptr
 ) {
   return std::make_tuple(type, start, application_prior);
 }
@@ -245,7 +245,7 @@ MemoKey memo_key(
 template <typename T> Poi::ParseResult<T> memo_success(
   MemoMap &memo,
   const MemoKey &key,
-  std::shared_ptr<T> node,
+  std::shared_ptr<const T> node,
   std::vector<Poi::Token>::const_iterator next
 ) {
   auto parse_result = Poi::ParseResult<T>(node, next);
@@ -257,7 +257,7 @@ template <typename T> Poi::ParseResult<T> memo_success(
 template <typename T> Poi::ParseResult<T> memo_error(
   MemoMap &memo,
   const MemoKey &key,
-  std::shared_ptr<Poi::ParseError> error
+  std::shared_ptr<const Poi::ParseError> error
 ) {
   auto parse_result = Poi::ParseResult<T>(error);
   memo.insert({key, parse_result.template upcast<Poi::Node>()});
@@ -272,7 +272,7 @@ template <typename T> Poi::ParseResult<T> memo_error(
 
 Poi::ParseResult<Poi::Pattern> parse_pattern(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -280,7 +280,7 @@ Poi::ParseResult<Poi::Pattern> parse_pattern(
 
 Poi::ParseResult<Poi::VariablePattern> parse_variable_pattern(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -288,7 +288,7 @@ Poi::ParseResult<Poi::VariablePattern> parse_variable_pattern(
 
 Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -296,7 +296,7 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
 
 Poi::ParseResult<Poi::Term> parse_term(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -304,7 +304,7 @@ Poi::ParseResult<Poi::Term> parse_term(
 
 Poi::ParseResult<Poi::Variable> parse_variable(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -312,7 +312,7 @@ Poi::ParseResult<Poi::Variable> parse_variable(
 
 Poi::ParseResult<Poi::Function> parse_function(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -320,16 +320,16 @@ Poi::ParseResult<Poi::Function> parse_function(
 
 Poi::ParseResult<Poi::Application> parse_application(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter,
-  std::shared_ptr<Poi::Term> application_prior
+  std::shared_ptr<const Poi::Term> application_prior
 );
 
 Poi::ParseResult<Poi::Binding> parse_binding(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -337,7 +337,7 @@ Poi::ParseResult<Poi::Binding> parse_binding(
 
 Poi::ParseResult<Poi::DataType> parse_data_type(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -345,7 +345,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
 
 Poi::ParseResult<Poi::Member> parse_member(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -353,7 +353,7 @@ Poi::ParseResult<Poi::Member> parse_member(
 
 Poi::ParseResult<Poi::Match> parse_match(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -361,7 +361,7 @@ Poi::ParseResult<Poi::Match> parse_match(
 
 Poi::ParseResult<Poi::Term> parse_group(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -371,7 +371,7 @@ Poi::ParseResult<Poi::Term> parse_group(
 
 Poi::ParseResult<Poi::Pattern> parse_pattern(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -426,7 +426,7 @@ Poi::ParseResult<Poi::Pattern> parse_pattern(
 
 Poi::ParseResult<Poi::VariablePattern> parse_variable_pattern(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -484,7 +484,7 @@ Poi::ParseResult<Poi::VariablePattern> parse_variable_pattern(
 
 Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -554,7 +554,7 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
   // Parse the parameters. Note that the lexical analyzer guarantees
   // curly braces are matched.
   auto parameters = std::make_shared<
-    std::vector<std::shared_ptr<Poi::Pattern>>
+    std::vector<std::shared_ptr<const Poi::Pattern>>
   >();
   while (iter->type != Poi::TokenType::RIGHT_CURLY) {
     auto parameter = Poi::ParseResult<Poi::Pattern>(
@@ -613,7 +613,7 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
 
 Poi::ParseResult<Poi::Term> parse_term(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -692,7 +692,7 @@ Poi::ParseResult<Poi::Term> parse_term(
 
 Poi::ParseResult<Poi::Variable> parse_variable(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -779,7 +779,7 @@ Poi::ParseResult<Poi::Variable> parse_variable(
 
 Poi::ParseResult<Poi::Function> parse_function(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -916,11 +916,11 @@ Poi::ParseResult<Poi::Function> parse_function(
 
 Poi::ParseResult<Poi::Application> parse_application(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter,
-  std::shared_ptr<Poi::Term> application_prior
+  std::shared_ptr<const Poi::Term> application_prior
 ) {
   // Check if we can reuse a memoized result.
   auto key = memo_key(MemoType::APPLICATION, iter, application_prior);
@@ -1081,9 +1081,11 @@ Poi::ParseResult<Poi::Application> parse_application(
 
   // Construct the Application. Special care is taken to construct the tree
   // with left-associativity, even though we are parsing with right-recursion.
-  std::shared_ptr<Poi::Application> application;
+  std::shared_ptr<const Poi::Application> application;
   if (right_includes_left) {
-    application = std::dynamic_pointer_cast<Poi::Application>(right->node);
+    application = std::dynamic_pointer_cast<
+      const Poi::Application
+    >(right->node);
   } else {
     if (application_prior) {
       auto prior_of_left_free_variables = std::make_shared<
@@ -1156,7 +1158,7 @@ Poi::ParseResult<Poi::Application> parse_application(
 
 Poi::ParseResult<Poi::Binding> parse_binding(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -1341,7 +1343,7 @@ Poi::ParseResult<Poi::Binding> parse_binding(
 
 Poi::ParseResult<Poi::DataType> parse_data_type(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -1417,7 +1419,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
     std::unordered_map<size_t, std::vector<size_t>>
   >();
   auto constructors = std::make_shared<
-    std::unordered_map<size_t, std::shared_ptr<Poi::Term>>
+    std::unordered_map<size_t, std::shared_ptr<const Poi::Term>>
   >();
   std::vector<std::shared_ptr<Poi::Data>> data_terms;
   bool first = true;
@@ -1584,9 +1586,9 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
 
   // "Tie the knot" by giving the Data terms a reference to the DataType.
   for (auto &data_term : data_terms) {
-    const_cast<std::weak_ptr<Poi::DataType> &>(
+    const_cast<std::weak_ptr<const Poi::DataType> &>(
       data_term->type
-    ) = std::weak_ptr<Poi::DataType>(data_type);
+    ) = std::weak_ptr<const Poi::DataType>(data_type);
   }
 
   // Memoize and return the result.
@@ -1595,7 +1597,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
 
 Poi::ParseResult<Poi::Member> parse_member(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -1761,7 +1763,7 @@ Poi::ParseResult<Poi::Member> parse_member(
 
 Poi::ParseResult<Poi::Match> parse_match(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -1865,7 +1867,7 @@ Poi::ParseResult<Poi::Match> parse_match(
   // Parse the cases. Note that the lexical analyzer guarantees
   // curly braces are matched.
   auto cases = std::make_shared<
-    std::vector<std::shared_ptr<Poi::Function>>
+    std::vector<std::shared_ptr<const Poi::Function>>
   >();
   bool first = true;
   while (iter->type != Poi::TokenType::RIGHT_CURLY) {
@@ -1939,7 +1941,7 @@ Poi::ParseResult<Poi::Match> parse_match(
 
 Poi::ParseResult<Poi::Term> parse_group(
   MemoMap &memo,
-  Poi::StringPool &pool,
+  const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
   const std::unordered_set<size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
@@ -2043,9 +2045,9 @@ Poi::ParseResult<Poi::Term> parse_group(
 // Public interface                                                          //
 ///////////////////////////////////////////////////////////////////////////////
 
-std::shared_ptr<Poi::Term> Poi::parse(
+std::shared_ptr<const Poi::Term> Poi::parse(
   const Poi::TokenStream &token_stream,
-  Poi::StringPool &pool
+  const Poi::StringPool &pool
 ) {
   // The environment records which variables are currently in scope.
   std::unordered_set<size_t> environment;
