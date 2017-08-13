@@ -54,7 +54,7 @@ void pattern_match(
         iter->second
       );
       if (proxy_value) {
-        proxy_value->value = value;
+        const_cast<std::shared_ptr<Poi::Value> &>(proxy_value->value) = value;
       }
       environment.erase(iter);
     }
@@ -466,7 +466,10 @@ Poi::DataType::DataType(
   std::shared_ptr<std::vector<size_t>> constructor_names,
   std::shared_ptr<
     std::unordered_map<size_t, std::vector<size_t>>
-  > constructor_params
+  > constructor_params,
+  std::shared_ptr<
+    std::unordered_map<size_t, std::shared_ptr<Poi::Term>>
+  > constructors
 ) : Term(
     source_name,
     source,
@@ -475,7 +478,8 @@ Poi::DataType::DataType(
     free_variables
   ),
   constructor_names(constructor_names),
-  constructor_params(constructor_params) {
+  constructor_params(constructor_params),
+  constructors(constructors) {
 }
 
 std::string Poi::DataType::show(const Poi::StringPool &pool) const {
@@ -543,9 +547,8 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
   );
   if (data_type_value) {
     // Make sure the constructor exists.
-    auto constructor_params = data_type_value->data_type->constructor_params;
-    auto constructor = constructor_params->find(field);
-    if (constructor == constructor_params->end()) {
+    auto constructor = data_type_value->data_type->constructors->find(field);
+    if (constructor == data_type_value->data_type->constructors->end()) {
       throw Poi::Error(
         "'" + pool.find(field) + "' is not a constructor of " +
           data_type_value->show(pool),
@@ -556,68 +559,24 @@ std::shared_ptr<Poi::Value> Poi::Member::eval(
       );
     }
 
-    if (constructor_params->at(field).empty()) {
-      // The constructor has no parameters. Instantiate immediately.
-      return std::make_shared<Poi::DataValue>(
-        data_type_value->data_type,
-        field,
+    // Check if the constructor is a Function.
+    auto constructor_function = std::dynamic_pointer_cast<Poi::Function>(
+      constructor->second
+    );
+    if (constructor_function) {
+      return std::make_shared<Poi::FunctionValue>(
+        constructor_function,
         std::make_shared<
           std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
         >()
       );
     } else {
-      // The constructor has some parameters. Return a function.
-      auto free_variables = std::make_shared<std::unordered_set<size_t>>();
-      free_variables->insert(
-        constructor->second.begin(),
-        constructor->second.end()
-      );
-      auto data = std::make_shared<Poi::Data>(
-        source_name,
-        source,
-        start_pos,
-        end_pos,
-        free_variables,
-        data_type_value->data_type,
-        field
-      );
-
-      auto function = std::static_pointer_cast<Poi::Term>(data);
-      for (
-        auto iter = constructor->second.rbegin();
-        iter != constructor->second.rend();
-        ++iter
-      ) {
-        free_variables = std::make_shared<std::unordered_set<size_t>>();
-        free_variables->insert(
-          function->free_variables->begin(),
-          function->free_variables->end()
-        );
-        free_variables->erase(*iter);
-        auto variable_pattern = std::make_shared<Poi::VariablePattern>(
-          function->source_name,
-          function->source,
-          function->start_pos,
-          function->end_pos,
-          *iter
-        );
-        function = std::make_shared<Poi::Function>(
-          function->source_name,
-          function->source,
-          function->start_pos,
-          function->end_pos,
-          free_variables,
-          variable_pattern,
-          function
-        );
-      }
-
-      auto captures = std::make_shared<
-        std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
-      >();
-      return std::make_shared<Poi::FunctionValue>(
-        std::dynamic_pointer_cast<Poi::Function>(function),
-        captures
+      return std::make_shared<Poi::DataValue>(
+        std::dynamic_pointer_cast<Poi::Data>(constructor->second)->type.lock(),
+        field,
+        std::make_shared<
+          std::unordered_map<size_t, std::shared_ptr<Poi::Value>>
+        >()
       );
     }
   } else {
@@ -661,7 +620,8 @@ Poi::Data::Data(
   size_t start_pos,
   size_t end_pos,
   std::shared_ptr<std::unordered_set<size_t>> free_variables,
-  std::shared_ptr<Poi::DataType> type, size_t constructor
+  std::weak_ptr<Poi::DataType> type,
+  size_t constructor
 ) : Term(
     source_name,
     source,
@@ -672,7 +632,7 @@ Poi::Data::Data(
 }
 
 std::string Poi::Data::show(const Poi::StringPool &pool) const {
-  return "<" + type->show(pool) + "." + pool.find(constructor) + ">";
+  return "<" + type.lock()->show(pool) + "." + pool.find(constructor) + ">";
 }
 
 std::shared_ptr<Poi::Value> Poi::Data::eval(
@@ -686,7 +646,7 @@ std::shared_ptr<Poi::Value> Poi::Data::eval(
   for (auto iter : *free_variables) {
     captures->insert({ iter, environment.at(iter) });
   }
-  return std::make_shared<Poi::DataValue>(type, constructor, captures);
+  return std::make_shared<Poi::DataValue>(type.lock(), constructor, captures);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

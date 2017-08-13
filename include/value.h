@@ -68,7 +68,7 @@ namespace Poi {
   // Used to "tie the knot" for recursive bindings
   class ProxyValue : public Value {
   public:
-    std::shared_ptr<Poi::Value> value;
+    const std::shared_ptr<Poi::Value> value;
 
     explicit ProxyValue(
       std::shared_ptr<Poi::Value> value

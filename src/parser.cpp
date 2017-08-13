@@ -1413,9 +1413,13 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
   // Parse the constructors. Note that the lexical analyzer guarantees
   // parentheses are matched.
   auto constructor_names = std::make_shared<std::vector<size_t>>();
-  auto constructors = std::make_shared<
+  auto constructor_params = std::make_shared<
     std::unordered_map<size_t, std::vector<size_t>>
   >();
+  auto constructors = std::make_shared<
+    std::unordered_map<size_t, std::shared_ptr<Poi::Term>>
+  >();
+  std::vector<std::shared_ptr<Poi::Data>> data_terms;
   bool first = true;
   while (iter->type != Poi::TokenType::RIGHT_CURLY) {
     // Parse the SEPARATOR if applicable.
@@ -1495,8 +1499,8 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
     }
 
     // Check whether a constructor of this name already exists.
-    auto existing_constructor = constructors->find(name);
-    if (existing_constructor != constructors->end()) {
+    auto existing_constructor = constructor_params->find(name);
+    if (existing_constructor != constructor_params->end()) {
       return memo_error<Poi::DataType>(
         memo,
         key,
@@ -1513,9 +1517,54 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
       );
     }
 
-    // Construct the DataConstructor.
+    // Register the constructor name and parameters.
     constructor_names->push_back(name);
-    constructors->insert({ name, params });
+    constructor_params->insert({ name, params });
+
+    // Construct the constructor.
+    auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+    free_variables->insert(
+      params.begin(),
+      params.end()
+    );
+    auto data_term = std::make_shared<Poi::Data>(
+      constructor_start->source_name,
+      constructor_start->source,
+      constructor_start->start_pos,
+      (iter - 1)->end_pos,
+      free_variables,
+      std::weak_ptr<Poi::DataType>(),
+      name
+    );
+    data_terms.push_back(data_term);
+    auto constructor = std::static_pointer_cast<Poi::Term>(data_term);
+    for (auto iter = params.rbegin(); iter != params.rend(); ++iter) {
+      free_variables = std::make_shared<std::unordered_set<size_t>>();
+      free_variables->insert(
+        constructor->free_variables->begin(),
+        constructor->free_variables->end()
+      );
+      free_variables->erase(*iter);
+      auto variable_pattern = std::make_shared<Poi::VariablePattern>(
+        constructor->source_name,
+        constructor->source,
+        constructor->start_pos,
+        constructor->end_pos,
+        *iter
+      );
+      constructor = std::static_pointer_cast<Poi::Term>(
+        std::make_shared<Poi::Function>(
+          constructor->source_name,
+          constructor->source,
+          constructor->start_pos,
+          constructor->end_pos,
+          free_variables,
+          variable_pattern,
+          constructor
+        )
+      );
+    }
+    constructors->insert({ name, constructor });
   }
 
   // Skip the closing RIGHT_CURLY.
@@ -1529,8 +1578,16 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
     (iter - 1)->end_pos,
     std::make_shared<std::unordered_set<size_t>>(),
     constructor_names,
+    constructor_params,
     constructors
   );
+
+  // "Tie the knot" by giving the Data terms a reference to the DataType.
+  for (auto &data_term : data_terms) {
+    const_cast<std::weak_ptr<Poi::DataType> &>(
+      data_term->type
+    ) = std::weak_ptr<Poi::DataType>(data_type);
+  }
 
   // Memoize and return the result.
   return memo_success<Poi::DataType>(memo, key, data_type, iter);
