@@ -36,6 +36,12 @@ public:
       iter != stack_trace.rend();
       ++iter
     ) {
+      if (std::dynamic_pointer_cast<const Poi::Binding>(*iter)) {
+        // Don't show frames corresponding to Binding expressions, because
+        // those are not very helpful.
+        continue;
+      }
+
       new_message += "\n" + Poi::get_location(
         pool.find((*iter)->source_name),
         pool.find((*iter)->source),
