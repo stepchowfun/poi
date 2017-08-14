@@ -238,7 +238,7 @@ namespace Poi {
   // syntax for Data terms.
   class Data : public Term {
   public:
-    const std::weak_ptr<const Poi::DataType> type;
+    const std::weak_ptr<const Poi::DataType> data_type;
     const size_t constructor;
 
     explicit Data(
@@ -247,7 +247,7 @@ namespace Poi {
       size_t start_pos,
       size_t end_pos,
       std::shared_ptr<const std::unordered_set<size_t>> free_variables,
-      std::weak_ptr<const Poi::DataType> type,
+      std::weak_ptr<const Poi::DataType> data_type,
       size_t constructor
     );
     std::string show(const Poi::StringPool &pool) const override;
