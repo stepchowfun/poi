@@ -118,10 +118,11 @@ int main(int argc, char *argv[]) {
 
     // Evaluate the program.
     std::unordered_map<size_t, std::shared_ptr<const Poi::Value>> environment;
+    std::vector<std::shared_ptr<const Poi::Term>> stack_trace;
     auto value = Poi::trampoline(
-      term->eval(term, environment, pool, 0),
-      pool,
-      0
+      term->eval(term, environment, stack_trace, pool),
+      stack_trace,
+      pool
     );
     std::cout << value->show(pool) << "\n";
   } catch(Poi::Error &e) {

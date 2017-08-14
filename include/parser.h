@@ -12,9 +12,9 @@
 
 namespace Poi {
   // Parse a stream of tokens.
-  std::shared_ptr<const Poi::Term> parse(
-    const Poi::TokenStream &token_stream,
-    const Poi::StringPool &pool
+  std::shared_ptr<const Term> parse(
+    const TokenStream &token_stream,
+    const StringPool &pool
   );
 }
 

@@ -8,20 +8,18 @@
 
 std::shared_ptr<const Poi::Value> Poi::trampoline(
   std::shared_ptr<const Poi::Value> value,
-  const Poi::StringPool &pool,
-  size_t depth
+  std::vector<std::shared_ptr<const Poi::Term>> &stack_trace,
+  const Poi::StringPool &pool
 ) {
   auto result = value;
   while (true) {
-    auto thunk_value = std::dynamic_pointer_cast<
-      const Poi::ThunkValue
-    >(result);
+    auto thunk_value = std::dynamic_pointer_cast<const ThunkValue>(result);
     if (thunk_value) {
       result = thunk_value->term->eval(
         thunk_value->term,
         *(thunk_value->environment),
-        pool,
-        depth
+        stack_trace,
+        pool
       );
     } else {
       break;
@@ -104,7 +102,7 @@ std::string Poi::ProxyValue::show(const Poi::StringPool &pool) const {
   if (value) {
     return value->show(pool);
   } else {
-    throw Poi::Error("Undefined.");
+    throw Error("Undefined.");
   }
 }
 

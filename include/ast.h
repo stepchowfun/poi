@@ -29,7 +29,7 @@ namespace Poi {
       size_t end_pos
     );
     virtual ~Node();
-    virtual std::string show(const Poi::StringPool &pool) const = 0;
+    virtual std::string show(const StringPool &pool) const = 0;
   };
 
   class Pattern : public Node {
@@ -58,14 +58,14 @@ namespace Poi {
       size_t variable,
       std::shared_ptr<const std::unordered_set<size_t>> variables
     );
-    std::string show(const Poi::StringPool &pool) const override;
+    std::string show(const StringPool &pool) const override;
   };
 
   class ConstructorPattern : public Pattern {
   public:
     const size_t constructor;
     const std::shared_ptr<
-      const std::vector<std::shared_ptr<const Poi::Pattern>>
+      const std::vector<std::shared_ptr<const Pattern>>
     > parameters;
 
     explicit ConstructorPattern(
@@ -75,11 +75,11 @@ namespace Poi {
       size_t end_pos,
       size_t constructor,
       std::shared_ptr<
-        const std::vector<std::shared_ptr<const Poi::Pattern>>
+        const std::vector<std::shared_ptr<const Pattern>>
       > parameters,
       std::shared_ptr<const std::unordered_set<size_t>> variables
     );
-    std::string show(const Poi::StringPool &pool) const override;
+    std::string show(const StringPool &pool) const override;
   };
 
   class Term : public Node {
@@ -94,13 +94,13 @@ namespace Poi {
       std::shared_ptr<const std::unordered_set<size_t>> free_variables
     );
     virtual ~Term();
-    virtual std::shared_ptr<const Poi::Value> eval(
-      std::shared_ptr<const Poi::Term> term,
+    virtual std::shared_ptr<const Value> eval(
+      std::shared_ptr<const Term> term,
       const std::unordered_map<
-        size_t, std::shared_ptr<const Poi::Value>
+        size_t, std::shared_ptr<const Value>
       > &environment,
-      const Poi::StringPool &pool,
-      size_t depth
+      std::vector<std::shared_ptr<const Term>> &stack_trace,
+      const StringPool &pool
     ) const = 0;
   };
 
@@ -116,21 +116,21 @@ namespace Poi {
       std::shared_ptr<const std::unordered_set<size_t>> free_variables,
       size_t variable
     );
-    std::string show(const Poi::StringPool &pool) const override;
-    std::shared_ptr<const Poi::Value> eval(
-      std::shared_ptr<const Poi::Term> term,
+    std::string show(const StringPool &pool) const override;
+    std::shared_ptr<const Value> eval(
+      std::shared_ptr<const Term> term,
       const std::unordered_map<
-        size_t, std::shared_ptr<const Poi::Value>
+        size_t, std::shared_ptr<const Value>
       > &environment,
-      const Poi::StringPool &pool,
-      size_t depth
+      std::vector<std::shared_ptr<const Term>> &stack_trace,
+      const StringPool &pool
     ) const override;
   };
 
   class Function : public Term {
   public:
-    const std::shared_ptr<const Poi::Pattern> pattern;
-    const std::shared_ptr<const Poi::Term> body;
+    const std::shared_ptr<const Pattern> pattern;
+    const std::shared_ptr<const Term> body;
 
     explicit Function(
       size_t source_name,
@@ -138,24 +138,24 @@ namespace Poi {
       size_t start_pos,
       size_t end_pos,
       std::shared_ptr<const std::unordered_set<size_t>> free_variables,
-      std::shared_ptr<const Poi::Pattern> pattern,
-      std::shared_ptr<const Poi::Term> body
+      std::shared_ptr<const Pattern> pattern,
+      std::shared_ptr<const Term> body
     );
-    std::string show(const Poi::StringPool &pool) const override;
-    std::shared_ptr<const Poi::Value> eval(
-      std::shared_ptr<const Poi::Term> term,
+    std::string show(const StringPool &pool) const override;
+    std::shared_ptr<const Value> eval(
+      std::shared_ptr<const Term> term,
       const std::unordered_map<
-        size_t, std::shared_ptr<const Poi::Value>
+        size_t, std::shared_ptr<const Value>
       > &environment,
-      const Poi::StringPool &pool,
-      size_t depth
+      std::vector<std::shared_ptr<const Term>> &stack_trace,
+      const StringPool &pool
     ) const override;
   };
 
   class Application : public Term {
   public:
-    const std::shared_ptr<const Poi::Term> function;
-    const std::shared_ptr<const Poi::Term> operand;
+    const std::shared_ptr<const Term> function;
+    const std::shared_ptr<const Term> operand;
 
     explicit Application(
       size_t source_name,
@@ -163,25 +163,25 @@ namespace Poi {
       size_t start_pos,
       size_t end_pos,
       std::shared_ptr<const std::unordered_set<size_t>> free_variables,
-      std::shared_ptr<const Poi::Term> function,
-      std::shared_ptr<const Poi::Term> operand
+      std::shared_ptr<const Term> function,
+      std::shared_ptr<const Term> operand
     );
-    std::string show(const Poi::StringPool &pool) const override;
-    std::shared_ptr<const Poi::Value> eval(
-      std::shared_ptr<const Poi::Term> term,
+    std::string show(const StringPool &pool) const override;
+    std::shared_ptr<const Value> eval(
+      std::shared_ptr<const Term> term,
       const std::unordered_map<
-        size_t, std::shared_ptr<const Poi::Value>
+        size_t, std::shared_ptr<const Value>
       > &environment,
-      const Poi::StringPool &pool,
-      size_t depth
+      std::vector<std::shared_ptr<const Term>> &stack_trace,
+      const StringPool &pool
     ) const override;
   };
 
   class Binding : public Term {
   public:
-    const std::shared_ptr<const Poi::Pattern> pattern;
-    const std::shared_ptr<const Poi::Term> definition;
-    const std::shared_ptr<const Poi::Term> body;
+    const std::shared_ptr<const Pattern> pattern;
+    const std::shared_ptr<const Term> definition;
+    const std::shared_ptr<const Term> body;
 
     explicit Binding(
       size_t source_name,
@@ -189,18 +189,18 @@ namespace Poi {
       size_t start_pos,
       size_t end_pos,
       std::shared_ptr<const std::unordered_set<size_t>> free_variables,
-      std::shared_ptr<const Poi::Pattern> pattern,
-      std::shared_ptr<const Poi::Term> definition,
-      std::shared_ptr<const Poi::Term> body
+      std::shared_ptr<const Pattern> pattern,
+      std::shared_ptr<const Term> definition,
+      std::shared_ptr<const Term> body
     );
-    std::string show(const Poi::StringPool &pool) const override;
-    std::shared_ptr<const Poi::Value> eval(
-      std::shared_ptr<const Poi::Term> term,
+    std::string show(const StringPool &pool) const override;
+    std::shared_ptr<const Value> eval(
+      std::shared_ptr<const Term> term,
       const std::unordered_map<
-        size_t, std::shared_ptr<const Poi::Value>
+        size_t, std::shared_ptr<const Value>
       > &environment,
-      const Poi::StringPool &pool,
-      size_t depth
+      std::vector<std::shared_ptr<const Term>> &stack_trace,
+      const StringPool &pool
     ) const override;
   };
 
@@ -211,7 +211,7 @@ namespace Poi {
       const std::unordered_map<size_t, std::vector<size_t>>
     > constructor_params;
     const std::shared_ptr<
-      const std::unordered_map<size_t, std::shared_ptr<const Poi::Term>>
+      const std::unordered_map<size_t, std::shared_ptr<const Term>>
     > constructors;
 
     explicit DataType(
@@ -225,17 +225,17 @@ namespace Poi {
         const std::unordered_map<size_t, std::vector<size_t>>
       > constructor_params,
       std::shared_ptr<
-        const std::unordered_map<size_t, std::shared_ptr<const Poi::Term>>
+        const std::unordered_map<size_t, std::shared_ptr<const Term>>
       > constructors
     );
-    std::string show(const Poi::StringPool &pool) const override;
-    std::shared_ptr<const Poi::Value> eval(
-      std::shared_ptr<const Poi::Term> term,
+    std::string show(const StringPool &pool) const override;
+    std::shared_ptr<const Value> eval(
+      std::shared_ptr<const Term> term,
       const std::unordered_map<
-        size_t, std::shared_ptr<const Poi::Value>
+        size_t, std::shared_ptr<const Value>
       > &environment,
-      const Poi::StringPool &pool,
-      size_t depth
+      std::vector<std::shared_ptr<const Term>> &stack_trace,
+      const StringPool &pool
     ) const override;
   };
 
@@ -244,7 +244,7 @@ namespace Poi {
   // syntax for Data terms.
   class Data : public Term {
   public:
-    const std::weak_ptr<const Poi::DataType> data_type;
+    const std::weak_ptr<const DataType> data_type;
     const size_t constructor;
 
     explicit Data(
@@ -253,17 +253,17 @@ namespace Poi {
       size_t start_pos,
       size_t end_pos,
       std::shared_ptr<const std::unordered_set<size_t>> free_variables,
-      std::weak_ptr<const Poi::DataType> data_type,
+      std::weak_ptr<const DataType> data_type,
       size_t constructor
     );
-    std::string show(const Poi::StringPool &pool) const override;
-    std::shared_ptr<const Poi::Value> eval(
-      std::shared_ptr<const Poi::Term> term,
+    std::string show(const StringPool &pool) const override;
+    std::shared_ptr<const Value> eval(
+      std::shared_ptr<const Term> term,
       const std::unordered_map<
-        size_t, std::shared_ptr<const Poi::Value>
+        size_t, std::shared_ptr<const Value>
       > &environment,
-      const Poi::StringPool &pool,
-      size_t depth
+      std::vector<std::shared_ptr<const Term>> &stack_trace,
+      const StringPool &pool
     ) const override;
   };
 
@@ -274,7 +274,7 @@ namespace Poi {
   //    Example: `person.name`
   class Member : public Term {
   public:
-    const std::shared_ptr<const Poi::Term> object;
+    const std::shared_ptr<const Term> object;
     const size_t field;
 
     explicit Member(
@@ -283,25 +283,25 @@ namespace Poi {
       size_t start_pos,
       size_t end_pos,
       std::shared_ptr<const std::unordered_set<size_t>> free_variables,
-      std::shared_ptr<const Poi::Term> object,
+      std::shared_ptr<const Term> object,
       size_t field
     );
-    std::string show(const Poi::StringPool &pool) const override;
-    std::shared_ptr<const Poi::Value> eval(
-      std::shared_ptr<const Poi::Term> term,
+    std::string show(const StringPool &pool) const override;
+    std::shared_ptr<const Value> eval(
+      std::shared_ptr<const Term> term,
       const std::unordered_map<
-        size_t, std::shared_ptr<const Poi::Value>
+        size_t, std::shared_ptr<const Value>
       > &environment,
-      const Poi::StringPool &pool,
-      size_t depth
+      std::vector<std::shared_ptr<const Term>> &stack_trace,
+      const StringPool &pool
     ) const override;
   };
 
   class Match : public Term {
   public:
-    const std::shared_ptr<const Poi::Term> discriminee;
+    const std::shared_ptr<const Term> discriminee;
     const std::shared_ptr<
-      const std::vector<std::shared_ptr<const Poi::Function>>
+      const std::vector<std::shared_ptr<const Function>>
     > cases;
 
     explicit Match(
@@ -310,19 +310,19 @@ namespace Poi {
       size_t start_pos,
       size_t end_pos,
       std::shared_ptr<const std::unordered_set<size_t>> free_variables,
-      std::shared_ptr<const Poi::Term> discriminee,
+      std::shared_ptr<const Term> discriminee,
       std::shared_ptr<
-        const std::vector<std::shared_ptr<const Poi::Function>>
+        const std::vector<std::shared_ptr<const Function>>
       > cases
     );
-    std::string show(const Poi::StringPool &pool) const override;
-    std::shared_ptr<const Poi::Value> eval(
-      std::shared_ptr<const Poi::Term> term,
+    std::string show(const StringPool &pool) const override;
+    std::shared_ptr<const Value> eval(
+      std::shared_ptr<const Term> term,
       const std::unordered_map<
-        size_t, std::shared_ptr<const Poi::Value>
+        size_t, std::shared_ptr<const Value>
       > &environment,
-      const Poi::StringPool &pool,
-      size_t depth
+      std::vector<std::shared_ptr<const Term>> &stack_trace,
+      const StringPool &pool
     ) const override;
   };
 }

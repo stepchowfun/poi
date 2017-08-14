@@ -39,7 +39,7 @@ namespace Poi {
 
   class Token {
   public:
-    const Poi::TokenType type;
+    const TokenType type;
     const size_t literal;
     const size_t source_name;
     const size_t source;
@@ -49,7 +49,7 @@ namespace Poi {
     const bool explicit_separator; // Only used for SEPARATOR tokens
 
     explicit Token(
-      Poi::TokenType type,
+      TokenType type,
       size_t literal,
       size_t source_name,
       size_t source,
@@ -57,19 +57,19 @@ namespace Poi {
       size_t end_pos,
       bool explicit_separator
     );
-    std::string show(Poi::StringPool &pool) const;
+    std::string show(StringPool &pool) const;
   };
 
   class TokenStream {
   public:
     const size_t source_name;
     const size_t source;
-    const std::shared_ptr<const std::vector<Poi::Token>> tokens;
+    const std::shared_ptr<const std::vector<Token>> tokens;
 
     explicit TokenStream(
       size_t source_name,
       size_t source,
-      std::shared_ptr<const std::vector<Poi::Token>> tokens
+      std::shared_ptr<const std::vector<Token>> tokens
     );
   };
 }

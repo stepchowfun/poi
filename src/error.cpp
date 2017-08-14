@@ -1,31 +1,23 @@
 #include <poi/error.h>
 
-Poi::Error::Error(const std::string &message) : message(message) {
-}
-
-Poi::Error::Error(
-  const std::string &message,
-  const std::string &source_name,
-  const std::string &source
-) {
-  // Output the source name and message.
-  this->message = message + "\nLocation: " + source_name;
-}
-
-Poi::Error::Error(
-  const std::string &message,
+void get_location_info(
   const std::string &source_name,
   const std::string &source,
-  size_t start_pos,
-  size_t end_pos
+  size_t start_pos, // Inclusive
+  size_t end_pos, // Exclusive
+  size_t &start_line,
+  size_t &start_col,
+  size_t &end_line,
+  size_t &end_col,
+  size_t &context_start_pos,
+  size_t &context_end_pos
 ) {
-  // Compute line numbers, column numbers, and context boundaries.
-  size_t start_line = 0;
-  size_t start_col = 0;
-  size_t end_line = 0;
-  size_t end_col = 0;
-  size_t context_start_pos = 0;
-  size_t context_end_pos = source.size();
+  start_line = 0;
+  start_col = 0;
+  end_line = 0;
+  end_col = 0;
+  context_start_pos = 0;
+  context_end_pos = source.size();
   size_t line_number = 0;
   size_t col_number = 0;
   bool found_start = false;
@@ -55,25 +47,102 @@ Poi::Error::Error(
       ++col_number;
     }
   }
-  auto context = source.substr(
-    context_start_pos,
-    context_end_pos - context_start_pos
-  );
+}
 
-  // Output the source name, position, and message.
+std::string Poi::get_location(
+  const std::string &source_name,
+  const std::string &source,
+  size_t start_pos,
+  size_t end_pos
+) {
+  size_t start_line = 0;
+  size_t start_col = 0;
+  size_t end_line = 0;
+  size_t end_col = 0;
+  size_t context_start_pos = 0;
+  size_t context_end_pos = 0;
+  get_location_info(
+    source_name,
+    source,
+    start_pos,
+    end_pos,
+    start_line,
+    start_col,
+    end_line,
+    end_col,
+    context_start_pos,
+    context_end_pos
+  );
   if (end_pos == start_pos || end_pos == start_pos + 1) {
-    this->message = message +
-      "\nLocation: " + source_name +
+    return source_name +
       " @ " + std::to_string(start_line + 1) +
       ":" + std::to_string(start_col + 1);
   } else {
-    this->message = message +
-      "\nLocation: " + source_name +
+    return source_name +
       " @ " + std::to_string(start_line + 1) +
       ":" + std::to_string(start_col + 1) +
       " - " + std::to_string(end_line + 1) +
       ":" + std::to_string(end_col);
   }
+}
+
+Poi::Error::Error() {
+}
+
+Poi::Error::Error(const std::string &message) : message(message) {
+}
+
+Poi::Error::Error(
+  const std::string &message,
+  const std::string &source_name,
+  const std::string &source
+) {
+  // Output the source name and message.
+  this->message = message + "\nLocation: " + source_name;
+}
+
+void Poi::Error::update(const std::string &message) {
+  this->message = message;
+}
+
+Poi::Error::Error(
+  const std::string &message,
+  const std::string &source_name,
+  const std::string &source,
+  size_t start_pos,
+  size_t end_pos
+) {
+  // Report the location of the error.
+  size_t start_line = 0;
+  size_t start_col = 0;
+  size_t end_line = 0;
+  size_t end_col = 0;
+  size_t context_start_pos = 0;
+  size_t context_end_pos = 0;
+  get_location_info(
+    source_name,
+    source,
+    start_pos,
+    end_pos,
+    start_line,
+    start_col,
+    end_line,
+    end_col,
+    context_start_pos,
+    context_end_pos
+  );
+  this->message = message + "\nLocation: " + get_location(
+    source_name,
+    source,
+    start_pos,
+    end_pos
+  );
+
+  // Extract the context from the source.
+  auto context = source.substr(
+    context_start_pos,
+    context_end_pos - context_start_pos
+  );
 
   // Check if the context has only whitespace.
   auto only_whitespace = true;
@@ -84,7 +153,7 @@ Poi::Error::Error(
     }
   }
 
-  // If there is nothing but whitespace, don't bother.
+  // If the context has nothing but whitespace, don't bother printing it.
   if (!only_whitespace) {
     // Output the context.
     this->message += "\n\n" + context + "\n";
@@ -94,9 +163,8 @@ Poi::Error::Error(
       // Before printing the carets, indent until we are at the right column.
       for (size_t i = 0; i < start_col; ++i) {
         if (source[start_pos + i] == '\t') {
-          // Assume a tab takes up 8 spaces in whatever program
-          // this error message is being displayed in. Not ideal,
-          // but what else can we do?
+          // Assume a tab takes up 8 spaces in whatever program this error
+          // message is being displayed in. Not ideal, but what else can we do?
           this->message += "        ";
         } else {
           this->message += " ";
@@ -106,17 +174,16 @@ Poi::Error::Error(
       // Add the carets to highlight the problematic code.
       for (size_t j = 0; j < end_col - start_col; ++j) {
         if (source[start_pos + start_col + j] == '\t') {
-          // Assume a tab takes up 8 carets in whatever program
-          // this error message is being displayed in. Not ideal,
-          // but what else can we do?
+          // Assume a tab takes up 8 carets in whatever program this error
+          // message is being displayed in. Not ideal, but what else can we do?
           this->message += "^^^^^^^^";
         } else {
           this->message += "^";
         }
       }
 
-      // We have a line feed before the context,
-      // so we add one after for symmetry.
+      // We have a line feed before the context, so we add one after for
+      // symmetry.
       this->message += "\n";
     }
   }
