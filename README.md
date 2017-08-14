@@ -29,13 +29,13 @@ Bindings:
 
 Algebraic data types and pattern matching:
 
-    bool = data {true, false}
+    bool = {true, false}
     not = x -> match x {
       {true} -> bool.false
       {false} -> bool.true
     }
 
-    option = data {none, some value}
+    option = {none, some value}
     map = f -> x -> match x {
       {none} -> option.none
       {some value} -> option.some (f value)

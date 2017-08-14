@@ -26,7 +26,7 @@
       (Variable | Application | DataType | Member | Match | Group)
       (Variable | DataType | Member | Match | Group)
     Binding = Pattern EQUALS Term SEPARATOR Term
-    DataType = DATA LEFT_CURLY DataConstructorList RIGHT_CURLY
+    DataType = LEFT_CURLY DataConstructorList RIGHT_CURLY
     DataConstructorList = | DataConstructor DataConstructorTail
     DataConstructorTail = | SEPARATOR DataConstructor DataConstructorTail
     DataConstructor = IDENTIFIER DataConstructorParams
@@ -78,8 +78,16 @@ namespace Poi {
   // to the user. To pick the most relevant one, we assign each error a
   // confidence level.
   enum class ErrorConfidence {
-    LOW,
-    HIGH
+    LOW, // The error provides no useful information other than the fact that
+         // the parse failed. Hopefully another branch will succeed or fail
+         // with a more useful error.
+    MED, // The error provides some useful information about the failure, but
+         // we aren't 100% confident that this is the right error to show the
+         // user. Another branch may succeed or fail with a more useful error.
+    HIGH // This is definitely the error we will show to the user. We are so
+         // confident in this error that it actually takes precedence over a
+         // successful branch (because we would have received a failure later
+         // on anyway).
   };
 
   // This is just like Poi::Error, except it also includes a confidence level.
@@ -518,10 +526,7 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
   }
 
   // Parse the LEFT_CURLY.
-  if (
-    iter == token_stream.tokens->end() ||
-    iter->type != Poi::TokenType::LEFT_CURLY
-  ) {
+  if (iter->type != Poi::TokenType::LEFT_CURLY) {
     return memo_error<Poi::ConstructorPattern>(
       memo,
       key,
@@ -548,7 +553,7 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
         pool.find(iter->source),
         iter->start_pos,
         iter->end_pos,
-        Poi::ErrorConfidence::HIGH
+        Poi::ErrorConfidence::MED
       )
     );
   }
@@ -586,7 +591,7 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
         key,
         std::make_shared<Poi::ParseError>(
           parameter.error->what(),
-          Poi::ErrorConfidence::HIGH
+          Poi::ErrorConfidence::MED
         )
       );
     }
@@ -603,7 +608,7 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
             pool.find(parameter.node->source),
             parameter.node->start_pos,
             parameter.node->end_pos,
-            Poi::ErrorConfidence::HIGH
+            Poi::ErrorConfidence::MED
           )
         );
       }
@@ -1370,41 +1375,18 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
     );
   }
 
-  // Parse the DATA.
-  if (
-    iter == token_stream.tokens->end() ||
-    iter->type != Poi::TokenType::DATA
-  ) {
+  // Parse the LEFT_CURLY.
+  if (iter->type != Poi::TokenType::LEFT_CURLY) {
     return memo_error<Poi::DataType>(
       memo,
       key,
       std::make_shared<Poi::ParseError>(
-        "Expected 'data' to introduce this data type.",
+        "Expected '{' to introduce a data type.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
         iter->end_pos,
         Poi::ErrorConfidence::LOW
-      )
-    );
-  }
-  ++iter;
-
-  // Parse the LEFT_CURLY.
-  if (
-    iter == token_stream.tokens->end() ||
-    iter->type != Poi::TokenType::LEFT_CURLY
-  ) {
-    return memo_error<Poi::DataType>(
-      memo,
-      key,
-      std::make_shared<Poi::ParseError>(
-        "Expected '{' after 'data'.",
-        pool.find(start->source_name),
-        pool.find(start->source),
-        start->start_pos,
-        (iter - 1)->end_pos,
-        Poi::ErrorConfidence::HIGH
       )
     );
   }
@@ -1443,7 +1425,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
           pool.find(constructor_start->source),
           constructor_start->start_pos,
           iter->end_pos,
-          Poi::ErrorConfidence::HIGH
+          Poi::ErrorConfidence::MED
         )
       );
     }
@@ -1467,7 +1449,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
             pool.find(constructor_start->source),
             constructor_start->start_pos,
             iter->end_pos,
-            Poi::ErrorConfidence::HIGH
+            Poi::ErrorConfidence::MED
           )
         );
       }
@@ -1488,7 +1470,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
             pool.find(iter->source),
             iter->start_pos,
             iter->end_pos,
-            Poi::ErrorConfidence::HIGH
+            Poi::ErrorConfidence::MED
           )
         );
       }
@@ -1512,7 +1494,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
           pool.find(constructor_start->source),
           constructor_start->start_pos,
           (iter - 1)->end_pos,
-          Poi::ErrorConfidence::HIGH
+          Poi::ErrorConfidence::MED
         )
       );
     }
@@ -1796,10 +1778,7 @@ Poi::ParseResult<Poi::Match> parse_match(
   }
 
   // Parse the MATCH.
-  if (
-    iter == token_stream.tokens->end() ||
-    iter->type != Poi::TokenType::MATCH
-  ) {
+  if (iter->type != Poi::TokenType::MATCH) {
     return memo_error<Poi::Match>(
       memo,
       key,
@@ -1974,10 +1953,7 @@ Poi::ParseResult<Poi::Term> parse_group(
   }
 
   // Parse the LEFT_PAREN.
-  if (
-    iter == token_stream.tokens->end() ||
-    iter->type != Poi::TokenType::LEFT_PAREN
-  ) {
+  if (iter->type != Poi::TokenType::LEFT_PAREN) {
     return memo_error<Poi::Term>(
       memo,
       key,

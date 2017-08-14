@@ -1,6 +1,6 @@
 {
-  "source": "data {}",
-  "stdout": "data {}\n",
+  "source": "{}",
+  "stdout": "{}\n",
   "stderr": "",
   "exit_code": 0
 }

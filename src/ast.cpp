@@ -505,7 +505,7 @@ Poi::DataType::DataType(
 }
 
 std::string Poi::DataType::show(const Poi::StringPool &pool) const {
-  std::string result = "data {";
+  std::string result = "{";
   for (
     auto iter = constructor_names->begin();
     iter != constructor_names->end();

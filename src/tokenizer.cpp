@@ -128,17 +128,7 @@ Poi::TokenStream Poi::tokenize(
       }
       size_t length = end_pos - pos;
       auto literal = source_str.substr(pos, length);
-      if (literal == "data") {
-        tokens.push_back(Token(
-          TokenType::DATA,
-          pool.insert(literal),
-          source_name,
-          source,
-          pos,
-          end_pos,
-          false
-        ));
-      } else if (literal == "match") {
+      if (literal == "match") {
         tokens.push_back(Token(
           TokenType::MATCH,
           pool.insert(literal),
