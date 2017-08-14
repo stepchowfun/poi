@@ -35,8 +35,8 @@
     Group = LEFT_PAREN Term RIGHT_PAREN
     Pattern = IDENTIFIER | LEFT_CURLY IDENTIFIER PatternList RIGHT_CURLY
     PatternList = | Pattern PatternList
-    Match = MATCH Term SEPARATOR LEFT_CURLY CaseList RIGHT_CURLY
-    CaseList = | Function CaseListTail
+    Match = MATCH Term LEFT_CURLY CaseList RIGHT_CURLY
+    CaseList = Function CaseListTail
     CaseListTail = | SEPARATOR Function CaseListTail
 
   There are two problems with the grammar above: the Application and Member
@@ -1901,6 +1901,22 @@ Poi::ParseResult<Poi::Match> parse_match(
     );
     cases->push_back(c.node);
     iter = c.next;
+  }
+
+  // Make sure we have at least one case.
+  if (cases->empty()) {
+    return memo_error<Poi::Match>(
+      memo,
+      key,
+      std::make_shared<Poi::ParseError>(
+        "A match expression must have at least one case.",
+        pool.find(start->source_name),
+        pool.find(start->source),
+        start->start_pos,
+        iter->end_pos,
+        Poi::ErrorConfidence::HIGH
+      )
+    );
   }
 
   // Skip the closing RIGHT_CURLY.
