@@ -21,7 +21,7 @@ size_t Poi::StringPool::insert(const std::string &s) {
 std::string Poi::StringPool::find(size_t id) const {
   auto iter = reverse_pool.find(id);
   if (iter == reverse_pool.end()) {
-    throw Poi::Error(
+    throw Error(
       "'" + std::to_string(id) + "' is not in the string pool."
     );
   } else {

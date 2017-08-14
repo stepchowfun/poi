@@ -15,92 +15,90 @@ namespace Poi {
   class Value {
   public:
     virtual ~Value();
-    virtual std::string show(const Poi::StringPool &pool) const = 0;
+    virtual std::string show(const StringPool &pool) const = 0;
   };
 
   class FunctionValue : public Value {
   public:
-    const std::shared_ptr<const Poi::Function> function;
+    const std::shared_ptr<const Function> function;
     const std::shared_ptr<
-      const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+      const std::unordered_map<size_t, std::shared_ptr<const Value>>
     > captures;
 
     explicit FunctionValue(
-      std::shared_ptr<const Poi::Function> function,
+      std::shared_ptr<const Function> function,
       std::shared_ptr<
-        const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+        const std::unordered_map<size_t, std::shared_ptr<const Value>>
       > captures
     );
-    std::string show(const Poi::StringPool &pool) const override;
+    std::string show(const StringPool &pool) const override;
   };
 
   class DataTypeValue : public Value {
   public:
-    const std::shared_ptr<const Poi::DataType> data_type;
+    const std::shared_ptr<const DataType> data_type;
     const std::shared_ptr<
-      const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+      const std::unordered_map<size_t, std::shared_ptr<const Value>>
     > constructors;
 
     explicit DataTypeValue(
-      std::shared_ptr<const Poi::DataType> data_type,
+      std::shared_ptr<const DataType> data_type,
       const std::shared_ptr<
-        const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+        const std::unordered_map<size_t, std::shared_ptr<const Value>>
       > constructors
     );
-    std::string show(const Poi::StringPool &pool) const override;
+    std::string show(const StringPool &pool) const override;
   };
 
   class DataValue : public Value {
   public:
-    const std::shared_ptr<const Poi::DataType> data_type;
+    const std::shared_ptr<const DataType> data_type;
     const std::size_t constructor;
     const std::shared_ptr<
-      const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+      const std::unordered_map<size_t, std::shared_ptr<const Value>>
     > members;
 
     explicit DataValue(
-      std::shared_ptr<const Poi::DataType> type,
+      std::shared_ptr<const DataType> type,
       std::size_t constructor,
       std::shared_ptr<
-        const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+        const std::unordered_map<size_t, std::shared_ptr<const Value>>
       > members
     );
-    std::string show(const Poi::StringPool &pool) const override;
+    std::string show(const StringPool &pool) const override;
   };
 
   // Used to "tie the knot" for recursive bindings
   class ProxyValue : public Value {
   public:
-    const std::shared_ptr<const Poi::Value> value;
+    const std::shared_ptr<const Value> value;
 
-    explicit ProxyValue(
-      std::shared_ptr<const Poi::Value> value
-    );
-    std::string show(const Poi::StringPool &pool) const override;
+    explicit ProxyValue(std::shared_ptr<const Value> value);
+    std::string show(const StringPool &pool) const override;
   };
 
   // Used to implement tail recursion
   class ThunkValue : public Value {
   public:
-    const std::shared_ptr<const Poi::Term> term;
+    const std::shared_ptr<const Term> term;
     const std::shared_ptr<
-      const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+      const std::unordered_map<size_t, std::shared_ptr<const Value>>
     > environment;
 
     explicit ThunkValue(
-      std::shared_ptr<const Poi::Term> term,
+      std::shared_ptr<const Term> term,
       std::shared_ptr<
-        const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+        const std::unordered_map<size_t, std::shared_ptr<const Value>>
       > environment
     );
-    std::string show(const Poi::StringPool &pool) const override;
+    std::string show(const StringPool &pool) const override;
   };
 
-  // Repeatedly evaluate a Poi::Value until it is no longer a Poi::ThunkValue.
-  std::shared_ptr<const Poi::Value> trampoline(
-    std::shared_ptr<const Poi::Value> value,
-    const Poi::StringPool &pool,
-    size_t depth
+  // Repeatedly evaluate a Value until it is no longer a ThunkValue.
+  std::shared_ptr<const Value> trampoline(
+    std::shared_ptr<const Value> value,
+    std::vector<std::shared_ptr<const Term>> &stack_trace,
+    const StringPool &pool
   );
 }
 

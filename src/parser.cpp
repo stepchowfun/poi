@@ -71,139 +71,137 @@
 // Error handling                                                            //
 ///////////////////////////////////////////////////////////////////////////////
 
-namespace Poi {
-  // If we encounter an error while parsing, we may backtrack and try a
-  // different branch of execution. This may lead to more errors. If all the
-  // branches lead to an error, we need to choose one of the errors to show
-  // to the user. To pick the most relevant one, we assign each error a
-  // confidence level.
-  enum class ErrorConfidence {
-    LOW, // The error provides no useful information other than the fact that
-         // the parse failed. Hopefully another branch will succeed or fail
-         // with a more useful error.
-    MED, // The error provides some useful information about the failure, but
-         // we aren't 100% confident that this is the right error to show the
-         // user. Another branch may succeed or fail with a more useful error.
-    HIGH // This is definitely the error we will show to the user. We are so
-         // confident in this error that it actually takes precedence over a
-         // successful branch (because we would have received a failure later
-         // on anyway).
+// If we encounter an error while parsing, we may backtrack and try a
+// different branch of execution. This may lead to more errors. If all the
+// branches lead to an error, we need to choose one of the errors to show to
+// the user. To pick the most relevant one, we assign each error a confidence
+// level.
+enum class ErrorConfidence {
+  LOW, // The error provides no useful information other than the fact that
+       // the parse failed. Hopefully another branch will succeed or fail with
+       // a more useful error.
+  MED, // The error provides some useful information about the failure, but we
+       // aren't 100% confident that this is the right error to show the user.
+       // Another branch may succeed or fail with a more useful error.
+  HIGH // This is definitely the error we will show to the user. We are so
+       // confident in this error that it actually takes precedence over a
+       // successful branch (because we would have received a failure later on
+       // anyway).
+};
+
+// This is just like Poi::Error, except it also includes a confidence level.
+class ParseError : public Poi::Error {
+public:
+  const ErrorConfidence confidence;
+
+  explicit ParseError(
+    const std::string &message, // No trailing line break
+    ErrorConfidence confidence
+  ) : Error(message), confidence(confidence) {
   };
 
-  // This is just like Poi::Error, except it also includes a confidence level.
-  class ParseError : public Error {
-  public:
-    const Poi::ErrorConfidence confidence;
-
-    explicit ParseError(
-      const std::string &message, // No trailing line break
-      Poi::ErrorConfidence confidence
-    ) : Error(message), confidence(confidence) {
-    };
-
-    explicit ParseError(
-      const std::string &message, // No trailing line break
-      const std::string &source_name,
-      const std::string &source,
-      Poi::ErrorConfidence confidence
-    ) :
-      Error (message, source_name, source),
-      confidence(confidence) {
-    };
-
-    explicit ParseError(
-      const std::string &message, // No trailing line break
-      const std::string &source_name,
-      const std::string &source,
-      size_t start_pos, // Inclusive
-      size_t end_pos, // Exclusive
-      Poi::ErrorConfidence confidence
-    ) :
-      Error (message, source_name, source, start_pos, end_pos),
-      confidence(confidence) {
-    };
+  explicit ParseError(
+    const std::string &message, // No trailing line break
+    const std::string &source_name,
+    const std::string &source,
+    ErrorConfidence confidence
+  ) :
+    Error (message, source_name, source),
+    confidence(confidence) {
   };
 
-  // A successful parse results in an AST node and an iterator pointing to the
-  // next token to parse. A failed parse results in a ParseError.
-  template <typename T> class ParseResult {
-  public:
-    // Exactly one of these two should be a null pointer.
-    const std::shared_ptr<const T> node;
-    const std::shared_ptr<const ParseError> error;
+  explicit ParseError(
+    const std::string &message, // No trailing line break
+    const std::string &source_name,
+    const std::string &source,
+    size_t start_pos, // Inclusive
+    size_t end_pos, // Exclusive
+    ErrorConfidence confidence
+  ) :
+    Error (message, source_name, source, start_pos, end_pos),
+    confidence(confidence) {
+  };
+};
 
-    // If `node` is present, this should point to the first token after `node`.
-    // Otherwise, its value is unspecified.
-    const std::vector<Poi::Token>::const_iterator next;
+// A successful parse results in an AST node and an iterator pointing to the
+// next token to parse. A failed parse results in a ParseError.
+template <typename T> class ParseResult {
+public:
+  // Exactly one of these two should be a null pointer.
+  const std::shared_ptr<const T> node;
+  const std::shared_ptr<const ParseError> error;
 
-    // Success constructor
-    explicit ParseResult(
-      std::shared_ptr<const T> node,
-      std::vector<Poi::Token>::const_iterator next
-    ) : node(node), next(next) {
+  // If `node` is present, this should point to the first token after `node`.
+  // Otherwise, its value is unspecified.
+  const std::vector<Poi::Token>::const_iterator next;
+
+  // Success constructor
+  explicit ParseResult(
+    std::shared_ptr<const T> node,
+    std::vector<Poi::Token>::const_iterator next
+  ) : node(node), next(next) {
+  }
+
+  // Failure constructor
+  explicit ParseResult(
+    std::shared_ptr<const ParseError> error
+  ) : error(error) {
+  }
+
+  // Cast a ParseResult<T> to a ParseResult<U>, where T <: U
+  template <typename U> ParseResult<U> upcast() const {
+    if (node) {
+      return ParseResult<U>(std::static_pointer_cast<const U>(node), next);
+    } else {
+      return ParseResult<U>(error);
     }
+  }
 
-    // Failure constructor
-    explicit ParseResult(
-      std::shared_ptr<const ParseError> error
-    ) : error(error) {
+  // Cast a ParseResult<T> to a ParseResult<U>, where U <: T
+  template <typename U> ParseResult<U> downcast() const {
+    if (node) {
+      return ParseResult<U>(std::dynamic_pointer_cast<const U>(node), next);
+    } else {
+      return ParseResult<U>(error);
     }
+  }
 
-    // Cast a ParseResult<T> to a ParseResult<U>, where T <: U
-    template <typename U> ParseResult<U> upcast() const {
-      if (node) {
-        return ParseResult<U>(std::static_pointer_cast<const U>(node), next);
-      } else {
-        return ParseResult<U>(error);
-      }
+  // Choose between this and another ParseResult. If one is a success and the
+  // other is an error, choose the success. If both are successes, choose the
+  // biggest node. If both are errors, choose based on the confidence.
+  ParseResult<T> choose(const ParseResult<T> &other) const {
+    if (error && error->confidence == ErrorConfidence::HIGH) {
+      return *this;
     }
-
-    // Cast a ParseResult<T> to a ParseResult<U>, where U <: T
-    template <typename U> ParseResult<U> downcast() const {
-      if (node) {
-        return ParseResult<U>(std::dynamic_pointer_cast<const U>(node), next);
-      } else {
-        return ParseResult<U>(error);
-      }
+    if (
+      other.error &&
+      other.error->confidence == ErrorConfidence::HIGH
+    ) {
+      return other;
     }
-
-    // Choose between this and another ParseResult. If one is a success and the
-    // other is an error, choose the success. If both are successes, choose
-    // the biggest node. If both are errors, choose based on the confidence.
-    ParseResult<T> choose(const ParseResult<T> &other) const {
-      if (error && error->confidence == Poi::ErrorConfidence::HIGH) {
-        return *this;
-      }
-      if (
-        other.error &&
-        other.error->confidence == Poi::ErrorConfidence::HIGH
-      ) {
-        return other;
-      }
-      if (node) {
-        if (other.node) {
-          if (other.node->end_pos > node->end_pos) {
-            return other;
-          } else {
-            return *this;
-          }
+    if (node) {
+      if (other.node) {
+        if (other.node->end_pos > node->end_pos) {
+          return other;
         } else {
           return *this;
         }
       } else {
-        if (other.node) {
+        return *this;
+      }
+    } else {
+      if (other.node) {
+        return other;
+      } else {
+        if (other.error->confidence > error->confidence) {
           return other;
         } else {
-          if (other.error->confidence > error->confidence) {
-            return other;
-          } else {
-            return *this;
-          }
+          return *this;
         }
       }
     }
-  };
-}
+  }
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Memoization                                                               //
@@ -235,7 +233,7 @@ using MemoKey = std::tuple<
 // The type of the memoization table
 using MemoMap = std::unordered_map<
   MemoKey,
-  Poi::ParseResult<Poi::Node>,
+  ParseResult<Poi::Node>,
   std::function<size_t(const MemoKey &key)>
 >;
 
@@ -249,24 +247,24 @@ MemoKey memo_key(
 }
 
 // Memoize and return a ParseResult representing a success
-template <typename T> Poi::ParseResult<T> memo_success(
+template <typename T> ParseResult<T> memo_success(
   MemoMap &memo,
   const MemoKey &key,
   std::shared_ptr<const T> node,
   std::vector<Poi::Token>::const_iterator next
 ) {
-  auto parse_result = Poi::ParseResult<T>(node, next);
+  auto parse_result = ParseResult<T>(node, next);
   memo.insert({key, parse_result.template upcast<Poi::Node>()});
   return parse_result;
 }
 
 // Memoize and return a ParseResult representing a failure
-template <typename T> Poi::ParseResult<T> memo_error(
+template <typename T> ParseResult<T> memo_error(
   MemoMap &memo,
   const MemoKey &key,
-  std::shared_ptr<const Poi::ParseError> error
+  std::shared_ptr<const ParseError> error
 ) {
-  auto parse_result = Poi::ParseResult<T>(error);
+  auto parse_result = ParseResult<T>(error);
   memo.insert({key, parse_result.template upcast<Poi::Node>()});
   return parse_result;
 }
@@ -277,7 +275,7 @@ template <typename T> Poi::ParseResult<T> memo_error(
 
 // Forward declarations necessary for mutual recursion
 
-Poi::ParseResult<Poi::Pattern> parse_pattern(
+ParseResult<Poi::Pattern> parse_pattern(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -285,7 +283,7 @@ Poi::ParseResult<Poi::Pattern> parse_pattern(
   std::vector<Poi::Token>::const_iterator iter
 );
 
-Poi::ParseResult<Poi::VariablePattern> parse_variable_pattern(
+ParseResult<Poi::VariablePattern> parse_variable_pattern(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -293,7 +291,7 @@ Poi::ParseResult<Poi::VariablePattern> parse_variable_pattern(
   std::vector<Poi::Token>::const_iterator iter
 );
 
-Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
+ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -301,7 +299,7 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
   std::vector<Poi::Token>::const_iterator iter
 );
 
-Poi::ParseResult<Poi::Term> parse_term(
+ParseResult<Poi::Term> parse_term(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -309,7 +307,7 @@ Poi::ParseResult<Poi::Term> parse_term(
   std::vector<Poi::Token>::const_iterator iter
 );
 
-Poi::ParseResult<Poi::Variable> parse_variable(
+ParseResult<Poi::Variable> parse_variable(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -317,7 +315,7 @@ Poi::ParseResult<Poi::Variable> parse_variable(
   std::vector<Poi::Token>::const_iterator iter
 );
 
-Poi::ParseResult<Poi::Function> parse_function(
+ParseResult<Poi::Function> parse_function(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -325,7 +323,7 @@ Poi::ParseResult<Poi::Function> parse_function(
   std::vector<Poi::Token>::const_iterator iter
 );
 
-Poi::ParseResult<Poi::Application> parse_application(
+ParseResult<Poi::Application> parse_application(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -334,7 +332,7 @@ Poi::ParseResult<Poi::Application> parse_application(
   std::shared_ptr<const Poi::Term> application_prior
 );
 
-Poi::ParseResult<Poi::Binding> parse_binding(
+ParseResult<Poi::Binding> parse_binding(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -342,7 +340,7 @@ Poi::ParseResult<Poi::Binding> parse_binding(
   std::vector<Poi::Token>::const_iterator iter
 );
 
-Poi::ParseResult<Poi::DataType> parse_data_type(
+ParseResult<Poi::DataType> parse_data_type(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -350,7 +348,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
   std::vector<Poi::Token>::const_iterator iter
 );
 
-Poi::ParseResult<Poi::Member> parse_member(
+ParseResult<Poi::Member> parse_member(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -358,7 +356,7 @@ Poi::ParseResult<Poi::Member> parse_member(
   std::vector<Poi::Token>::const_iterator iter
 );
 
-Poi::ParseResult<Poi::Match> parse_match(
+ParseResult<Poi::Match> parse_match(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -366,7 +364,7 @@ Poi::ParseResult<Poi::Match> parse_match(
   std::vector<Poi::Token>::const_iterator iter
 );
 
-Poi::ParseResult<Poi::Term> parse_group(
+ParseResult<Poi::Term> parse_group(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -376,7 +374,7 @@ Poi::ParseResult<Poi::Term> parse_group(
 
 // The definitions of the parsing functions
 
-Poi::ParseResult<Poi::Pattern> parse_pattern(
+ParseResult<Poi::Pattern> parse_pattern(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -395,24 +393,24 @@ Poi::ParseResult<Poi::Pattern> parse_pattern(
     return memo_error<Poi::Pattern>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "No pattern to parse.",
         pool.find(token_stream.source_name),
         pool.find(token_stream.source),
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
 
   // A pattern is one of the following constructs.
-  auto pattern = Poi::ParseResult<Poi::Pattern>(
-    std::make_shared<Poi::ParseError>(
+  auto pattern = ParseResult<Poi::Pattern>(
+    std::make_shared<ParseError>(
       "Unexpected token.",
       pool.find(iter->source_name),
       pool.find(iter->source),
       iter->start_pos,
       iter->end_pos,
-      Poi::ErrorConfidence::LOW
+      ErrorConfidence::LOW
     )
   ).choose(
     parse_variable_pattern(
@@ -431,7 +429,7 @@ Poi::ParseResult<Poi::Pattern> parse_pattern(
   return memo_success<Poi::Pattern>(memo, key, pattern.node, pattern.next);
 }
 
-Poi::ParseResult<Poi::VariablePattern> parse_variable_pattern(
+ParseResult<Poi::VariablePattern> parse_variable_pattern(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -450,11 +448,11 @@ Poi::ParseResult<Poi::VariablePattern> parse_variable_pattern(
     return memo_error<Poi::VariablePattern>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "No variable pattern to parse.",
         pool.find(token_stream.source_name),
         pool.find(token_stream.source),
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -464,13 +462,13 @@ Poi::ParseResult<Poi::VariablePattern> parse_variable_pattern(
     return memo_error<Poi::VariablePattern>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "A variable pattern must be an identifier.",
         pool.find(iter->source_name),
         pool.find(iter->source),
         iter->start_pos,
         iter->end_pos,
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -494,7 +492,7 @@ Poi::ParseResult<Poi::VariablePattern> parse_variable_pattern(
   return memo_success<Poi::VariablePattern>(memo, key, variable_pattern, iter);
 }
 
-Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
+ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -516,11 +514,11 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
     return memo_error<Poi::ConstructorPattern>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "No constructor pattern to parse.",
         pool.find(token_stream.source_name),
         pool.find(token_stream.source),
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -530,13 +528,13 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
     return memo_error<Poi::ConstructorPattern>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "Expected '{' to introduce this constructor pattern.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
         iter->end_pos,
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -547,13 +545,13 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
     return memo_error<Poi::ConstructorPattern>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "A constructor pattern must begin with the name of a constructor.",
         pool.find(iter->source_name),
         pool.find(iter->source),
         iter->start_pos,
         iter->end_pos,
-        Poi::ErrorConfidence::MED
+        ErrorConfidence::MED
       )
     );
   }
@@ -567,14 +565,14 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
   >();
   auto variables = std::make_shared<const std::unordered_set<size_t>>();
   while (iter->type != Poi::TokenType::RIGHT_CURLY) {
-    auto parameter = Poi::ParseResult<Poi::Pattern>(
-      std::make_shared<Poi::ParseError>(
+    auto parameter = ParseResult<Poi::Pattern>(
+      std::make_shared<ParseError>(
         "Unexpected token.",
         pool.find(iter->source_name),
         pool.find(iter->source),
         iter->start_pos,
         iter->end_pos,
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     ).choose(
       parse_pattern(
@@ -589,9 +587,9 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
       return memo_error<Poi::ConstructorPattern>(
         memo,
         key,
-        std::make_shared<Poi::ParseError>(
+        std::make_shared<ParseError>(
           parameter.error->what(),
-          Poi::ErrorConfidence::MED
+          ErrorConfidence::MED
         )
       );
     }
@@ -602,13 +600,13 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
         return memo_error<Poi::ConstructorPattern>(
           memo,
           key,
-          std::make_shared<Poi::ParseError>(
+          std::make_shared<ParseError>(
             "Duplicate variable '" + pool.find(variable) + "' in pattern.",
             pool.find(parameter.node->source_name),
             pool.find(parameter.node->source),
             parameter.node->start_pos,
             parameter.node->end_pos,
-            Poi::ErrorConfidence::MED
+            ErrorConfidence::MED
           )
         );
       }
@@ -641,7 +639,7 @@ Poi::ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
   );
 }
 
-Poi::ParseResult<Poi::Term> parse_term(
+ParseResult<Poi::Term> parse_term(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -660,24 +658,24 @@ Poi::ParseResult<Poi::Term> parse_term(
     return memo_error<Poi::Term>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "No term to parse.",
         pool.find(token_stream.source_name),
         pool.find(token_stream.source),
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
 
   // A term is one of the following constructs.
-  auto term = Poi::ParseResult<Poi::Term>(
-    std::make_shared<Poi::ParseError>(
+  auto term = ParseResult<Poi::Term>(
+    std::make_shared<ParseError>(
       "Unexpected token.",
       pool.find(iter->source_name),
       pool.find(iter->source),
       iter->start_pos,
       iter->end_pos,
-      Poi::ErrorConfidence::LOW
+      ErrorConfidence::LOW
     )
   ).choose(
     parse_variable(
@@ -720,7 +718,7 @@ Poi::ParseResult<Poi::Term> parse_term(
   return memo_success<Poi::Term>(memo, key, term.node, term.next);
 }
 
-Poi::ParseResult<Poi::Variable> parse_variable(
+ParseResult<Poi::Variable> parse_variable(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -739,11 +737,11 @@ Poi::ParseResult<Poi::Variable> parse_variable(
     return memo_error<Poi::Variable>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "No variable to parse.",
         pool.find(token_stream.source_name),
         pool.find(token_stream.source),
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -753,13 +751,13 @@ Poi::ParseResult<Poi::Variable> parse_variable(
     return memo_error<Poi::Variable>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "A variable must be an identifier.",
         pool.find(iter->source_name),
         pool.find(iter->source),
         iter->start_pos,
         iter->end_pos,
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -767,19 +765,19 @@ Poi::ParseResult<Poi::Variable> parse_variable(
 
   // Look up the variable in the environment.
   if (environment.find(variable_name) == environment.end()) {
-    Poi::ErrorConfidence confidence = Poi::ErrorConfidence::LOW;
+    ErrorConfidence confidence = ErrorConfidence::LOW;
     if (
       iter + 1 == token_stream.tokens->end() || (
         (iter + 1)->type != Poi::TokenType::ARROW &&
         (iter + 1)->type != Poi::TokenType::EQUALS
       )
     ) {
-      confidence = Poi::ErrorConfidence::HIGH;
+      confidence = ErrorConfidence::HIGH;
     }
     return memo_error<Poi::Variable>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "Undefined variable '" + pool.find(variable_name) + "'.",
         pool.find(iter->source_name),
         pool.find(iter->source),
@@ -807,7 +805,7 @@ Poi::ParseResult<Poi::Variable> parse_variable(
   return memo_success<Poi::Variable>(memo, key, variable, iter);
 }
 
-Poi::ParseResult<Poi::Function> parse_function(
+ParseResult<Poi::Function> parse_function(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -829,24 +827,24 @@ Poi::ParseResult<Poi::Function> parse_function(
     return memo_error<Poi::Function>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "No function to parse.",
         pool.find(token_stream.source_name),
         pool.find(token_stream.source),
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
 
   // Parse the Pattern.
-  auto pattern = Poi::ParseResult<Poi::Pattern>(
-    std::make_shared<Poi::ParseError>(
+  auto pattern = ParseResult<Poi::Pattern>(
+    std::make_shared<ParseError>(
       "No pattern found for this binding.",
       pool.find(start->source_name),
       pool.find(start->source),
       start->start_pos,
       iter->end_pos,
-      Poi::ErrorConfidence::LOW
+      ErrorConfidence::LOW
     )
   ).choose(parse_pattern(memo, pool, token_stream, environment, iter));
   if (pattern.error) {
@@ -862,13 +860,13 @@ Poi::ParseResult<Poi::Function> parse_function(
     return memo_error<Poi::Function>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "Expected '->' in this function.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
         (iter - 1)->end_pos,
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -882,23 +880,23 @@ Poi::ParseResult<Poi::Function> parse_function(
   );
 
   // Parse the body.
-  auto body = Poi::ParseResult<Poi::Term>(
-    std::make_shared<Poi::ParseError>(
+  auto body = ParseResult<Poi::Term>(
+    std::make_shared<ParseError>(
       "No body found for this function.",
       pool.find(start->source_name),
       pool.find(start->source),
       start->start_pos,
       (iter - 1)->end_pos,
-      Poi::ErrorConfidence::LOW
+      ErrorConfidence::LOW
     )
   ).choose(parse_term(memo, pool, token_stream, new_environment, iter));
   if (body.error) {
     return memo_error<Poi::Function>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         body.error->what(),
-        Poi::ErrorConfidence::HIGH
+        ErrorConfidence::HIGH
       )
     );
   }
@@ -927,7 +925,7 @@ Poi::ParseResult<Poi::Function> parse_function(
   return memo_success<Poi::Function>(memo, key, function, iter);
 }
 
-Poi::ParseResult<Poi::Application> parse_application(
+ParseResult<Poi::Application> parse_application(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -947,24 +945,24 @@ Poi::ParseResult<Poi::Application> parse_application(
     return memo_error<Poi::Application>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "No left subterm to parse.",
         pool.find(token_stream.source_name),
         pool.find(token_stream.source),
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
 
   // Parse the left term.
-  auto left = Poi::ParseResult<Poi::Term>(
-    std::make_shared<Poi::ParseError>(
+  auto left = ParseResult<Poi::Term>(
+    std::make_shared<ParseError>(
       "Unexpected token.",
       pool.find(iter->source_name),
       pool.find(iter->source),
       iter->start_pos,
       iter->end_pos,
-      Poi::ErrorConfidence::LOW
+      ErrorConfidence::LOW
     )
   ).choose(
     parse_variable(
@@ -997,25 +995,25 @@ Poi::ParseResult<Poi::Application> parse_application(
     return memo_error<Poi::Application>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "No right subterm to parse.",
         pool.find(token_stream.source_name),
         pool.find(token_stream.source),
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
 
   // Parse the right term.
-  auto right = std::make_shared<Poi::ParseResult<Poi::Term>>(
-    Poi::ParseResult<Poi::Term>(
-      std::make_shared<Poi::ParseError>(
+  auto right = std::make_shared<ParseResult<Poi::Term>>(
+    ParseResult<Poi::Term>(
+      std::make_shared<ParseError>(
         "Unexpected token.",
         pool.find(iter->source_name),
         pool.find(iter->source),
         iter->start_pos,
         iter->end_pos,
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     ).choose(
       parse_variable(
@@ -1060,7 +1058,7 @@ Poi::ParseResult<Poi::Application> parse_application(
       application_prior,
       left.node
     );
-    right = std::make_shared<Poi::ParseResult<Poi::Term>>(
+    right = std::make_shared<ParseResult<Poi::Term>>(
       right->choose(
         parse_application(
           memo,
@@ -1073,7 +1071,7 @@ Poi::ParseResult<Poi::Application> parse_application(
       )
     );
   } else {
-    right = std::make_shared<Poi::ParseResult<Poi::Term>>(
+    right = std::make_shared<ParseResult<Poi::Term>>(
       right->choose(
         parse_application(
           memo,
@@ -1169,7 +1167,7 @@ Poi::ParseResult<Poi::Application> parse_application(
   return memo_success<Poi::Application>(memo, key, application, iter);
 }
 
-Poi::ParseResult<Poi::Binding> parse_binding(
+ParseResult<Poi::Binding> parse_binding(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -1191,33 +1189,33 @@ Poi::ParseResult<Poi::Binding> parse_binding(
     return memo_error<Poi::Binding>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "No binding to parse.",
         pool.find(token_stream.source_name),
         pool.find(token_stream.source),
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
 
   // Parse the Pattern.
-  auto pattern = Poi::ParseResult<Poi::Pattern>(
-    std::make_shared<Poi::ParseError>(
+  auto pattern = ParseResult<Poi::Pattern>(
+    std::make_shared<ParseError>(
       "No pattern found for this binding.",
       pool.find(start->source_name),
       pool.find(start->source),
       start->start_pos,
       iter->end_pos,
-      Poi::ErrorConfidence::LOW
+      ErrorConfidence::LOW
     )
   ).choose(parse_pattern(memo, pool, token_stream, environment, iter));
   if (pattern.error) {
     return memo_error<Poi::Binding>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         pattern.error->what(),
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -1231,13 +1229,13 @@ Poi::ParseResult<Poi::Binding> parse_binding(
     return memo_error<Poi::Binding>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "Expected '=' in this binding.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
         (iter - 1)->end_pos,
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -1251,23 +1249,23 @@ Poi::ParseResult<Poi::Binding> parse_binding(
   );
 
   // Parse the definition.
-  auto definition = Poi::ParseResult<Poi::Term>(
-    std::make_shared<Poi::ParseError>(
+  auto definition = ParseResult<Poi::Term>(
+    std::make_shared<ParseError>(
       "No definition found for this binding.",
       pool.find(start->source_name),
       pool.find(start->source),
       start->start_pos,
       (iter - 1)->end_pos,
-      Poi::ErrorConfidence::LOW
+      ErrorConfidence::LOW
     )
   ).choose(parse_term(memo, pool, token_stream, new_environment, iter));
   if (definition.error) {
     return memo_error<Poi::Binding>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         definition.error->what(),
-        Poi::ErrorConfidence::HIGH
+        ErrorConfidence::HIGH
       )
     );
   }
@@ -1281,36 +1279,36 @@ Poi::ParseResult<Poi::Binding> parse_binding(
     return memo_error<Poi::Binding>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "Expected a body for this binding.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
         (iter - 1)->end_pos,
-        Poi::ErrorConfidence::HIGH
+        ErrorConfidence::HIGH
       )
     );
   }
   ++iter;
 
   // Parse the body.
-  auto body = Poi::ParseResult<Poi::Term>(
-    std::make_shared<Poi::ParseError>(
+  auto body = ParseResult<Poi::Term>(
+    std::make_shared<ParseError>(
       "No body found for this binding.",
       pool.find(start->source_name),
       pool.find(start->source),
       start->start_pos,
       (iter - 1)->end_pos,
-      Poi::ErrorConfidence::LOW
+      ErrorConfidence::LOW
     )
   ).choose(parse_term(memo, pool, token_stream, new_environment, iter));
   if (body.error) {
     return memo_error<Poi::Binding>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         body.error->what(),
-        Poi::ErrorConfidence::HIGH
+        ErrorConfidence::HIGH
       )
     );
   }
@@ -1344,7 +1342,7 @@ Poi::ParseResult<Poi::Binding> parse_binding(
   return memo_success<Poi::Binding>(memo, key, binding, iter);
 }
 
-Poi::ParseResult<Poi::DataType> parse_data_type(
+ParseResult<Poi::DataType> parse_data_type(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -1366,11 +1364,11 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
     return memo_error<Poi::DataType>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "No data type to parse.",
         pool.find(token_stream.source_name),
         pool.find(token_stream.source),
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -1380,13 +1378,13 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
     return memo_error<Poi::DataType>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "Expected '{' to introduce a data type.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
         iter->end_pos,
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -1419,13 +1417,13 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
       return memo_error<Poi::DataType>(
         memo,
         key,
-        std::make_shared<Poi::ParseError>(
+        std::make_shared<ParseError>(
           "Invalid data constructor.",
           pool.find(constructor_start->source_name),
           pool.find(constructor_start->source),
           constructor_start->start_pos,
           iter->end_pos,
-          Poi::ErrorConfidence::MED
+          ErrorConfidence::MED
         )
       );
     }
@@ -1443,13 +1441,13 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
         return memo_error<Poi::DataType>(
           memo,
           key,
-          std::make_shared<Poi::ParseError>(
+          std::make_shared<ParseError>(
             "Invalid data constructor.",
             pool.find(constructor_start->source_name),
             pool.find(constructor_start->source),
             constructor_start->start_pos,
             iter->end_pos,
-            Poi::ErrorConfidence::MED
+            ErrorConfidence::MED
           )
         );
       }
@@ -1460,7 +1458,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
         return memo_error<Poi::DataType>(
           memo,
           key,
-          std::make_shared<Poi::ParseError>(
+          std::make_shared<ParseError>(
             "Duplicate parameter '" +
                pool.find(parameter) +
                "' in data constructor '" +
@@ -1470,7 +1468,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
             pool.find(iter->source),
             iter->start_pos,
             iter->end_pos,
-            Poi::ErrorConfidence::MED
+            ErrorConfidence::MED
           )
         );
       }
@@ -1486,7 +1484,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
       return memo_error<Poi::DataType>(
         memo,
         key,
-        std::make_shared<Poi::ParseError>(
+        std::make_shared<ParseError>(
           "Duplicate constructor '" +
            pool.find(name) +
            "' in data type.",
@@ -1494,7 +1492,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
           pool.find(constructor_start->source),
           constructor_start->start_pos,
           (iter - 1)->end_pos,
-          Poi::ErrorConfidence::MED
+          ErrorConfidence::MED
         )
       );
     }
@@ -1580,7 +1578,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
   return memo_success<Poi::DataType>(memo, key, data_type, iter);
 }
 
-Poi::ParseResult<Poi::Member> parse_member(
+ParseResult<Poi::Member> parse_member(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -1602,24 +1600,24 @@ Poi::ParseResult<Poi::Member> parse_member(
     return memo_error<Poi::Member>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "No member to parse.",
         pool.find(token_stream.source_name),
         pool.find(token_stream.source),
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
 
   // Parse the object.
-  auto object = Poi::ParseResult<Poi::Term>(
-    std::make_shared<Poi::ParseError>(
+  auto object = ParseResult<Poi::Term>(
+    std::make_shared<ParseError>(
       "Unexpected token.",
       pool.find(iter->source_name),
       pool.find(iter->source),
       iter->start_pos,
       iter->end_pos,
-      Poi::ErrorConfidence::LOW
+      ErrorConfidence::LOW
     )
   ).choose(
     parse_variable(
@@ -1647,13 +1645,13 @@ Poi::ParseResult<Poi::Member> parse_member(
     return memo_error<Poi::Member>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "Expected '.' for this member access.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
         (iter - 1)->end_pos,
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -1667,13 +1665,13 @@ Poi::ParseResult<Poi::Member> parse_member(
     return memo_error<Poi::Member>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "Invalid member access.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
         (iter - 1)->end_pos,
-        Poi::ErrorConfidence::HIGH
+        ErrorConfidence::HIGH
       )
     );
   }
@@ -1712,13 +1710,13 @@ Poi::ParseResult<Poi::Member> parse_member(
       return memo_error<Poi::Member>(
         memo,
         key,
-        std::make_shared<Poi::ParseError>(
+        std::make_shared<ParseError>(
           "Invalid member access.",
           pool.find(start->source_name),
           pool.find(start->source),
           start->start_pos,
           (iter - 1)->end_pos,
-          Poi::ErrorConfidence::HIGH
+          ErrorConfidence::HIGH
         )
       );
     }
@@ -1746,7 +1744,7 @@ Poi::ParseResult<Poi::Member> parse_member(
   return memo_success<Poi::Member>(memo, key, member, iter);
 }
 
-Poi::ParseResult<Poi::Match> parse_match(
+ParseResult<Poi::Match> parse_match(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -1768,11 +1766,11 @@ Poi::ParseResult<Poi::Match> parse_match(
     return memo_error<Poi::Match>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "No match expression to parse.",
         pool.find(token_stream.source_name),
         pool.find(token_stream.source),
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -1782,13 +1780,13 @@ Poi::ParseResult<Poi::Match> parse_match(
     return memo_error<Poi::Match>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "Expected 'match' to start this match expression.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
         iter->end_pos,
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -1798,14 +1796,14 @@ Poi::ParseResult<Poi::Match> parse_match(
   auto discriminee = parse_term(
     memo, pool, token_stream, environment, iter
   ).choose(
-    Poi::ParseResult<Poi::Term>(
-      std::make_shared<Poi::ParseError>(
+    ParseResult<Poi::Term>(
+      std::make_shared<ParseError>(
         "No discriminee found for this match expression.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
         (iter - 1)->end_pos,
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     )
   );
@@ -1813,9 +1811,9 @@ Poi::ParseResult<Poi::Match> parse_match(
     return memo_error<Poi::Match>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         discriminee.error->what(),
-        Poi::ErrorConfidence::HIGH
+        ErrorConfidence::HIGH
       )
     );
   }
@@ -1834,13 +1832,13 @@ Poi::ParseResult<Poi::Match> parse_match(
     return memo_error<Poi::Match>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "Expected '{' to begin the cases for this match expression.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
         (iter - 1)->end_pos,
-        Poi::ErrorConfidence::HIGH
+        ErrorConfidence::HIGH
       )
     );
   }
@@ -1861,13 +1859,13 @@ Poi::ParseResult<Poi::Match> parse_match(
         return memo_error<Poi::Match>(
           memo,
           key,
-          std::make_shared<Poi::ParseError>(
+          std::make_shared<ParseError>(
             "Invalid case in this match expression.",
             pool.find(iter->source_name),
             pool.find(iter->source),
             iter->start_pos,
             iter->end_pos,
-            Poi::ErrorConfidence::HIGH
+            ErrorConfidence::HIGH
           )
         );
       }
@@ -1875,23 +1873,23 @@ Poi::ParseResult<Poi::Match> parse_match(
     }
 
     // Parse the case.
-    auto c = Poi::ParseResult<Poi::Function>(
-      std::make_shared<Poi::ParseError>(
+    auto c = ParseResult<Poi::Function>(
+      std::make_shared<ParseError>(
         "Invalid case in this match expression.",
         pool.find(iter->source_name),
         pool.find(iter->source),
         iter->start_pos,
         iter->end_pos,
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     ).choose(parse_function(memo, pool, token_stream, environment, iter));
     if (c.error) {
       return memo_error<Poi::Match>(
         memo,
         key,
-        std::make_shared<Poi::ParseError>(
+        std::make_shared<ParseError>(
           c.error->what(),
-          Poi::ErrorConfidence::HIGH
+          ErrorConfidence::HIGH
         )
       );
     }
@@ -1908,13 +1906,13 @@ Poi::ParseResult<Poi::Match> parse_match(
     return memo_error<Poi::Match>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "A match expression must have at least one case.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
         iter->end_pos,
-        Poi::ErrorConfidence::HIGH
+        ErrorConfidence::HIGH
       )
     );
   }
@@ -1937,7 +1935,7 @@ Poi::ParseResult<Poi::Match> parse_match(
   return memo_success<Poi::Match>(memo, key, match, iter);
 }
 
-Poi::ParseResult<Poi::Term> parse_group(
+ParseResult<Poi::Term> parse_group(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
@@ -1959,11 +1957,11 @@ Poi::ParseResult<Poi::Term> parse_group(
     return memo_error<Poi::Term>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "No group to parse.",
         pool.find(token_stream.source_name),
         pool.find(token_stream.source),
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -1973,13 +1971,13 @@ Poi::ParseResult<Poi::Term> parse_group(
     return memo_error<Poi::Term>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "Expected '(' to start this group.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
         iter->end_pos,
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     );
   }
@@ -1989,14 +1987,14 @@ Poi::ParseResult<Poi::Term> parse_group(
   auto body = parse_term(
     memo, pool, token_stream, environment, iter
   ).choose(
-    Poi::ParseResult<Poi::Term>(
-      std::make_shared<Poi::ParseError>(
+    ParseResult<Poi::Term>(
+      std::make_shared<ParseError>(
         "No body found for this group.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
         (iter - 1)->end_pos,
-        Poi::ErrorConfidence::LOW
+        ErrorConfidence::LOW
       )
     )
   );
@@ -2004,9 +2002,9 @@ Poi::ParseResult<Poi::Term> parse_group(
     return memo_error<Poi::Term>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         body.error->what(),
-        Poi::ErrorConfidence::HIGH
+        ErrorConfidence::HIGH
       )
     );
   }
@@ -2020,17 +2018,24 @@ Poi::ParseResult<Poi::Term> parse_group(
     return memo_error<Poi::Term>(
       memo,
       key,
-      std::make_shared<Poi::ParseError>(
+      std::make_shared<ParseError>(
         "Expected ')' to close this group.",
         pool.find(start->source_name),
         pool.find(start->source),
         start->start_pos,
         (iter - 1)->end_pos,
-        Poi::ErrorConfidence::HIGH
+        ErrorConfidence::HIGH
       )
     );
   }
   ++iter;
+
+  // Modify the body's token span to include the parentheses. This is
+  // important because some Nodes get their spans from their children, and it
+  // would be akward (for example) if the last child of a Node were a Group
+  // and we didn't include the closing parenthesis.
+  const_cast<size_t &>(body.node->start_pos) = start->start_pos;
+  const_cast<size_t &>(body.node->end_pos) = (iter - 1)->end_pos;
 
   // Memoize and return the result.
   return memo_success<Poi::Term>(memo, key, body.node, iter);
@@ -2079,7 +2084,7 @@ std::shared_ptr<const Poi::Term> Poi::parse(
 
   // Make sure we have some tokens to parse.
   if (token_stream.tokens->empty()) {
-    throw Poi::Error(
+    throw Error(
       "Nothing to parse.",
       pool.find(token_stream.source_name),
       pool.find(token_stream.source)
@@ -2087,7 +2092,7 @@ std::shared_ptr<const Poi::Term> Poi::parse(
   }
 
   // Parse the term.
-  Poi::ParseResult<Poi::Term> term = parse_term(
+  ParseResult<Term> term = parse_term(
     memo,
     pool,
     token_stream,
@@ -2097,12 +2102,12 @@ std::shared_ptr<const Poi::Term> Poi::parse(
 
   // Check if there was an error.
   if (term.error) {
-    throw Poi::Error(term.error->what());
+    throw Error(term.error->what());
   }
 
   // Make sure we parsed the whole file.
   if (term.next != token_stream.tokens->end()) {
-    throw Poi::Error(
+    throw Error(
       "The end of the file was expected here.",
       pool.find(term.next->source_name),
       pool.find(term.next->source),
