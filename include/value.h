@@ -37,27 +37,33 @@ namespace Poi {
   class DataTypeValue : public Value {
   public:
     const std::shared_ptr<const Poi::DataType> data_type;
+    const std::shared_ptr<
+      const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+    > constructors;
 
     explicit DataTypeValue(
-      std::shared_ptr<const Poi::DataType> data_type
+      std::shared_ptr<const Poi::DataType> data_type,
+      const std::shared_ptr<
+        const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+      > constructors
     );
     std::string show(const Poi::StringPool &pool) const override;
   };
 
   class DataValue : public Value {
   public:
-    const std::shared_ptr<const Poi::DataType> type;
+    const std::shared_ptr<const Poi::DataType> data_type;
     const std::size_t constructor;
     const std::shared_ptr<
       const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
-    > captures;
+    > members;
 
     explicit DataValue(
       std::shared_ptr<const Poi::DataType> type,
       std::size_t constructor,
       std::shared_ptr<
         const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
-      > captures
+      > members
     );
     std::string show(const Poi::StringPool &pool) const override;
   };

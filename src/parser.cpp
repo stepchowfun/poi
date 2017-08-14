@@ -1572,7 +1572,7 @@ Poi::ParseResult<Poi::DataType> parse_data_type(
   // "Tie the knot" by giving the Data terms a reference to the DataType.
   for (auto &data_term : data_terms) {
     const_cast<std::weak_ptr<const Poi::DataType> &>(
-      data_term->type
+      data_term->data_type
     ) = std::weak_ptr<const Poi::DataType>(data_type);
   }
 

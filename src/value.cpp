@@ -30,8 +30,11 @@ std::string Poi::FunctionValue::show(const Poi::StringPool &pool) const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::DataTypeValue::DataTypeValue(
-  std::shared_ptr<const Poi::DataType> data_type
-) : data_type(data_type) {
+  std::shared_ptr<const Poi::DataType> data_type,
+  const std::shared_ptr<
+    const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+  > constructors
+) : data_type(data_type), constructors(constructors) {
 }
 
 std::string Poi::DataTypeValue::show(const Poi::StringPool &pool) const {
@@ -43,18 +46,18 @@ std::string Poi::DataTypeValue::show(const Poi::StringPool &pool) const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::DataValue::DataValue(
-  std::shared_ptr<const Poi::DataType> type,
+  std::shared_ptr<const Poi::DataType> data_type,
   std::size_t constructor,
   std::shared_ptr<
     const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
-  > captures
-) : type(type), constructor(constructor), captures(captures) {
+  > members
+) : data_type(data_type), constructor(constructor), members(members) {
 }
 
 std::string Poi::DataValue::show(const Poi::StringPool &pool) const {
   std::string result = "(" + pool.find(constructor);
-  for (auto &capture : *captures) {
-    result += " " + capture.second->show(pool);
+  for (auto &member : *members) {
+    result += " " + member.second->show(pool);
   }
   result += ")";
   return result;
