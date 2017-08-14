@@ -118,7 +118,11 @@ int main(int argc, char *argv[]) {
 
     // Evaluate the program.
     std::unordered_map<size_t, std::shared_ptr<const Poi::Value>> environment;
-    auto value = term->eval(term, environment, pool);
+    auto value = Poi::trampoline(
+      term->eval(term, environment, pool, 0),
+      pool,
+      0
+    );
     std::cout << value->show(pool) << "\n";
   } catch(Poi::Error &e) {
     // There was an error. Print it and exit.

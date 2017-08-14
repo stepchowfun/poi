@@ -99,7 +99,8 @@ namespace Poi {
       const std::unordered_map<
         size_t, std::shared_ptr<const Poi::Value>
       > &environment,
-      const Poi::StringPool &pool
+      const Poi::StringPool &pool,
+      size_t depth
     ) const = 0;
   };
 
@@ -121,7 +122,8 @@ namespace Poi {
       const std::unordered_map<
         size_t, std::shared_ptr<const Poi::Value>
       > &environment,
-      const Poi::StringPool &pool
+      const Poi::StringPool &pool,
+      size_t depth
     ) const override;
   };
 
@@ -145,7 +147,8 @@ namespace Poi {
       const std::unordered_map<
         size_t, std::shared_ptr<const Poi::Value>
       > &environment,
-      const Poi::StringPool &pool
+      const Poi::StringPool &pool,
+      size_t depth
     ) const override;
   };
 
@@ -169,7 +172,8 @@ namespace Poi {
       const std::unordered_map<
         size_t, std::shared_ptr<const Poi::Value>
       > &environment,
-      const Poi::StringPool &pool
+      const Poi::StringPool &pool,
+      size_t depth
     ) const override;
   };
 
@@ -195,7 +199,8 @@ namespace Poi {
       const std::unordered_map<
         size_t, std::shared_ptr<const Poi::Value>
       > &environment,
-      const Poi::StringPool &pool
+      const Poi::StringPool &pool,
+      size_t depth
     ) const override;
   };
 
@@ -229,7 +234,8 @@ namespace Poi {
       const std::unordered_map<
         size_t, std::shared_ptr<const Poi::Value>
       > &environment,
-      const Poi::StringPool &pool
+      const Poi::StringPool &pool,
+      size_t depth
     ) const override;
   };
 
@@ -256,7 +262,8 @@ namespace Poi {
       const std::unordered_map<
         size_t, std::shared_ptr<const Poi::Value>
       > &environment,
-      const Poi::StringPool &pool
+      const Poi::StringPool &pool,
+      size_t depth
     ) const override;
   };
 
@@ -285,7 +292,8 @@ namespace Poi {
       const std::unordered_map<
         size_t, std::shared_ptr<const Poi::Value>
       > &environment,
-      const Poi::StringPool &pool
+      const Poi::StringPool &pool,
+      size_t depth
     ) const override;
   };
 
@@ -313,7 +321,8 @@ namespace Poi {
       const std::unordered_map<
         size_t, std::shared_ptr<const Poi::Value>
       > &environment,
-      const Poi::StringPool &pool
+      const Poi::StringPool &pool,
+      size_t depth
     ) const override;
   };
 }
