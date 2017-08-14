@@ -3,6 +3,34 @@
 #include <poi/value.h>
 
 ///////////////////////////////////////////////////////////////////////////////
+// Helpers                                                                   //
+///////////////////////////////////////////////////////////////////////////////
+
+std::shared_ptr<const Poi::Value> Poi::trampoline(
+  std::shared_ptr<const Poi::Value> value,
+  const Poi::StringPool &pool,
+  size_t depth
+) {
+  auto result = value;
+  while (true) {
+    auto thunk_value = std::dynamic_pointer_cast<
+      const Poi::ThunkValue
+    >(result);
+    if (thunk_value) {
+      result = thunk_value->term->eval(
+        thunk_value->term,
+        *(thunk_value->environment),
+        pool,
+        depth
+      );
+    } else {
+      break;
+    }
+  }
+  return result;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Value                                                                     //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -78,4 +106,20 @@ std::string Poi::ProxyValue::show(const Poi::StringPool &pool) const {
   } else {
     throw Poi::Error("Undefined.");
   }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// ThunkValue                                                                //
+///////////////////////////////////////////////////////////////////////////////
+
+Poi::ThunkValue::ThunkValue(
+  std::shared_ptr<const Poi::Term> term,
+  std::shared_ptr<
+    const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+  > environment
+) : term(term), environment(environment) {
+}
+
+std::string Poi::ThunkValue::show(const Poi::StringPool &pool) const {
+  return "<" + term->show(pool) + ">";
 }

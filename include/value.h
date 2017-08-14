@@ -78,6 +78,30 @@ namespace Poi {
     );
     std::string show(const Poi::StringPool &pool) const override;
   };
+
+  // Used to implement tail recursion
+  class ThunkValue : public Value {
+  public:
+    const std::shared_ptr<const Poi::Term> term;
+    const std::shared_ptr<
+      const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+    > environment;
+
+    explicit ThunkValue(
+      std::shared_ptr<const Poi::Term> term,
+      std::shared_ptr<
+        const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+      > environment
+    );
+    std::string show(const Poi::StringPool &pool) const override;
+  };
+
+  // Repeatedly evaluate a Poi::Value until it is no longer a Poi::ThunkValue.
+  std::shared_ptr<const Poi::Value> trampoline(
+    std::shared_ptr<const Poi::Value> value,
+    const Poi::StringPool &pool,
+    size_t depth
+  );
 }
 
 #endif

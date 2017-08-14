@@ -3,6 +3,12 @@
 #include <poi/value.h>
 
 ///////////////////////////////////////////////////////////////////////////////
+// Configuration                                                             //
+///////////////////////////////////////////////////////////////////////////////
+
+const size_t max_recursion_depth = 1024;
+
+///////////////////////////////////////////////////////////////////////////////
 // Error handling                                                            //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -117,6 +123,33 @@ void pattern_match(
       pool.find(pattern->source),
       pattern->start_pos,
       pattern->end_pos
+    );
+  }
+}
+
+std::shared_ptr<const Poi::Value> tail_call(
+  std::shared_ptr<const Poi::Term> term,
+  std::shared_ptr<
+    const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+  > environment
+) {
+  return std::static_pointer_cast<const Poi::Value>(
+    std::make_shared<const Poi::ThunkValue>(term, environment)
+  );
+}
+
+void check_recursion_depth(
+  const Poi::Term &term,
+  size_t depth,
+  const Poi::StringPool &pool
+) {
+  if (depth >= max_recursion_depth) {
+    throw Poi::MatchError(
+      "Maximum recursion depth exceeded.",
+      pool.find(term.source_name),
+      pool.find(term.source),
+      term.start_pos,
+      term.end_pos
     );
   }
 }
@@ -273,8 +306,10 @@ std::shared_ptr<const Poi::Value> Poi::Variable::eval(
   const std::unordered_map<
     size_t, std::shared_ptr<const Poi::Value>
   > &environment,
-  const Poi::StringPool &pool
+  const Poi::StringPool &pool,
+  size_t depth
 ) const {
+  check_recursion_depth(*term, depth, pool);
   auto value = environment.at(variable);
   while (true) {
     auto proxy_value = std::dynamic_pointer_cast<const Poi::ProxyValue>(value);
@@ -326,8 +361,10 @@ std::shared_ptr<const Poi::Value> Poi::Function::eval(
   const std::unordered_map<
     size_t, std::shared_ptr<const Poi::Value>
   > &environment,
-  const Poi::StringPool &pool
+  const Poi::StringPool &pool,
+  size_t depth
 ) const {
+  check_recursion_depth(*term, depth, pool);
   auto captures = std::make_shared<
     const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
   >();
@@ -336,7 +373,7 @@ std::shared_ptr<const Poi::Value> Poi::Function::eval(
       std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
     >(captures)->insert({ iter, environment.at(iter) });
   }
-  return std::dynamic_pointer_cast<const Poi::Value>(
+  return std::static_pointer_cast<const Poi::Value>(
     std::make_shared<Poi::FunctionValue>(
       std::dynamic_pointer_cast<const Poi::Function>(term),
       captures
@@ -374,15 +411,23 @@ std::shared_ptr<const Poi::Value> Poi::Application::eval(
   const std::unordered_map<
     size_t, std::shared_ptr<const Poi::Value>
   > &environment,
-  const Poi::StringPool &pool
+  const Poi::StringPool &pool,
+  size_t depth
 ) const {
-  auto function_value = function->eval(function, environment, pool);
-  auto operand_value = operand->eval(operand, environment, pool);
+  check_recursion_depth(*term, depth, pool);
+  auto function_value = Poi::trampoline(
+    function->eval(function, environment, pool, depth + 1),
+    pool,
+    depth + 1
+  );
+  auto operand_value = Poi::trampoline(
+    operand->eval(operand, environment, pool, depth + 1),
+    pool,
+    depth + 1
+  );
   auto function_value_fun = std::dynamic_pointer_cast<
     const Poi::FunctionValue
-  >(
-    function_value
-  );
+  >(function_value);
   if (!function_value_fun) {
     throw Poi::Error(
       function_value->show(pool) + " is not a function.",
@@ -392,15 +437,19 @@ std::shared_ptr<const Poi::Value> Poi::Application::eval(
       end_pos
     );
   }
-  std::unordered_map<
-    size_t, std::shared_ptr<const Poi::Value>
-  > new_environment;
+  auto new_environment = std::make_shared<
+    const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+  >();
   for (auto iter : *(function_value_fun->captures)) {
-    new_environment.insert(iter);
+    std::const_pointer_cast<
+      std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+    >(new_environment)->insert(iter);
   }
   try {
     pattern_match(
-      new_environment,
+      *std::const_pointer_cast<
+        std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+      >(new_environment),
       pool,
       function_value_fun->function->pattern,
       operand_value
@@ -408,11 +457,7 @@ std::shared_ptr<const Poi::Value> Poi::Application::eval(
   } catch (Poi::MatchError &e) {
     throw Poi::Error(e.what());
   }
-  return function_value_fun->function->body->eval(
-    function_value_fun->function->body,
-    new_environment,
-    pool
-  );
+  return tail_call(function_value_fun->function->body, new_environment);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -453,21 +498,33 @@ std::shared_ptr<const Poi::Value> Poi::Binding::eval(
   const std::unordered_map<
     size_t, std::shared_ptr<const Poi::Value>
   > &environment,
-  const Poi::StringPool &pool
+  const Poi::StringPool &pool,
+  size_t depth
 ) const {
-  auto new_environment = environment;
+  check_recursion_depth(*term, depth, pool);
+  auto new_environment = std::make_shared<
+    const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+  >(environment.begin(), environment.end());
   for (auto &variable : *(pattern->variables)) {
-    new_environment.insert({
+    std::const_pointer_cast<
+      std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+    >(new_environment)->insert({
       variable,
       std::static_pointer_cast<Poi::Value>(
         std::make_shared<Poi::ProxyValue>(nullptr)
       )
     });
   }
-  auto definition_value = definition->eval(definition, new_environment, pool);
+  auto definition_value = Poi::trampoline(
+    definition->eval(definition, *new_environment, pool, depth + 1),
+    pool,
+    depth + 1
+  );
   try {
     pattern_match(
-      new_environment,
+      *std::const_pointer_cast<
+        std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+      >(new_environment),
       pool,
       pattern,
       definition_value
@@ -475,7 +532,7 @@ std::shared_ptr<const Poi::Value> Poi::Binding::eval(
   } catch (Poi::MatchError &e) {
     throw Poi::Error(e.what());
   }
-  return body->eval(body, new_environment, pool);
+  return tail_call(body, new_environment);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -531,8 +588,10 @@ std::shared_ptr<const Poi::Value> Poi::DataType::eval(
   const std::unordered_map<
     size_t, std::shared_ptr<const Poi::Value>
   > &environment,
-  const Poi::StringPool &pool
+  const Poi::StringPool &pool,
+  size_t depth
 ) const {
+  check_recursion_depth(*term, depth, pool);
   auto constructor_values = std::make_shared<
     const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
   >();
@@ -545,7 +604,7 @@ std::shared_ptr<const Poi::Value> Poi::DataType::eval(
         std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
       >(constructor_values)->insert({
         constructor.first,
-        std::dynamic_pointer_cast<const Poi::Value>(
+        std::static_pointer_cast<const Poi::Value>(
           std::make_shared<Poi::FunctionValue>(
             constructor_function,
             std::make_shared<
@@ -559,7 +618,7 @@ std::shared_ptr<const Poi::Value> Poi::DataType::eval(
         std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
       >(constructor_values)->insert({
         constructor.first,
-        std::dynamic_pointer_cast<const Poi::Value>(
+        std::static_pointer_cast<const Poi::Value>(
           std::make_shared<Poi::DataValue>(
             std::dynamic_pointer_cast<const Poi::Data>(
               constructor.second
@@ -573,7 +632,7 @@ std::shared_ptr<const Poi::Value> Poi::DataType::eval(
       });
     }
   }
-  return std::dynamic_pointer_cast<const Poi::Value>(
+  return std::static_pointer_cast<const Poi::Value>(
     std::make_shared<Poi::DataTypeValue>(
       std::dynamic_pointer_cast<const Poi::DataType>(term),
       constructor_values
@@ -616,15 +675,17 @@ std::shared_ptr<const Poi::Value> Poi::Data::eval(
   const std::unordered_map<
     size_t, std::shared_ptr<const Poi::Value>
   > &environment,
-  const Poi::StringPool &pool
+  const Poi::StringPool &pool,
+  size_t depth
 ) const {
+  check_recursion_depth(*term, depth, pool);
   auto members = std::make_shared<
     std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
   >();
   for (auto iter : *free_variables) {
     members->insert({ iter, environment.at(iter) });
   }
-  return std::dynamic_pointer_cast<const Poi::Value>(
+  return std::static_pointer_cast<const Poi::Value>(
     std::make_shared<Poi::DataValue>(data_type.lock(), constructor, members)
   );
 }
@@ -659,9 +720,15 @@ std::shared_ptr<const Poi::Value> Poi::Member::eval(
   const std::unordered_map<
     size_t, std::shared_ptr<const Poi::Value>
   > &environment,
-  const Poi::StringPool &pool
+  const Poi::StringPool &pool,
+  size_t depth
 ) const {
-  auto object_value = object->eval(object, environment, pool);
+  check_recursion_depth(*term, depth, pool);
+  auto object_value = Poi::trampoline(
+    object->eval(object, environment, pool, depth + 1),
+    pool,
+    depth + 1
+  );
   auto data_type_value = std::dynamic_pointer_cast<const Poi::DataTypeValue>(
     object_value
   );
@@ -751,16 +818,26 @@ std::shared_ptr<const Poi::Value> Poi::Match::eval(
   const std::unordered_map<
     size_t, std::shared_ptr<const Poi::Value>
   > &environment,
-  const Poi::StringPool &pool
+  const Poi::StringPool &pool,
+  size_t depth
 ) const {
-  auto discriminee_value = discriminee->eval(discriminee, environment, pool);
+  check_recursion_depth(*term, depth, pool);
+  auto discriminee_value = Poi::trampoline(
+    discriminee->eval(discriminee, environment, pool, depth + 1),
+    pool,
+    depth + 1
+  );
 
   std::shared_ptr<const Poi::Value> result;
   for (auto &c : *cases) {
-    auto new_environment = environment;
+    auto new_environment = std::make_shared<
+      const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+    >(environment.begin(), environment.end());
     try {
       pattern_match(
-        new_environment,
+        *std::const_pointer_cast<
+          std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
+        >(new_environment),
         pool,
         c->pattern,
         discriminee_value
@@ -769,7 +846,7 @@ std::shared_ptr<const Poi::Value> Poi::Match::eval(
       continue;
     }
     if (!result) {
-      result = c->body->eval(c->body, new_environment, pool);
+      result = tail_call(c->body, new_environment);
     }
   }
   if (result) {
