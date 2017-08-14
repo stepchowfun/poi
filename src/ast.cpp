@@ -7,6 +7,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 const size_t max_evaluation_depth = 1024;
+const size_t tail_call_elimination_min_depth = 100;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Error handling                                                            //
@@ -132,13 +133,19 @@ void pattern_match(
 
 std::shared_ptr<const Poi::Value> tail_call(
   std::shared_ptr<const Poi::Term> term,
+  std::vector<std::shared_ptr<const Poi::Term>> &stack_trace,
   std::shared_ptr<
     const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
-  > environment
+  > environment,
+  const Poi::StringPool &pool
 ) {
-  return std::static_pointer_cast<const Poi::Value>(
-    std::make_shared<const Poi::ThunkValue>(term, environment)
-  );
+  if (stack_trace.size() >= tail_call_elimination_min_depth) {
+    return std::static_pointer_cast<const Poi::Value>(
+      std::make_shared<const Poi::ThunkValue>(term, environment)
+    );
+  } else {
+    return term->eval(term, *environment, stack_trace, pool);
+  }
 }
 
 void enter_frame(
@@ -462,8 +469,14 @@ std::shared_ptr<const Poi::Value> Poi::Application::eval(
   } catch (MatchError &e) {
     throw EvaluationError(e.what(), stack_trace, pool);
   }
+  auto result = tail_call(
+    function_value_fun->function->body,
+    stack_trace,
+    new_environment,
+    pool
+  );
   leave_frame(stack_trace);
-  return tail_call(function_value_fun->function->body, new_environment);
+  return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -539,8 +552,9 @@ std::shared_ptr<const Poi::Value> Poi::Binding::eval(
   } catch (MatchError &e) {
     throw EvaluationError(e.what(), stack_trace, pool);
   }
+  auto result = tail_call(body, stack_trace, new_environment, pool);
   leave_frame(stack_trace);
-  return tail_call(body, new_environment);
+  return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -853,7 +867,7 @@ std::shared_ptr<const Poi::Value> Poi::Match::eval(
       continue;
     }
     if (!result) {
-      result = tail_call(c->body, new_environment);
+      result = tail_call(c->body, stack_trace, new_environment, pool);
     }
   }
   if (result) {
