@@ -11,11 +11,31 @@
 
 namespace Poi {
   enum class InstructionType {
-    COPY
+    COPY,
+    CASE,
+    CALL_NON_TAIL,
+    CALL_TAIL,
+    CREATE_PROXY,
+    DATA,
+    DATA_TYPE,
+    FUNCTION,
+    MEMBER,
+    RETURN,
+    UPDATE_PROXY
   };
 
   const char * const InstructionTypeName[] = {
-    "COPY"
+    "COPY",
+    "CASE",
+    "CALL_NON_TAIL",
+    "CALL_TAIL",
+    "CREATE_PROXY",
+    "DATA",
+    "DATA_TYPE",
+    "FUNCTION",
+    "MEMBER",
+    "RETURN",
+    "UPDATE_PROXY"
   };
 
   class Instruction {
