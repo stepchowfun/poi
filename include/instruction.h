@@ -6,6 +6,8 @@
 #define POI_INSTRUCTION_H
 
 #include <poi/ast.h>
+#include <poi/string_pool.h>
+#include <string>
 
 namespace Poi {
   enum class InstructionType {
@@ -20,6 +22,8 @@ namespace Poi {
   public:
     const InstructionType type;
     const Node * const node;
+
+    std::string show(StringPool &pool) const;
   };
 }
 
