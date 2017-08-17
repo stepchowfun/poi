@@ -57,6 +57,7 @@ namespace Poi {
     size_t destination;
     size_t body;
     size_t frame_size;
+    size_t num_captures;
     size_t *captures;
   };
 
