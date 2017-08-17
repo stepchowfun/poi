@@ -13,13 +13,9 @@ namespace Poi {
   enum class InstructionType {
     CALL_NON_TAIL,
     CALL_TAIL,
-    CASE,
     COPY,
     CREATE_PROXY,
-    DATA,
-    DATA_TYPE,
     FUNCTION,
-    MEMBER,
     RETURN,
     UPDATE_PROXY
   };
@@ -27,13 +23,9 @@ namespace Poi {
   const char * const InstructionTypeName[] = {
     "CALL_NON_TAIL",
     "CALL_TAIL",
-    "CASE",
     "COPY",
     "CREATE_PROXY",
-    "DATA",
-    "DATA_TYPE",
     "FUNCTION",
-    "MEMBER",
     "RETURN",
     "UPDATE_PROXY"
   };
@@ -49,14 +41,6 @@ namespace Poi {
     size_t frame_size;
   };
 
-  class CaseArguments {
-  public:
-    size_t *destination;
-    size_t source;
-    size_t constructor;
-    size_t fail;
-  };
-
   class CopyArguments {
   public:
     size_t destination;
@@ -68,32 +52,12 @@ namespace Poi {
     size_t destination;
   };
 
-  class DataArguments {
-  public:
-    size_t destination;
-    size_t constructor;
-    size_t *captures;
-  };
-
-  class DataTypeArguments {
-  public:
-    size_t destination;
-    size_t *data_type;
-  };
-
   class FunctionArguments {
   public:
     size_t destination;
     size_t body;
     size_t frame_size;
     size_t *captures;
-  };
-
-  class MemberArguments {
-  public:
-    size_t destination;
-    size_t source;
-    size_t field;
   };
 
   class ReturnArguments {
@@ -113,14 +77,10 @@ namespace Poi {
     InstructionType type;
     union {
       CopyArguments copy_args;
-      CaseArguments case_args;
       CallNonTailArguments call_non_tail_args;
       CallTailArguments call_tail_args;
       CreateProxyArguments create_proxy_args;
-      DataArguments data_args;
-      DataTypeArguments data_type_args;
       FunctionArguments function_args;
-      MemberArguments member_args;
       ReturnArguments return_args;
       UpdateProxyArguments update_proxy_args;
     };
