@@ -349,6 +349,12 @@ std::shared_ptr<const Poi::Value> Poi::Variable::eval(
   return value;
 }
 
+void Poi::Variable::emit_instructions(
+  std::vector<Poi::Instruction> &program,
+  std::vector<Poi::Instruction> &expression
+) const {
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Function                                                                  //
 ///////////////////////////////////////////////////////////////////////////////
@@ -398,6 +404,12 @@ std::shared_ptr<const Poi::Value> Poi::Function::eval(
       captures
     )
   );
+}
+
+void Poi::Function::emit_instructions(
+  std::vector<Poi::Instruction> &program,
+  std::vector<Poi::Instruction> &expression
+) const {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -485,6 +497,12 @@ std::shared_ptr<const Poi::Value> Poi::Application::eval(
   return result;
 }
 
+void Poi::Application::emit_instructions(
+  std::vector<Poi::Instruction> &program,
+  std::vector<Poi::Instruction> &expression
+) const {
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Binding                                                                   //
 ///////////////////////////////////////////////////////////////////////////////
@@ -561,6 +579,12 @@ std::shared_ptr<const Poi::Value> Poi::Binding::eval(
   auto result = tail_call(body, stack_trace, new_environment, pool);
   leave_frame(stack_trace);
   return result;
+}
+
+void Poi::Binding::emit_instructions(
+  std::vector<Poi::Instruction> &program,
+  std::vector<Poi::Instruction> &expression
+) const {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -669,6 +693,12 @@ std::shared_ptr<const Poi::Value> Poi::DataType::eval(
   );
 }
 
+void Poi::DataType::emit_instructions(
+  std::vector<Poi::Instruction> &program,
+  std::vector<Poi::Instruction> &expression
+) const {
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Data                                                                      //
 ///////////////////////////////////////////////////////////////////////////////
@@ -718,6 +748,12 @@ std::shared_ptr<const Poi::Value> Poi::Data::eval(
   return std::static_pointer_cast<const Value>(
     std::make_shared<DataValue>(data_type.lock(), constructor, members)
   );
+}
+
+void Poi::Data::emit_instructions(
+  std::vector<Poi::Instruction> &program,
+  std::vector<Poi::Instruction> &expression
+) const {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -800,6 +836,12 @@ std::shared_ptr<const Poi::Value> Poi::Member::eval(
       );
     }
   }
+}
+
+void Poi::Member::emit_instructions(
+  std::vector<Poi::Instruction> &program,
+  std::vector<Poi::Instruction> &expression
+) const {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -885,4 +927,10 @@ std::shared_ptr<const Poi::Value> Poi::Match::eval(
     stack_trace,
     pool
   );
+}
+
+void Poi::Match::emit_instructions(
+  std::vector<Poi::Instruction> &program,
+  std::vector<Poi::Instruction> &expression
+) const {
 }

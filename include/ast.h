@@ -12,8 +12,9 @@
 #include <vector>
 
 namespace Poi {
-  // A forward declaration to avoid mutually recursive headers
+  // Forward declarations to avoid mutually recursive headers
   class Value; // Declared in poi/value.h
+  class Instruction; // Declared in poi/instruction.h
 
   class Node {
   public:
@@ -102,6 +103,10 @@ namespace Poi {
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
     ) const = 0;
+    virtual void emit_instructions(
+      std::vector<Poi::Instruction> &program,
+      std::vector<Poi::Instruction> &expression
+    ) const = 0;
   };
 
   class Variable : public Term {
@@ -124,6 +129,10 @@ namespace Poi {
       > &environment,
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
+    ) const override;
+    void emit_instructions(
+      std::vector<Poi::Instruction> &program,
+      std::vector<Poi::Instruction> &expression
     ) const override;
   };
 
@@ -150,6 +159,10 @@ namespace Poi {
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
     ) const override;
+    void emit_instructions(
+      std::vector<Poi::Instruction> &program,
+      std::vector<Poi::Instruction> &expression
+    ) const override;
   };
 
   class Application : public Term {
@@ -174,6 +187,10 @@ namespace Poi {
       > &environment,
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
+    ) const override;
+    void emit_instructions(
+      std::vector<Poi::Instruction> &program,
+      std::vector<Poi::Instruction> &expression
     ) const override;
   };
 
@@ -201,6 +218,10 @@ namespace Poi {
       > &environment,
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
+    ) const override;
+    void emit_instructions(
+      std::vector<Poi::Instruction> &program,
+      std::vector<Poi::Instruction> &expression
     ) const override;
   };
 
@@ -237,6 +258,10 @@ namespace Poi {
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
     ) const override;
+    void emit_instructions(
+      std::vector<Poi::Instruction> &program,
+      std::vector<Poi::Instruction> &expression
+    ) const override;
   };
 
   // A Data term evaluates to a DataValue value. These terms show up in the
@@ -264,6 +289,10 @@ namespace Poi {
       > &environment,
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
+    ) const override;
+    void emit_instructions(
+      std::vector<Poi::Instruction> &program,
+      std::vector<Poi::Instruction> &expression
     ) const override;
   };
 
@@ -295,6 +324,10 @@ namespace Poi {
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
     ) const override;
+    void emit_instructions(
+      std::vector<Poi::Instruction> &program,
+      std::vector<Poi::Instruction> &expression
+    ) const override;
   };
 
   class Match : public Term {
@@ -323,6 +356,10 @@ namespace Poi {
       > &environment,
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
+    ) const override;
+    void emit_instructions(
+      std::vector<Poi::Instruction> &program,
+      std::vector<Poi::Instruction> &expression
     ) const override;
   };
 }

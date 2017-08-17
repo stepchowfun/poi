@@ -74,7 +74,7 @@ namespace Poi {
 
   class Instruction {
   public:
-    Node * node;
+    Node *node;
     InstructionType type;
     union {
       CopyArguments copy_args;
