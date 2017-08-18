@@ -8,11 +8,11 @@ std::string Poi::Instruction::show(Poi::StringPool &pool) const {
 
   switch (type) {
     case Poi::InstructionType::CALL_NON_TAIL:
-      result += " " + std::to_string(call_non_tail_args.fun);
+      result += " " + std::to_string(call_non_tail_args.function);
       break;
     case Poi::InstructionType::CALL_TAIL:
       result +=
-        " " + std::to_string(call_tail_args.fun) +
+        " " + std::to_string(call_tail_args.function) +
         " " + std::to_string(call_tail_args.frame_size);
       break;
     case Poi::InstructionType::COPY:
