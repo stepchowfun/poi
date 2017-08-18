@@ -2,48 +2,49 @@
 #include <type_traits>
 
 std::string Poi::Instruction::show(Poi::StringPool &pool) const {
-  std::string instruction_string = std::string(
-    InstructionTypeName[
-      static_cast<typename std::underlying_type<InstructionType>::type>(type)
-    ]
-  );
+  std::string result = InstructionTypeName[
+    static_cast<typename std::underlying_type<InstructionType>::type>(type)
+  ];
 
-  switch(type) {
+  switch (type) {
     case Poi::InstructionType::CALL_NON_TAIL:
-      instruction_string += " " + std::to_string(call_non_tail_args.fun);
+      result += " " + std::to_string(call_non_tail_args.fun);
       break;
     case Poi::InstructionType::CALL_TAIL:
-      instruction_string += " " + std::to_string(call_tail_args.fun) +
+      result +=
+        " " + std::to_string(call_tail_args.fun) +
         " " + std::to_string(call_tail_args.frame_size);
       break;
     case Poi::InstructionType::COPY:
-      instruction_string += " " + std::to_string(copy_args.destination) +
+      result +=
+        " " + std::to_string(copy_args.destination) +
         " " + std::to_string(copy_args.source);
       break;
     case Poi::InstructionType::CREATE_PROXY:
-      instruction_string += " " +
-        std::to_string(create_proxy_args.destination);
+      result += " " + std::to_string(create_proxy_args.destination);
       break;
     case Poi::InstructionType::FUNCTION:
-      instruction_string += " " + std::to_string(function_args.destination) +
+      result +=
+        " " + std::to_string(function_args.destination) +
         " " + std::to_string(function_args.body) +
         " " + std::to_string(function_args.frame_size) +
         " [" + std::to_string(function_args.captures[0]);
       for (size_t i = 1; i < function_args.num_captures; i++) {
-        instruction_string += ", " +
+        result += ", " +
           std::to_string(function_args.captures[i]);
       }
-      instruction_string += "]";
+      result += "]";
       break;
     case Poi::InstructionType::RETURN:
-      instruction_string += " " + std::to_string(return_args.frame_size);
+      result += " " + std::to_string(return_args.frame_size);
       break;
     case Poi::InstructionType::UPDATE_PROXY:
-      instruction_string += " " + std::to_string(update_proxy_args.proxy) +
+      result +=
+        " " + std::to_string(update_proxy_args.proxy) +
         " " + std::to_string(update_proxy_args.target);
       break;
     default:
-      instruction_string = "`show` is not supported for " + std::string(
+      result = "`show` is not supported for " + std::string(
         InstructionTypeName[
           static_cast<typename std::underlying_type<InstructionType>::type>(
             type
@@ -52,5 +53,5 @@ std::string Poi::Instruction::show(Poi::StringPool &pool) const {
       ) + ".";
       break;
   }
-  return instruction_string + "\n";
+  return result + "\n";
 }
