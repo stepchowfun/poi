@@ -11,23 +11,38 @@
 
 namespace Poi {
   enum class InstructionType {
+    BEGIN_FIXPOINT,
     CALL_NON_TAIL,
     CALL_TAIL,
     COPY,
-    CREATE_PROXY,
-    FUNCTION,
-    RETURN,
-    UPDATE_PROXY
+    END_FIXPOINT,
+    CREATE_FUNCTION,
+    RETURN
   };
 
   const char * const InstructionTypeName[] = {
+    "BEGIN_FIXPOINT",
     "CALL_NON_TAIL",
     "CALL_TAIL",
     "COPY",
-    "CREATE_PROXY",
-    "FUNCTION",
-    "RETURN",
-    "UPDATE_PROXY"
+    "END_FIXPOINT",
+    "CREATE_FUNCTION",
+    "RETURN"
+  };
+
+  // Name: BEGIN_FIXPOINT
+  //
+  // Description:
+  //   Create a fixpoint value. Fixpoint values are used as placeholders in
+  //   recursive definitions. The END_FIXPOINT instruction "ties the knot" by
+  //   updating all the recursive references to point to the value being
+  //   defined.
+  class BeginFixpointArguments {
+  public:
+    size_t destination; // (SP - destination) will contain the new fixpoint
+                        // value.
+    size_t num_references; // The number of functions that will capture this
+                           // fixpoint value
   };
 
   // Name: CALL_NON_TAIL
@@ -105,21 +120,11 @@ namespace Poi {
     size_t source; // (SP - source) contains the pointer to copy.
   };
 
-  // Name: CREATE_PROXY
-  //
-  // Description:
-  //   Create a proxy value that initially points to nothing. A proxy value is
-  //   a value that acts as another value.
-  class CreateProxyArguments {
-  public:
-    size_t destination; // (SP - destination) will contain the new proxy value.
-  };
-
-  // Name: FUNCTION
+  // Name: CREATE_FUNCTION
   //
   // Description:
   //   Create a function.
-  class FunctionArguments {
+  class CreateFunctionArguments {
   public:
     size_t destination; // (SP - destination) will contain the new function.
     size_t body; // A pointer to the first instruction of the body
@@ -128,6 +133,17 @@ namespace Poi {
     size_t num_captures; // The number of free variables of the function
     size_t *captures; // An array of stack indices (counting down from SP)
                       // which refer to values to be captured
+  };
+
+  // Name: END_FIXPOINT
+  //
+  // Description:
+  //   "Tie the knot" for a recursive definition by updating the fixpoint value
+  //   to point to the recursive value that was just defined.
+  class EndFixpointArguments {
+  public:
+    size_t fixpoint; // (SP - fixpoint) contains the fixpoint value.
+    size_t target; // (SP - target) contains the recursive value.
   };
 
   // Name: RETURN
@@ -149,28 +165,18 @@ namespace Poi {
     size_t frame_size; // (SP - frame_size) contains the return address.
   };
 
-  // Name: UPDATE_PROXY
-  //
-  // Description:
-  //   Set the value pointed to by a proxy value (in-place).
-  class UpdateProxyArguments {
-  public:
-    size_t proxy; // (SP - proxy) contains the proxy value.
-    size_t target; // (SP - target) contains the new target.
-  };
-
   class Instruction {
   public:
     Node *node;
     InstructionType type;
     union {
-      CopyArguments copy_args;
+      BeginFixpointArguments begin_fixpoint_args;
       CallNonTailArguments call_non_tail_args;
       CallTailArguments call_tail_args;
-      CreateProxyArguments create_proxy_args;
-      FunctionArguments function_args;
+      CopyArguments copy_args;
+      CreateFunctionArguments create_function_args;
+      EndFixpointArguments end_fixpoint_args;
       ReturnArguments return_args;
-      UpdateProxyArguments update_proxy_args;
     };
 
     std::string show(StringPool &pool) const;
