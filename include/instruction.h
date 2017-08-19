@@ -167,7 +167,7 @@ namespace Poi {
 
   class Instruction {
   public:
-    Node *node;
+    const Node *node;
     InstructionType type;
     union {
       BeginFixpointArguments begin_fixpoint_args;

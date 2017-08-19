@@ -1,5 +1,6 @@
 #include <poi/ast.h>
 #include <poi/error.h>
+#include <poi/instruction.h>
 #include <poi/value.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -355,6 +356,12 @@ void Poi::Variable::emit_instructions(
   const std::unordered_map<size_t, size_t> &environment,
   size_t destination
 ) const {
+  Instruction copy;
+  copy.node = static_cast<const Poi::Node *>(this);
+  copy.type = Poi::InstructionType::COPY;
+  copy.copy_args.destination = destination;
+  copy.copy_args.source = environment.find(variable)->second;
+  expression.push_back(copy);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
