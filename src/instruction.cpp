@@ -10,32 +10,34 @@ std::string Poi::Instruction::show(Poi::StringPool &pool) const {
   switch (type) {
     case Poi::InstructionType::BEGIN_FIXPOINT:
       result +=
-        " " + std::to_string(begin_fixpoint_args.destination) +
-        " " + std::to_string(begin_fixpoint_args.num_references);
+        " destination=" + std::to_string(begin_fixpoint_args.destination) +
+        " num_references=" + std::to_string(
+          begin_fixpoint_args.num_references
+        );
       break;
     case Poi::InstructionType::CALL_NON_TAIL:
       result +=
-        " " + std::to_string(call_non_tail_args.destination) +
-        " " + std::to_string(call_non_tail_args.function) +
-        " " + std::to_string(call_non_tail_args.argument);
+        " destination=" + std::to_string(call_non_tail_args.destination) +
+        " function=" + std::to_string(call_non_tail_args.function) +
+        " argument=" + std::to_string(call_non_tail_args.argument);
       break;
     case Poi::InstructionType::CALL_TAIL:
       result +=
-        " " + std::to_string(call_non_tail_args.destination) +
-        " " + std::to_string(call_non_tail_args.function) +
-        " " + std::to_string(call_non_tail_args.argument);
+        " destination=" + std::to_string(call_non_tail_args.destination) +
+        " function=" + std::to_string(call_non_tail_args.function) +
+        " argument=" + std::to_string(call_non_tail_args.argument);
       break;
     case Poi::InstructionType::COPY:
       result +=
-        " " + std::to_string(copy_args.destination) +
-        " " + std::to_string(copy_args.source);
+        " destination=" + std::to_string(copy_args.destination) +
+        " source=" + std::to_string(copy_args.source);
       break;
     case Poi::InstructionType::CREATE_FUNCTION:
       result +=
-        " " + std::to_string(create_function_args.destination) +
-        " " + std::to_string(create_function_args.body) +
-        " " + std::to_string(create_function_args.frame_size) +
-        " [";
+        " destination=" + std::to_string(create_function_args.destination) +
+        " body=" + std::to_string(create_function_args.body) +
+        " frame_size=" + std::to_string(create_function_args.frame_size) +
+        " captures=[";
       for (size_t i = 0; i < create_function_args.num_captures; i++) {
         if (i != 0) {
           result += ", ";
@@ -46,12 +48,12 @@ std::string Poi::Instruction::show(Poi::StringPool &pool) const {
       break;
     case Poi::InstructionType::END_FIXPOINT:
       result +=
-        " " + std::to_string(end_fixpoint_args.fixpoint) +
-        " " + std::to_string(end_fixpoint_args.target);
+        " fixpoint=" + std::to_string(end_fixpoint_args.fixpoint) +
+        " target=" + std::to_string(end_fixpoint_args.target);
       break;
     case Poi::InstructionType::RETURN:
       result +=
-        " " + std::to_string(return_args.value);
+        " value=" + std::to_string(return_args.value);
       break;
     default:
       throw Error( "show(...) is not implemented for '" + result + "'");
