@@ -352,7 +352,8 @@ std::shared_ptr<const Poi::Value> Poi::Variable::eval(
 void Poi::Variable::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment
+  const std::unordered_map<size_t, size_t> &environment,
+  size_t destination
 ) const {
 }
 
@@ -410,7 +411,8 @@ std::shared_ptr<const Poi::Value> Poi::Function::eval(
 void Poi::Function::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment
+  const std::unordered_map<size_t, size_t> &environment,
+  size_t destination
 ) const {
 }
 
@@ -502,7 +504,8 @@ std::shared_ptr<const Poi::Value> Poi::Application::eval(
 void Poi::Application::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment
+  const std::unordered_map<size_t, size_t> &environment,
+  size_t destination
 ) const {
 }
 
@@ -587,7 +590,8 @@ std::shared_ptr<const Poi::Value> Poi::Binding::eval(
 void Poi::Binding::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment
+  const std::unordered_map<size_t, size_t> &environment,
+  size_t destination
 ) const {
 }
 
@@ -700,7 +704,8 @@ std::shared_ptr<const Poi::Value> Poi::DataType::eval(
 void Poi::DataType::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment
+  const std::unordered_map<size_t, size_t> &environment,
+  size_t destination
 ) const {
 }
 
@@ -758,7 +763,8 @@ std::shared_ptr<const Poi::Value> Poi::Data::eval(
 void Poi::Data::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment
+  const std::unordered_map<size_t, size_t> &environment,
+  size_t destination
 ) const {
 }
 
@@ -847,7 +853,8 @@ std::shared_ptr<const Poi::Value> Poi::Member::eval(
 void Poi::Member::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment
+  const std::unordered_map<size_t, size_t> &environment,
+  size_t destination
 ) const {
 }
 
@@ -939,6 +946,7 @@ std::shared_ptr<const Poi::Value> Poi::Match::eval(
 void Poi::Match::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment
+  const std::unordered_map<size_t, size_t> &environment,
+  size_t destination
 ) const {
 }
