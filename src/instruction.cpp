@@ -1,3 +1,4 @@
+#include <poi/error.h>
 #include <poi/instruction.h>
 #include <type_traits>
 
@@ -46,14 +47,7 @@ std::string Poi::Instruction::show(Poi::StringPool &pool) const {
       result += " " + std::to_string(return_args.frame_size);
       break;
     default:
-      result = "`show` is not supported for " + std::string(
-        InstructionTypeName[
-          static_cast<typename std::underlying_type<InstructionType>::type>(
-            type
-          )
-        ]
-      ) + ".";
-      break;
+      throw Error( "show(...) is not implemented for '" + result + "'");
   }
   return result + "\n";
 }

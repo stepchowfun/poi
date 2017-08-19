@@ -3,6 +3,7 @@
 #include <memory>
 #include <poi/ast.h>
 #include <poi/error.h>
+#include <poi/instruction.h>
 #include <poi/parser.h>
 #include <poi/string_pool.h>
 #include <poi/tokenizer.h>
@@ -14,6 +15,7 @@
 enum class CliAction {
   EMIT_TOKENS,
   EMIT_AST,
+  EMIT_BYTECODE,
   EVAL
 };
 
@@ -40,6 +42,7 @@ int main(int argc, char *argv[]) {
       "  poi source\n"
       "  poi --emit-tokens source\n"
       "  poi --emit-ast source\n"
+      "  poi --emit-bytecode source\n"
       "  poi --eval source\n";
     return 0;
   }
@@ -70,6 +73,8 @@ int main(int argc, char *argv[]) {
       cli_action = CliAction::EMIT_TOKENS;
     } else if (std::string(argv[1]) == "--emit-ast") {
       cli_action = CliAction::EMIT_AST;
+    } else if (std::string(argv[1]) == "--emit-bytecode") {
+      cli_action = CliAction::EMIT_BYTECODE;
     } else if (std::string(argv[1]) == "--eval") {
       cli_action = CliAction::EVAL;
     } else {
@@ -110,8 +115,20 @@ int main(int argc, char *argv[]) {
     // Parse the tokens into an AST.
     auto term = Poi::parse(token_stream, pool);
     if (cli_action == CliAction::EMIT_AST) {
-      if (term) {
-        std::cout << term->show(pool) << "\n";
+      std::cout << term->show(pool) << "\n";
+      return 0;
+    }
+
+    // Compile the AST into bytecode.
+    std::vector<Poi::Instruction> program;
+    std::vector<Poi::Instruction> expression;
+    term->emit_instructions(program, expression);
+    if (cli_action == CliAction::EMIT_BYTECODE) {
+      for (auto &instruction : program) {
+        std::cout << instruction.show(pool) << "\n";
+      }
+      for (auto &instruction : expression) {
+        std::cout << instruction.show(pool) << "\n";
       }
       return 0;
     }
