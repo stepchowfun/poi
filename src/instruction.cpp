@@ -36,10 +36,12 @@ std::string Poi::Instruction::show(Poi::StringPool &pool) const {
         " " + std::to_string(create_function_args.destination) +
         " " + std::to_string(create_function_args.body) +
         " " + std::to_string(create_function_args.frame_size) +
-        " [" + std::to_string(create_function_args.captures[0]);
-      for (size_t i = 1; i < create_function_args.num_captures; i++) {
-        result += ", " +
-          std::to_string(create_function_args.captures[i]);
+        " [";
+      for (size_t i = 0; i < create_function_args.num_captures; i++) {
+        if (i != 0) {
+          result += ", ";
+        }
+        result += std::to_string(create_function_args.captures[i]);
       }
       result += "]";
       break;
@@ -56,5 +58,5 @@ std::string Poi::Instruction::show(Poi::StringPool &pool) const {
     default:
       throw Error( "show(...) is not implemented for '" + result + "'");
   }
-  return result + "\n";
+  return result;
 }

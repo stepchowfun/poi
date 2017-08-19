@@ -422,7 +422,44 @@ size_t Poi::Function::emit_instructions(
   const std::unordered_map<size_t, size_t> &environment,
   size_t destination
 ) const {
-  return 0;
+  Instruction function;
+  function.node = static_cast<const Poi::Node *>(this);
+  function.type = Poi::InstructionType::CREATE_FUNCTION;
+  function.create_function_args.destination = destination;
+  function.create_function_args.body = program.size();
+
+  std::unordered_map<size_t, size_t> body_environment;
+  auto variable = std::dynamic_pointer_cast<
+    const VariablePattern
+  >(pattern)->variable;
+
+  function.create_function_args.captures = new size_t[free_variables->size()];
+  body_environment.insert({ variable, 0 });
+  size_t index = 1;
+  for (auto iter : *free_variables) {
+    body_environment.insert({ iter, index });
+    function.create_function_args.captures[index - 1] = environment.at(iter);
+    index++;
+  }
+
+  function.create_function_args.num_captures = free_variables->size();
+  function.create_function_args.frame_size = index + body->emit_instructions(
+    program,
+    program,
+    body_environment,
+    index
+  );
+
+  Instruction return_instruction;
+  return_instruction.node = static_cast<const Poi::Node *>(this);
+  return_instruction.type = Poi::InstructionType::RETURN;
+  return_instruction.return_args.value = index;
+  return_instruction.return_args.frame_size =
+    function.create_function_args.frame_size;
+  program.push_back(return_instruction);
+
+  expression.push_back(function);
+  return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

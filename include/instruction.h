@@ -95,7 +95,7 @@ namespace Poi {
     size_t destination; // (SP - destination) will contain the new function.
     size_t body; // A pointer to the first instruction of the body
     size_t frame_size; // The number of slots to allocate on top of the return
-                       // address, including the arguments
+                       // address, including the captures and the argument
     size_t num_captures; // The number of free variables of the function
     size_t *captures; // An array of stack indices (counting down from SP)
                       // which refer to values to be captured
