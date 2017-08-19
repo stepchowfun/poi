@@ -103,7 +103,7 @@ namespace Poi {
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
     ) const = 0;
-    virtual void emit_instructions(
+    virtual size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
@@ -132,7 +132,7 @@ namespace Poi {
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
     ) const override;
-    void emit_instructions(
+    size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
@@ -163,7 +163,7 @@ namespace Poi {
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
     ) const override;
-    void emit_instructions(
+    size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
@@ -194,7 +194,7 @@ namespace Poi {
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
     ) const override;
-    void emit_instructions(
+    size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
@@ -227,7 +227,7 @@ namespace Poi {
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
     ) const override;
-    void emit_instructions(
+    size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
@@ -268,7 +268,7 @@ namespace Poi {
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
     ) const override;
-    void emit_instructions(
+    size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
@@ -302,7 +302,7 @@ namespace Poi {
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
     ) const override;
-    void emit_instructions(
+    size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
@@ -338,7 +338,7 @@ namespace Poi {
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
     ) const override;
-    void emit_instructions(
+    size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
@@ -373,7 +373,7 @@ namespace Poi {
       std::vector<std::shared_ptr<const Term>> &stack_trace,
       const StringPool &pool
     ) const override;
-    void emit_instructions(
+    size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
