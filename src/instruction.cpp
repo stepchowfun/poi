@@ -14,11 +14,16 @@ std::string Poi::Instruction::show(Poi::StringPool &pool) const {
         " " + std::to_string(begin_fixpoint_args.num_references);
       break;
     case Poi::InstructionType::CALL_NON_TAIL:
-      result += " " + std::to_string(call_non_tail_args.function);
+      result +=
+        " " + std::to_string(call_non_tail_args.destination) +
+        " " + std::to_string(call_non_tail_args.function) +
+        " " + std::to_string(call_non_tail_args.argument);
       break;
     case Poi::InstructionType::CALL_TAIL:
       result +=
-        " " + std::to_string(call_tail_args.function) +
+        " " + std::to_string(call_non_tail_args.destination) +
+        " " + std::to_string(call_non_tail_args.function) +
+        " " + std::to_string(call_non_tail_args.argument) +
         " " + std::to_string(call_tail_args.frame_size);
       break;
     case Poi::InstructionType::COPY:
@@ -44,7 +49,9 @@ std::string Poi::Instruction::show(Poi::StringPool &pool) const {
         " " + std::to_string(end_fixpoint_args.target);
       break;
     case Poi::InstructionType::RETURN:
-      result += " " + std::to_string(return_args.frame_size);
+      result +=
+        " " + std::to_string(return_args.value) +
+        " " + std::to_string(return_args.frame_size);
       break;
     default:
       throw Error( "show(...) is not implemented for '" + result + "'");
