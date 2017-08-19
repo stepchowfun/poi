@@ -107,7 +107,8 @@ namespace Poi {
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
-      size_t destination
+      size_t destination,
+      bool tail_position
     ) const = 0;
   };
 
@@ -136,7 +137,8 @@ namespace Poi {
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
-      size_t destination
+      size_t destination,
+      bool tail_position
     ) const override;
   };
 
@@ -167,7 +169,8 @@ namespace Poi {
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
-      size_t destination
+      size_t destination,
+      bool tail_position
     ) const override;
   };
 
@@ -198,7 +201,8 @@ namespace Poi {
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
-      size_t destination
+      size_t destination,
+      bool tail_position
     ) const override;
   };
 
@@ -231,7 +235,8 @@ namespace Poi {
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
-      size_t destination
+      size_t destination,
+      bool tail_position
     ) const override;
   };
 
@@ -272,7 +277,8 @@ namespace Poi {
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
-      size_t destination
+      size_t destination,
+      bool tail_position
     ) const override;
   };
 
@@ -306,7 +312,8 @@ namespace Poi {
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
-      size_t destination
+      size_t destination,
+      bool tail_position
     ) const override;
   };
 
@@ -342,7 +349,8 @@ namespace Poi {
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
-      size_t destination
+      size_t destination,
+      bool tail_position
     ) const override;
   };
 
@@ -377,7 +385,8 @@ namespace Poi {
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
       const std::unordered_map<size_t, size_t> &environment,
-      size_t destination
+      size_t destination,
+      bool tail_position
     ) const override;
   };
 }

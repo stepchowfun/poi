@@ -354,7 +354,8 @@ size_t Poi::Variable::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
   const std::unordered_map<size_t, size_t> &environment,
-  size_t destination
+  size_t destination,
+  bool tail_position
 ) const {
   Instruction copy;
   copy.node = static_cast<const Poi::Node *>(this);
@@ -420,7 +421,8 @@ size_t Poi::Function::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
   const std::unordered_map<size_t, size_t> &environment,
-  size_t destination
+  size_t destination,
+  bool tail_position
 ) const {
   Instruction function;
   function.node = static_cast<const Poi::Node *>(this);
@@ -434,11 +436,11 @@ size_t Poi::Function::emit_instructions(
   >(pattern)->variable;
 
   function.create_function_args.captures = new size_t[free_variables->size()];
-  body_environment.insert({ variable, 0 });
-  size_t index = 1;
+  body_environment.insert({ variable, 2 });
+  size_t index = 3;
   for (auto iter : *free_variables) {
     body_environment.insert({ iter, index });
-    function.create_function_args.captures[index - 1] = environment.at(iter);
+    function.create_function_args.captures[index - 3] = environment.at(iter);
     index++;
   }
 
@@ -447,16 +449,17 @@ size_t Poi::Function::emit_instructions(
     program,
     program,
     body_environment,
-    index
+    index,
+    true
   );
 
-  Instruction return_instruction;
-  return_instruction.node = static_cast<const Poi::Node *>(this);
-  return_instruction.type = Poi::InstructionType::RETURN;
-  return_instruction.return_args.value = index;
-  return_instruction.return_args.frame_size =
-    function.create_function_args.frame_size;
-  program.push_back(return_instruction);
+  if (program.back().type != Poi::InstructionType::CALL_TAIL) {
+    Instruction return_instruction;
+    return_instruction.node = static_cast<const Poi::Node *>(this);
+    return_instruction.type = Poi::InstructionType::RETURN;
+    return_instruction.return_args.value = index;
+    program.push_back(return_instruction);
+  }
 
   expression.push_back(function);
   return 1;
@@ -551,9 +554,40 @@ size_t Poi::Application::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
   const std::unordered_map<size_t, size_t> &environment,
-  size_t destination
+  size_t destination,
+  bool tail_position
 ) const {
-  return 0;
+  auto function_footprint = function->emit_instructions(
+    program,
+    expression,
+    environment,
+    destination,
+    false
+  );
+  auto operand_footprint = operand->emit_instructions(
+    program,
+    expression,
+    environment,
+    destination + function_footprint,
+    false
+  );
+
+  Instruction call;
+  call.node = this;
+  if (tail_position) {
+    call.type = Poi::InstructionType::CALL_TAIL;
+    call.call_tail_args.destination = destination;
+    call.call_tail_args.function = destination;
+    call.call_tail_args.argument = destination + function_footprint;
+  } else {
+    call.type = Poi::InstructionType::CALL_NON_TAIL;
+    call.call_non_tail_args.destination = destination;
+    call.call_non_tail_args.function = destination;
+    call.call_non_tail_args.argument = destination + function_footprint;
+  }
+
+  expression.push_back(call);
+  return function_footprint + operand_footprint;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -638,7 +672,8 @@ size_t Poi::Binding::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
   const std::unordered_map<size_t, size_t> &environment,
-  size_t destination
+  size_t destination,
+  bool tail_position
 ) const {
   return 0;
 }
@@ -753,7 +788,8 @@ size_t Poi::DataType::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
   const std::unordered_map<size_t, size_t> &environment,
-  size_t destination
+  size_t destination,
+  bool tail_position
 ) const {
   return 0;
 }
@@ -813,7 +849,8 @@ size_t Poi::Data::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
   const std::unordered_map<size_t, size_t> &environment,
-  size_t destination
+  size_t destination,
+  bool tail_position
 ) const {
   return 0;
 }
@@ -904,7 +941,8 @@ size_t Poi::Member::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
   const std::unordered_map<size_t, size_t> &environment,
-  size_t destination
+  size_t destination,
+  bool tail_position
 ) const {
   return 0;
 }
@@ -998,7 +1036,8 @@ size_t Poi::Match::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
   const std::unordered_map<size_t, size_t> &environment,
-  size_t destination
+  size_t destination,
+  bool tail_position
 ) const {
   return 0;
 }

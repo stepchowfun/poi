@@ -30,6 +30,18 @@ namespace Poi {
     "RETURN"
   };
 
+  // Stack diagram:
+  // - Base pointer (points to previous base pointer)
+  // - Return address (points to the instruction just after the CALL_NON_TAIL)
+  // - Argument for the current function
+  // - Capture 0
+  // - ...
+  // - Capture N
+  // - ...
+  // - Base pointer
+  // - Return address
+  // - ...
+
   // Name: BEGIN_FIXPOINT
   //
   // Description:
@@ -48,9 +60,10 @@ namespace Poi {
   // Name: CALL_NON_TAIL
   //
   // Description:
-  //   Call a function. This instruction pushes a return address onto the stack
-  //   so the caller can return back to the callee. It then allocates a new
-  //   stack frame for the callee to use.
+  //   Call a function. This instruction allocates a new stack frame with the
+  //   captured values from the closure at the top. Then the following are
+  //   pushed onto the stack: the argument, the return address, and the base
+  //   pointer.
   class CallNonTailArguments {
   public:
     size_t destination; // (SP - destination) will contain the return value.
@@ -61,17 +74,17 @@ namespace Poi {
   // Name: CALL_TAIL
   //
   // Description:
-  //   Call a function. This instruction does not push a new return address
-  //   onto the stack. Instead, the callee will return to the caller's caller.
-  //   This function pops the current stack frame before allocating a new one
-  //   for the callee, so the callee will reuse the stack space previously
-  //   allocated for the caller.
+  //   Call a function. This instruction first pops the current frame off the
+  //   stack. Then it allocates a new stack frame with the captured values
+  //   from the closure at the top. Finally, the following are pushed onto the
+  //   stack: the argument, the previous return address, and the previous base
+  //   pointer. This allows the callee to reuse the memory from the caller's
+  //   stack frame.
   class CallTailArguments {
   public:
     size_t destination; // (SP - destination) will contain the return value.
     size_t function; // (SP - function) contains the function to call.
     size_t argument; // (SP - arugment) contains the argument.
-    size_t frame_size; // (SP - frame_size) contains the instruction pointer.
   };
 
   // Name: COPY
@@ -120,7 +133,6 @@ namespace Poi {
   class ReturnArguments {
   public:
     size_t value; // (SP - value) contains the return value.
-    size_t frame_size; // (SP - frame_size) contains the return address.
   };
 
   class Instruction {

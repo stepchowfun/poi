@@ -23,8 +23,7 @@ std::string Poi::Instruction::show(Poi::StringPool &pool) const {
       result +=
         " " + std::to_string(call_non_tail_args.destination) +
         " " + std::to_string(call_non_tail_args.function) +
-        " " + std::to_string(call_non_tail_args.argument) +
-        " " + std::to_string(call_tail_args.frame_size);
+        " " + std::to_string(call_non_tail_args.argument);
       break;
     case Poi::InstructionType::COPY:
       result +=
@@ -52,8 +51,7 @@ std::string Poi::Instruction::show(Poi::StringPool &pool) const {
       break;
     case Poi::InstructionType::RETURN:
       result +=
-        " " + std::to_string(return_args.value) +
-        " " + std::to_string(return_args.frame_size);
+        " " + std::to_string(return_args.value);
       break;
     default:
       throw Error( "show(...) is not implemented for '" + result + "'");
