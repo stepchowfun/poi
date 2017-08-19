@@ -124,11 +124,9 @@ int main(int argc, char *argv[]) {
     std::vector<Poi::Instruction> expression;
     std::unordered_map<size_t, size_t> environment;
     term->emit_instructions(program, expression, environment, 0);
+    program.insert(program.end(), expression.begin(), expression.end());
     if (cli_action == CliAction::EMIT_BYTECODE) {
       for (auto &instruction : program) {
-        std::cout << instruction.show(pool) << "\n";
-      }
-      for (auto &instruction : expression) {
         std::cout << instruction.show(pool) << "\n";
       }
       return 0;
