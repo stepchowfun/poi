@@ -122,7 +122,8 @@ int main(int argc, char *argv[]) {
     // Compile the AST into bytecode.
     std::vector<Poi::Instruction> program;
     std::vector<Poi::Instruction> expression;
-    term->emit_instructions(program, expression);
+    std::unordered_map<size_t, size_t> environment;
+    term->emit_instructions(program, expression, environment);
     if (cli_action == CliAction::EMIT_BYTECODE) {
       for (auto &instruction : program) {
         std::cout << instruction.show(pool) << "\n";
@@ -134,10 +135,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Evaluate the program.
-    std::unordered_map<size_t, std::shared_ptr<const Poi::Value>> environment;
+    std::unordered_map<
+      size_t,
+      std::shared_ptr<const Poi::Value>
+    > interpreter_environment;
     std::vector<std::shared_ptr<const Poi::Term>> stack_trace;
     auto value = Poi::trampoline(
-      term->eval(term, environment, stack_trace, pool),
+      term->eval(term, interpreter_environment, stack_trace, pool),
       stack_trace,
       pool
     );
