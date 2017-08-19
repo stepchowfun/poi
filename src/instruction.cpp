@@ -10,10 +10,7 @@ std::string Poi::Instruction::show(Poi::StringPool &pool) const {
   switch (type) {
     case Poi::InstructionType::BEGIN_FIXPOINT:
       result +=
-        " destination=" + std::to_string(begin_fixpoint_args.destination) +
-        " num_references=" + std::to_string(
-          begin_fixpoint_args.num_references
-        );
+        " destination=" + std::to_string(begin_fixpoint_args.destination);
       break;
     case Poi::InstructionType::CALL_NON_TAIL:
       result +=

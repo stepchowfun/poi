@@ -53,8 +53,6 @@ namespace Poi {
   public:
     size_t destination; // (SP - destination) will contain the new fixpoint
                         // value.
-    size_t num_references; // The number of functions that will capture this
-                           // fixpoint value
   };
 
   // Name: CALL_NON_TAIL

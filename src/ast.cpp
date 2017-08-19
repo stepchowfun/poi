@@ -675,7 +675,52 @@ size_t Poi::Binding::emit_instructions(
   size_t destination,
   bool tail_position
 ) const {
-  return 0;
+  Instruction begin_fixpoint;
+  begin_fixpoint.node = static_cast<const Poi::Node *>(this);
+  begin_fixpoint.type = Poi::InstructionType::BEGIN_FIXPOINT;
+  begin_fixpoint.begin_fixpoint_args.destination = destination;
+  expression.push_back(begin_fixpoint);
+
+  auto new_environment = std::unordered_map<
+    size_t, size_t
+  >(environment.begin(), environment.end());
+
+  auto variable = std::dynamic_pointer_cast<
+    const VariablePattern
+  >(pattern)->variable;
+  new_environment.insert({ variable, destination });
+
+  auto definition_footprint = definition->emit_instructions(
+    program,
+    expression,
+    new_environment,
+    destination + 1,
+    true
+  );
+
+  Instruction end_fixpoint;
+  end_fixpoint.node = static_cast<const Poi::Node *>(this);
+  end_fixpoint.type = Poi::InstructionType::END_FIXPOINT;
+  end_fixpoint.end_fixpoint_args.fixpoint = destination;
+  end_fixpoint.end_fixpoint_args.target = destination + 1;
+  expression.push_back(end_fixpoint);
+
+  auto body_footprint = body->emit_instructions(
+    program,
+    expression,
+    new_environment,
+    destination + 2,
+    true
+  );
+
+  Instruction copy;
+  copy.node = static_cast<const Poi::Node *>(this);
+  copy.type = Poi::InstructionType::COPY;
+  copy.copy_args.destination = destination;
+  copy.copy_args.source = destination + 2;
+  expression.push_back(copy);
+
+  return std::max<size_t>(definition_footprint, body_footprint) + 2;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
