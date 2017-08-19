@@ -33,10 +33,10 @@ namespace Poi {
   // Name: CALL_NON_TAIL
   //
   // Description:
-  //   Call a function. This version pushes a return address onto the stack so
-  //   the caller can return back to the callee. It then allocates a new stack
-  //   frame for the callee to use.  The callee is expected to overwrite the
-  //   argument with the return value.
+  //   Call a function. This instruction pushes a return address onto the stack
+  //   so the caller can return back to the callee. It then allocates a new
+  //   stack frame for the callee to use.  The callee is expected to overwrite
+  //   the argument with the return value.
   //
   // Stack before (X is just a point of reference for comparison):
   //   X - Argument
@@ -62,10 +62,10 @@ namespace Poi {
   // Name: CALL_TAIL
   //
   // Description:
-  //   Call a function. This version does not push a new return address onto
-  //   the stack. Instead, the callee will return to the caller's caller. This
-  //   function pops the current stack frame before allocating a new one for
-  //   the callee, so the callee will reuse the stack space previously
+  //   Call a function. This instruction does not push a new return address
+  //   onto the stack. Instead, the callee will return to the caller's caller.
+  //   This function pops the current stack frame before allocating a new one
+  //   for the callee, so the callee will reuse the stack space previously
   //   allocated for the caller.  The callee is expected to overwrite the
   //   caller's argument with its own return value.
   //
@@ -89,7 +89,7 @@ namespace Poi {
   //     - ...
   class CallTailArguments {
   public:
-    size_t function; // (SP - function) contains to the function to call.
+    size_t function; // (SP - function) contains the function to call.
     size_t frame_size; // (SP - frame_size) contains the instruction pointer.
   };
 
@@ -115,19 +115,19 @@ namespace Poi {
     size_t destination; // (SP - destination) will contain the new proxy value.
   };
 
-  // Name: CREATE_FUNCTION
+  // Name: FUNCTION
   //
   // Description:
   //   Create a function.
   class FunctionArguments {
   public:
     size_t destination; // (SP - destination) will contain the new function.
-    size_t body; // An pointer to the first instruction of the body
+    size_t body; // A pointer to the first instruction of the body
     size_t frame_size; // The number of slots to allocate on top of the return
                        // address, including the arguments
     size_t num_captures; // The number of free variables of the function
     size_t *captures; // An array of stack indices (counting down from SP)
-                      // which refer to values to be captured.
+                      // which refer to values to be captured
   };
 
   // Name: RETURN
