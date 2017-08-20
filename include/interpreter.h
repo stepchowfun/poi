@@ -10,6 +10,7 @@
 #include <vector>
 
 namespace Poi {
+  // Interpret a bytecode program.
   Value * interpret(
     Poi::Instruction *program,
     std::size_t program_size,
