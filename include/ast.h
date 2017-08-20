@@ -12,8 +12,7 @@
 #include <vector>
 
 namespace Poi {
-  // Forward declarations to avoid mutually recursive headers
-  class Value; // Declared in poi/value.h
+  // A forward declaration to avoid mutually recursive headers
   class Instruction; // Declared in poi/instruction.h
 
   class Node {
