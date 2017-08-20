@@ -1,5 +1,5 @@
 /*
-  This header declares the interface to the interpreter.
+  This header declares the interface to the compiler.
 */
 
 #ifndef POI_COMPILER_H
@@ -12,7 +12,7 @@
 
 namespace Poi {
   size_t compile(
-    std::shared_ptr<const Poi::Term> term,
+    const Poi::Term &term,
     std::vector<Poi::Instruction> &program
   );
 }

@@ -2,7 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <poi/ast.h>
-#include <poi/compile.h>
+#include <poi/compiler.h>
 #include <poi/error.h>
 #include <poi/instruction.h>
 #include <poi/parser.h>
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
 
     // Compile the AST into bytecode.
     std::vector<Poi::Instruction> program;
-    size_t start = Poi::compile(term, program);
+    size_t start = Poi::compile(*term, program);
     if (cli_action == CliAction::EMIT_BYTECODE) {
       for (size_t i = 0; i < program.size(); ++i) {
         std::cout << i << " " << program[i].show(pool);
