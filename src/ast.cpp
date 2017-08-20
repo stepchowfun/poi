@@ -159,7 +159,6 @@ std::size_t Poi::Variable::emit_bytecode(
   bool tail_position
 ) const {
   Bytecode copy;
-  copy.node = static_cast<const Poi::Node *>(this);
   copy.type = Poi::BytecodeType::COPY;
   copy.copy_args.destination = destination;
   copy.copy_args.source = environment.find(variable)->second;
@@ -200,7 +199,6 @@ std::size_t Poi::Function::emit_bytecode(
   bool tail_position
 ) const {
   Bytecode function;
-  function.node = static_cast<const Poi::Node *>(this);
   function.type = Poi::BytecodeType::CREATE_FUNCTION;
   function.create_function_args.destination = destination;
   function.create_function_args.body = program.size();
@@ -232,7 +230,6 @@ std::size_t Poi::Function::emit_bytecode(
 
   if (program.back().type != Poi::BytecodeType::CALL_TAIL) {
     Bytecode return_bytecode;
-    return_bytecode.node = static_cast<const Poi::Node *>(this);
     return_bytecode.type = Poi::BytecodeType::RETURN;
     return_bytecode.return_args.value = index;
     program.push_back(return_bytecode);
@@ -290,7 +287,6 @@ std::size_t Poi::Application::emit_bytecode(
   );
 
   Bytecode call;
-  call.node = this;
   if (tail_position) {
     call.type = Poi::BytecodeType::CALL_TAIL;
     call.call_tail_args.destination = destination;
@@ -348,7 +344,6 @@ std::size_t Poi::Binding::emit_bytecode(
   bool tail_position
 ) const {
   Bytecode begin_fixpoint;
-  begin_fixpoint.node = static_cast<const Poi::Node *>(this);
   begin_fixpoint.type = Poi::BytecodeType::BEGIN_FIXPOINT;
   begin_fixpoint.begin_fixpoint_args.destination = destination;
   expression.push_back(begin_fixpoint);
@@ -372,7 +367,6 @@ std::size_t Poi::Binding::emit_bytecode(
   );
 
   Bytecode end_fixpoint;
-  end_fixpoint.node = static_cast<const Poi::Node *>(this);
   end_fixpoint.type = Poi::BytecodeType::END_FIXPOINT;
   end_fixpoint.end_fixpoint_args.fixpoint = destination;
   end_fixpoint.end_fixpoint_args.target = destination + 1;
@@ -387,7 +381,6 @@ std::size_t Poi::Binding::emit_bytecode(
   );
 
   Bytecode copy;
-  copy.node = static_cast<const Poi::Node *>(this);
   copy.type = Poi::BytecodeType::COPY;
   copy.copy_args.destination = destination;
   copy.copy_args.source = destination + 1;

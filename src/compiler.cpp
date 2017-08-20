@@ -15,7 +15,6 @@ std::size_t Poi::compile(
   program.insert(program.end(), expression.begin(), expression.end());
 
   Bytecode return_bytecode;
-  return_bytecode.node = static_cast<const Poi::Node *>(&term);
   return_bytecode.type = Poi::BytecodeType::RETURN;
   return_bytecode.return_args.value = 0;
   program.push_back(return_bytecode);

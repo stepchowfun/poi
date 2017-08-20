@@ -6,7 +6,6 @@
 #define POI_BYTECODE_H
 
 #include <cstddef>
-#include <poi/ast.h>
 #include <poi/string_pool.h>
 #include <string>
 
@@ -140,7 +139,6 @@ namespace Poi {
 
   class Bytecode {
   public:
-    const Node * node;
     BytecodeType type;
 
     union {
