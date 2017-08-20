@@ -32,18 +32,6 @@ namespace Poi {
     "RETURN"
   };
 
-  // Stack diagram:
-  // - Base pointer (points to previous base pointer)
-  // - Return address (points to the bytecode just after the CALL_NON_TAIL)
-  // - Argument for the current function
-  // - Capture 0
-  // - ...
-  // - Capture N
-  // - ...
-  // - Base pointer
-  // - Return address
-  // - ...
-
   class BeginFixpointArguments {
   public:
     std::size_t destination; // (SP - destination) will contain the new
@@ -60,8 +48,6 @@ namespace Poi {
 
   class CallTailArguments {
   public:
-    std::size_t destination; // (SP - destination) will contain the return
-                             // value.
     std::size_t function; // (SP - function) contains the function to call.
     std::size_t argument; // (SP - arugment) contains the argument.
   };
@@ -77,9 +63,7 @@ namespace Poi {
     std::size_t destination; // (SP - destination) will contain the new
                              // function.
     std::size_t body; // A pointer to the first bytecode of the body
-    std::size_t frame_size; // The number of slots to allocate on top of the
-                            // return address, including the captures and the
-                            // argument
+    std::size_t frame_size; // The number of slots to allocate on the stack
     std::size_t num_captures; // The number of free variables of the function
     std::size_t * captures; // An array of stack indices (counting down from
                             // SP) which refer to values to be captured

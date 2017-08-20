@@ -2,7 +2,15 @@
 #include <poi/value.h>
 #include <type_traits>
 
-std::string Poi::Value::show() const {
+namespace Poi {
+  const std::size_t max_value_show_depth = 4;
+}
+
+std::string Poi::Value::show(std::size_t depth) const {
+  if (depth > Poi::max_value_show_depth) {
+    return "...";
+  }
+
   std::string result = ValueTypeName[
     static_cast<typename std::underlying_type<ValueType>::type>(type)
   ];
@@ -10,7 +18,7 @@ std::string Poi::Value::show() const {
   switch (type) {
     case Poi::ValueType::FIXPOINT: {
       if (fixpoint_members.target) {
-        result += " target=" + fixpoint_members.target->show();
+        result += " target=" + fixpoint_members.target->show(depth + 1);
       } else {
         result += " target=null";
       }
@@ -25,7 +33,7 @@ std::string Poi::Value::show() const {
         if (i != 0) {
           result += ", ";
         }
-        result += function_members.captures[i]->show();
+        result += function_members.captures[i]->show(depth + 1);
       }
       result += "]";
       break;

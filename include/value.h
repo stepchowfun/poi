@@ -46,7 +46,7 @@ namespace Poi {
       FunctionMembers function_members;
     };
 
-    std::string show() const;
+    std::string show(std::size_t depth) const;
   };
 }
 

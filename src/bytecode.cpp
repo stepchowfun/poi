@@ -58,9 +58,8 @@ std::string Poi::Bytecode::show() const {
     }
     case Poi::BytecodeType::CALL_TAIL: {
       result +=
-        " destination=" + std::to_string(call_non_tail_args.destination) +
-        " function=" + std::to_string(call_non_tail_args.function) +
-        " argument=" + std::to_string(call_non_tail_args.argument);
+        " function=" + std::to_string(call_tail_args.function) +
+        " argument=" + std::to_string(call_tail_args.argument);
       break;
     }
     case Poi::BytecodeType::COPY: {

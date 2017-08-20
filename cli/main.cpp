@@ -5,6 +5,7 @@
 #include <poi/bytecode.h>
 #include <poi/compiler.h>
 #include <poi/error.h>
+#include <poi/interpreter.h>
 #include <poi/parser.h>
 #include <poi/string_pool.h>
 #include <poi/tokenizer.h>
@@ -122,11 +123,18 @@ int main(int argc, char *argv[]) {
 
     // Compile the AST into bytecode.
     std::vector<Poi::Bytecode> program;
-    std::size_t start = Poi::compile(*term, program);
+    std::size_t start_program_counter = 0;
+    std::size_t start_stack_size = 0;
+    Poi::compile(
+      *term,
+      program,
+      start_program_counter,
+      start_stack_size
+    );
     if (cli_action == CliAction::EMIT_BYTECODE) {
       for (std::size_t i = 0; i < program.size(); ++i) {
         std::cout << i << " " << program[i].show();
-        if (i == start) {
+        if (i == start_program_counter) {
           std::cout << " <- START";
         }
         std::cout << "\n";
@@ -135,7 +143,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Evaluate the program.
-    // TODO
+    auto result = Poi::interpret(
+      &program[0],
+      program.size(),
+      start_program_counter,
+      start_stack_size
+    );
+    std::cout << result->show(0) << "\n";
 
     // Clean up.
     Poi::free(program);

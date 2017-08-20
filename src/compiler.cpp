@@ -4,21 +4,23 @@
 #include <poi/compiler.h>
 #include <vector>
 
-std::size_t Poi::compile(
+void Poi::compile(
   const Poi::Term &term,
-  std::vector<Poi::Bytecode> &program
+  std::vector<Poi::Bytecode> &program,
+  std::size_t &start_program_counter,
+  std::size_t &start_stack_size
 ) {
   std::vector<Poi::Bytecode> expression;
   std::unordered_map<std::size_t, VariableInfo> environment;
-  term.emit_bytecode(program, expression, environment, 0, true);
-  std::size_t start = program.size();
+  start_stack_size = term.emit_bytecode(
+    program,
+    expression,
+    environment,
+    0,
+    false
+  );
+  start_program_counter = program.size();
   program.insert(program.end(), expression.begin(), expression.end());
-
-  Bytecode return_bytecode;
-  return_bytecode.type = Poi::BytecodeType::RETURN;
-  return_bytecode.return_args.value = 0;
-  program.push_back(return_bytecode);
-  return start;
 }
 
 void Poi::free(std::vector<Poi::Bytecode> &program) {

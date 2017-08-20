@@ -307,7 +307,6 @@ std::size_t Poi::Application::emit_bytecode(
   Bytecode call;
   if (tail_position) {
     call.type = Poi::BytecodeType::CALL_TAIL;
-    call.call_tail_args.destination = destination;
     call.call_tail_args.function = destination;
     call.call_tail_args.argument = destination + function_footprint;
   } else {
@@ -384,7 +383,7 @@ std::size_t Poi::Binding::emit_bytecode(
     expression,
     new_environment,
     destination + 1,
-    true
+    false
   );
 
   Bytecode end_fixpoint;
@@ -398,14 +397,16 @@ std::size_t Poi::Binding::emit_bytecode(
     expression,
     new_environment,
     destination + 1,
-    true
+    tail_position
   );
 
-  Bytecode copy;
-  copy.type = Poi::BytecodeType::COPY;
-  copy.copy_args.destination = destination;
-  copy.copy_args.source = destination + 1;
-  expression.push_back(copy);
+  if (expression.back().type != Poi::BytecodeType::CALL_TAIL) {
+    Bytecode copy;
+    copy.type = Poi::BytecodeType::COPY;
+    copy.copy_args.destination = destination;
+    copy.copy_args.source = destination + 1;
+    expression.push_back(copy);
+  }
 
   return std::max<std::size_t>(definition_footprint, body_footprint) + 1;
 }
