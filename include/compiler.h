@@ -7,13 +7,13 @@
 
 #include <memory>
 #include <poi/ast.h>
-#include <poi/instruction.h>
+#include <poi/bytecode.h>
 #include <vector>
 
 namespace Poi {
   std::size_t compile(
     const Poi::Term &term,
-    std::vector<Poi::Instruction> &program
+    std::vector<Poi::Bytecode> &program
   );
 }
 

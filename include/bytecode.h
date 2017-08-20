@@ -1,16 +1,16 @@
 /*
-  This header declares a class for instructions.
+  This header declares a class for bytecode instructions.
 */
 
-#ifndef POI_INSTRUCTION_H
-#define POI_INSTRUCTION_H
+#ifndef POI_BYTECODE_H
+#define POI_BYTECODE_H
 
 #include <poi/ast.h>
 #include <poi/string_pool.h>
 #include <string>
 
 namespace Poi {
-  enum class InstructionType {
+  enum class BytecodeType {
     BEGIN_FIXPOINT,
     CALL_NON_TAIL,
     CALL_TAIL,
@@ -20,7 +20,7 @@ namespace Poi {
     RETURN
   };
 
-  const char * const InstructionTypeName[] = {
+  const char * const BytecodeTypeName[] = {
     "BEGIN_FIXPOINT",
     "CALL_NON_TAIL",
     "CALL_TAIL",
@@ -32,7 +32,7 @@ namespace Poi {
 
   // Stack diagram:
   // - Base pointer (points to previous base pointer)
-  // - Return address (points to the instruction just after the CALL_NON_TAIL)
+  // - Return address (points to the bytecode just after the CALL_NON_TAIL)
   // - Argument for the current function
   // - Capture 0
   // - ...
@@ -107,7 +107,7 @@ namespace Poi {
   public:
     std::size_t destination; // (SP - destination) will contain the new
                              // function.
-    std::size_t body; // A pointer to the first instruction of the body
+    std::size_t body; // A pointer to the first bytecode of the body
     std::size_t frame_size; // The number of slots to allocate on top of the
                             // return address, including the captures and the
                             // argument
@@ -137,10 +137,10 @@ namespace Poi {
     std::size_t value; // (SP - value) contains the return value.
   };
 
-  class Instruction {
+  class Bytecode {
   public:
     const Node *node;
-    InstructionType type;
+    BytecodeType type;
     union {
       BeginFixpointArguments begin_fixpoint_args;
       CallNonTailArguments call_non_tail_args;

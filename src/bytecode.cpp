@@ -1,35 +1,35 @@
+#include <poi/bytecode.h>
 #include <poi/error.h>
-#include <poi/instruction.h>
 #include <type_traits>
 
-std::string Poi::Instruction::show(Poi::StringPool &pool) const {
-  std::string result = InstructionTypeName[
-    static_cast<typename std::underlying_type<InstructionType>::type>(type)
+std::string Poi::Bytecode::show(Poi::StringPool &pool) const {
+  std::string result = BytecodeTypeName[
+    static_cast<typename std::underlying_type<BytecodeType>::type>(type)
   ];
 
   switch (type) {
-    case Poi::InstructionType::BEGIN_FIXPOINT:
+    case Poi::BytecodeType::BEGIN_FIXPOINT:
       result +=
         " destination=" + std::to_string(begin_fixpoint_args.destination);
       break;
-    case Poi::InstructionType::CALL_NON_TAIL:
+    case Poi::BytecodeType::CALL_NON_TAIL:
       result +=
         " destination=" + std::to_string(call_non_tail_args.destination) +
         " function=" + std::to_string(call_non_tail_args.function) +
         " argument=" + std::to_string(call_non_tail_args.argument);
       break;
-    case Poi::InstructionType::CALL_TAIL:
+    case Poi::BytecodeType::CALL_TAIL:
       result +=
         " destination=" + std::to_string(call_non_tail_args.destination) +
         " function=" + std::to_string(call_non_tail_args.function) +
         " argument=" + std::to_string(call_non_tail_args.argument);
       break;
-    case Poi::InstructionType::COPY:
+    case Poi::BytecodeType::COPY:
       result +=
         " destination=" + std::to_string(copy_args.destination) +
         " source=" + std::to_string(copy_args.source);
       break;
-    case Poi::InstructionType::CREATE_FUNCTION:
+    case Poi::BytecodeType::CREATE_FUNCTION:
       result +=
         " destination=" + std::to_string(create_function_args.destination) +
         " body=" + std::to_string(create_function_args.body) +
@@ -43,12 +43,12 @@ std::string Poi::Instruction::show(Poi::StringPool &pool) const {
       }
       result += "]";
       break;
-    case Poi::InstructionType::END_FIXPOINT:
+    case Poi::BytecodeType::END_FIXPOINT:
       result +=
         " fixpoint=" + std::to_string(end_fixpoint_args.fixpoint) +
         " target=" + std::to_string(end_fixpoint_args.target);
       break;
-    case Poi::InstructionType::RETURN:
+    case Poi::BytecodeType::RETURN:
       result +=
         " value=" + std::to_string(return_args.value);
       break;

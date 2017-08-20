@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <poi/ast.h>
+#include <poi/bytecode.h>
 #include <poi/error.h>
-#include <poi/instruction.h>
 #include <poi/value.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -151,16 +151,16 @@ std::string Poi::Variable::show(const Poi::StringPool &pool) const {
   return pool.find(variable);
 }
 
-std::size_t Poi::Variable::emit_instructions(
-  std::vector<Poi::Instruction> &program,
-  std::vector<Poi::Instruction> &expression,
+std::size_t Poi::Variable::emit_bytecode(
+  std::vector<Poi::Bytecode> &program,
+  std::vector<Poi::Bytecode> &expression,
   const std::unordered_map<std::size_t, std::size_t> &environment,
   std::size_t destination,
   bool tail_position
 ) const {
-  Instruction copy;
+  Bytecode copy;
   copy.node = static_cast<const Poi::Node *>(this);
-  copy.type = Poi::InstructionType::COPY;
+  copy.type = Poi::BytecodeType::COPY;
   copy.copy_args.destination = destination;
   copy.copy_args.source = environment.find(variable)->second;
   expression.push_back(copy);
@@ -192,16 +192,16 @@ std::string Poi::Function::show(const Poi::StringPool &pool) const {
   return "(" + pattern->show(pool) + " -> " + body->show(pool) + ")";
 }
 
-std::size_t Poi::Function::emit_instructions(
-  std::vector<Poi::Instruction> &program,
-  std::vector<Poi::Instruction> &expression,
+std::size_t Poi::Function::emit_bytecode(
+  std::vector<Poi::Bytecode> &program,
+  std::vector<Poi::Bytecode> &expression,
   const std::unordered_map<std::size_t, std::size_t> &environment,
   std::size_t destination,
   bool tail_position
 ) const {
-  Instruction function;
+  Bytecode function;
   function.node = static_cast<const Poi::Node *>(this);
-  function.type = Poi::InstructionType::CREATE_FUNCTION;
+  function.type = Poi::BytecodeType::CREATE_FUNCTION;
   function.create_function_args.destination = destination;
   function.create_function_args.body = program.size();
 
@@ -222,7 +222,7 @@ std::size_t Poi::Function::emit_instructions(
   }
 
   function.create_function_args.num_captures = free_variables->size();
-  function.create_function_args.frame_size = index + body->emit_instructions(
+  function.create_function_args.frame_size = index + body->emit_bytecode(
     program,
     program,
     body_environment,
@@ -230,12 +230,12 @@ std::size_t Poi::Function::emit_instructions(
     true
   );
 
-  if (program.back().type != Poi::InstructionType::CALL_TAIL) {
-    Instruction return_instruction;
-    return_instruction.node = static_cast<const Poi::Node *>(this);
-    return_instruction.type = Poi::InstructionType::RETURN;
-    return_instruction.return_args.value = index;
-    program.push_back(return_instruction);
+  if (program.back().type != Poi::BytecodeType::CALL_TAIL) {
+    Bytecode return_bytecode;
+    return_bytecode.node = static_cast<const Poi::Node *>(this);
+    return_bytecode.type = Poi::BytecodeType::RETURN;
+    return_bytecode.return_args.value = index;
+    program.push_back(return_bytecode);
   }
 
   expression.push_back(function);
@@ -267,21 +267,21 @@ std::string Poi::Application::show(const Poi::StringPool &pool) const {
   return "(" + function->show(pool) + " " + operand->show(pool) + ")";
 }
 
-std::size_t Poi::Application::emit_instructions(
-  std::vector<Poi::Instruction> &program,
-  std::vector<Poi::Instruction> &expression,
+std::size_t Poi::Application::emit_bytecode(
+  std::vector<Poi::Bytecode> &program,
+  std::vector<Poi::Bytecode> &expression,
   const std::unordered_map<std::size_t, std::size_t> &environment,
   std::size_t destination,
   bool tail_position
 ) const {
-  auto function_footprint = function->emit_instructions(
+  auto function_footprint = function->emit_bytecode(
     program,
     expression,
     environment,
     destination,
     false
   );
-  auto operand_footprint = operand->emit_instructions(
+  auto operand_footprint = operand->emit_bytecode(
     program,
     expression,
     environment,
@@ -289,15 +289,15 @@ std::size_t Poi::Application::emit_instructions(
     false
   );
 
-  Instruction call;
+  Bytecode call;
   call.node = this;
   if (tail_position) {
-    call.type = Poi::InstructionType::CALL_TAIL;
+    call.type = Poi::BytecodeType::CALL_TAIL;
     call.call_tail_args.destination = destination;
     call.call_tail_args.function = destination;
     call.call_tail_args.argument = destination + function_footprint;
   } else {
-    call.type = Poi::InstructionType::CALL_NON_TAIL;
+    call.type = Poi::BytecodeType::CALL_NON_TAIL;
     call.call_non_tail_args.destination = destination;
     call.call_non_tail_args.function = destination;
     call.call_non_tail_args.argument = destination + function_footprint;
@@ -340,16 +340,16 @@ std::string Poi::Binding::show(const Poi::StringPool &pool) const {
     ")";
 }
 
-std::size_t Poi::Binding::emit_instructions(
-  std::vector<Poi::Instruction> &program,
-  std::vector<Poi::Instruction> &expression,
+std::size_t Poi::Binding::emit_bytecode(
+  std::vector<Poi::Bytecode> &program,
+  std::vector<Poi::Bytecode> &expression,
   const std::unordered_map<std::size_t, std::size_t> &environment,
   std::size_t destination,
   bool tail_position
 ) const {
-  Instruction begin_fixpoint;
+  Bytecode begin_fixpoint;
   begin_fixpoint.node = static_cast<const Poi::Node *>(this);
-  begin_fixpoint.type = Poi::InstructionType::BEGIN_FIXPOINT;
+  begin_fixpoint.type = Poi::BytecodeType::BEGIN_FIXPOINT;
   begin_fixpoint.begin_fixpoint_args.destination = destination;
   expression.push_back(begin_fixpoint);
 
@@ -363,7 +363,7 @@ std::size_t Poi::Binding::emit_instructions(
   }
   new_environment.insert({ variable, destination });
 
-  auto definition_footprint = definition->emit_instructions(
+  auto definition_footprint = definition->emit_bytecode(
     program,
     expression,
     new_environment,
@@ -371,14 +371,14 @@ std::size_t Poi::Binding::emit_instructions(
     true
   );
 
-  Instruction end_fixpoint;
+  Bytecode end_fixpoint;
   end_fixpoint.node = static_cast<const Poi::Node *>(this);
-  end_fixpoint.type = Poi::InstructionType::END_FIXPOINT;
+  end_fixpoint.type = Poi::BytecodeType::END_FIXPOINT;
   end_fixpoint.end_fixpoint_args.fixpoint = destination;
   end_fixpoint.end_fixpoint_args.target = destination + 1;
   expression.push_back(end_fixpoint);
 
-  auto body_footprint = body->emit_instructions(
+  auto body_footprint = body->emit_bytecode(
     program,
     expression,
     new_environment,
@@ -386,9 +386,9 @@ std::size_t Poi::Binding::emit_instructions(
     true
   );
 
-  Instruction copy;
+  Bytecode copy;
   copy.node = static_cast<const Poi::Node *>(this);
-  copy.type = Poi::InstructionType::COPY;
+  copy.type = Poi::BytecodeType::COPY;
   copy.copy_args.destination = destination;
   copy.copy_args.source = destination + 1;
   expression.push_back(copy);
@@ -444,9 +444,9 @@ std::string Poi::DataType::show(const Poi::StringPool &pool) const {
   return result;
 }
 
-std::size_t Poi::DataType::emit_instructions(
-  std::vector<Poi::Instruction> &program,
-  std::vector<Poi::Instruction> &expression,
+std::size_t Poi::DataType::emit_bytecode(
+  std::vector<Poi::Bytecode> &program,
+  std::vector<Poi::Bytecode> &expression,
   const std::unordered_map<std::size_t, std::size_t> &environment,
   std::size_t destination,
   bool tail_position
@@ -484,9 +484,9 @@ std::string Poi::Data::show(const Poi::StringPool &pool) const {
     ">";
 }
 
-std::size_t Poi::Data::emit_instructions(
-  std::vector<Poi::Instruction> &program,
-  std::vector<Poi::Instruction> &expression,
+std::size_t Poi::Data::emit_bytecode(
+  std::vector<Poi::Bytecode> &program,
+  std::vector<Poi::Bytecode> &expression,
   const std::unordered_map<std::size_t, std::size_t> &environment,
   std::size_t destination,
   bool tail_position
@@ -519,9 +519,9 @@ std::string Poi::Member::show(const Poi::StringPool &pool) const {
   return "(" + object->show(pool) + "." + pool.find(field) + ")";
 }
 
-std::size_t Poi::Member::emit_instructions(
-  std::vector<Poi::Instruction> &program,
-  std::vector<Poi::Instruction> &expression,
+std::size_t Poi::Member::emit_bytecode(
+  std::vector<Poi::Bytecode> &program,
+  std::vector<Poi::Bytecode> &expression,
   const std::unordered_map<std::size_t, std::size_t> &environment,
   std::size_t destination,
   bool tail_position
@@ -566,9 +566,9 @@ std::string Poi::Match::show(const Poi::StringPool &pool) const {
   return result;
 }
 
-std::size_t Poi::Match::emit_instructions(
-  std::vector<Poi::Instruction> &program,
-  std::vector<Poi::Instruction> &expression,
+std::size_t Poi::Match::emit_bytecode(
+  std::vector<Poi::Bytecode> &program,
+  std::vector<Poi::Bytecode> &expression,
   const std::unordered_map<std::size_t, std::size_t> &environment,
   std::size_t destination,
   bool tail_position

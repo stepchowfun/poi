@@ -30,7 +30,7 @@ namespace Poi {
 
   class FunctionMembers {
   public:
-    std::size_t body; // A pointer to the first instruction of the body
+    std::size_t body; // A pointer to the first bytecode of the body
     std::size_t frame_size; // The number of slots to allocate on top of the
                             // return address, including the captures and the
                             // argument
