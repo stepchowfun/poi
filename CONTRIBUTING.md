@@ -24,8 +24,8 @@ The continuous integration system also runs an automated test suite, which can b
 
   ```c++
   // These bounds define the source region spanned by the token.
-  size_t start_pos; // Inclusive
-  size_t end_pos; // Exclusive
+  std::size_t start_pos; // Inclusive
+  std::size_t end_pos; // Exclusive
   ```
 
   **Rationale:** This is somewhat arbitrary, but we want to choose a convention and be consistent everywhere.

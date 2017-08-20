@@ -5,7 +5,7 @@ Poi::StringPool::StringPool() {
   counter = 0;
 }
 
-size_t Poi::StringPool::insert(const std::string &s) {
+std::size_t Poi::StringPool::insert(const std::string &s) {
   auto iter = forward_pool.find(s);
   if (iter == forward_pool.end()) {
     auto index = counter;
@@ -18,7 +18,7 @@ size_t Poi::StringPool::insert(const std::string &s) {
   }
 }
 
-std::string Poi::StringPool::find(size_t id) const {
+std::string Poi::StringPool::find(std::size_t id) const {
   auto iter = reverse_pool.find(id);
   if (iter == reverse_pool.end()) {
     throw Error( "'" + std::to_string(id) + "' is not in the string pool.");

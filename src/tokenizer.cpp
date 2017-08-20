@@ -9,8 +9,8 @@ enum class LineContinuationStatus {
 };
 
 Poi::TokenStream Poi::tokenize(
-  size_t source_name,
-  size_t source,
+  std::size_t source_name,
+  std::size_t source,
   Poi::StringPool &pool
 ) {
   // For performance, get a local copy of the source name and content.
@@ -18,11 +18,11 @@ Poi::TokenStream Poi::tokenize(
   std::string source_str = pool.find(source);
 
   std::vector<Token> tokens;
-  size_t pos = 0;
+  std::size_t pos = 0;
   std::vector<Token> grouping_stack;
   LineContinuationStatus line_continuation_status =
     LineContinuationStatus::LCS_DEFAULT;
-  size_t line_continuation_marker_pos = 0;
+  std::size_t line_continuation_marker_pos = 0;
 
   while (pos < source_str.size()) {
     // Comments begin with '#' and continue to the end of the line.
@@ -118,7 +118,7 @@ Poi::TokenStream Poi::tokenize(
       (source_str[pos] >= 'A' && source_str[pos] <= 'Z') ||
       (source_str[pos] >= 'a' && source_str[pos] <= 'z') ||
       (source_str[pos] & 0x80) != 0) {
-      size_t end_pos = pos + 1;
+      std::size_t end_pos = pos + 1;
       while (end_pos < source_str.size() && (source_str[end_pos] == '_' ||
         (source_str[end_pos] >= 'A' && source_str[end_pos] <= 'Z') ||
         (source_str[end_pos] >= 'a' && source_str[end_pos] <= 'z') ||
@@ -126,7 +126,7 @@ Poi::TokenStream Poi::tokenize(
         (source_str[end_pos] & 0x80) != 0)) {
         ++end_pos;
       }
-      size_t length = end_pos - pos;
+      std::size_t length = end_pos - pos;
       auto literal = source_str.substr(pos, length);
       if (literal == "match") {
         tokens.push_back(Token(

@@ -20,7 +20,7 @@ std::string Poi::Value::show(Poi::StringPool &pool) const {
         " body=" + std::to_string(function_members.body) +
         " frame_size=" + std::to_string(function_members.frame_size) +
         " captures=[";
-      for (size_t i = 0; i < function_members.num_captures; i++) {
+      for (std::size_t i = 0; i < function_members.num_captures; i++) {
         if (i != 0) {
           result += ", ";
         }

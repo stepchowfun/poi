@@ -35,7 +35,7 @@ std::string Poi::Instruction::show(Poi::StringPool &pool) const {
         " body=" + std::to_string(create_function_args.body) +
         " frame_size=" + std::to_string(create_function_args.frame_size) +
         " captures=[";
-      for (size_t i = 0; i < create_function_args.num_captures; i++) {
+      for (std::size_t i = 0; i < create_function_args.num_captures; i++) {
         if (i != 0) {
           result += ", ";
         }

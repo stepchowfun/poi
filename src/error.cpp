@@ -3,14 +3,14 @@
 void get_location_info(
   const std::string &source_name,
   const std::string &source,
-  size_t start_pos, // Inclusive
-  size_t end_pos, // Exclusive
-  size_t &start_line,
-  size_t &start_col,
-  size_t &end_line,
-  size_t &end_col,
-  size_t &context_start_pos,
-  size_t &context_end_pos
+  std::size_t start_pos, // Inclusive
+  std::size_t end_pos, // Exclusive
+  std::size_t &start_line,
+  std::size_t &start_col,
+  std::size_t &end_line,
+  std::size_t &end_col,
+  std::size_t &context_start_pos,
+  std::size_t &context_end_pos
 ) {
   start_line = 0;
   start_col = 0;
@@ -18,11 +18,11 @@ void get_location_info(
   end_col = 0;
   context_start_pos = 0;
   context_end_pos = source.size();
-  size_t line_number = 0;
-  size_t col_number = 0;
+  std::size_t line_number = 0;
+  std::size_t col_number = 0;
   bool found_start = false;
   bool found_end = false;
-  for (size_t pos = 0; pos <= source.size(); ++pos) {
+  for (std::size_t pos = 0; pos <= source.size(); ++pos) {
     if (pos == start_pos) {
       start_line = line_number;
       start_col = col_number;
@@ -52,15 +52,15 @@ void get_location_info(
 std::string Poi::get_location(
   const std::string &source_name,
   const std::string &source,
-  size_t start_pos,
-  size_t end_pos
+  std::size_t start_pos,
+  std::size_t end_pos
 ) {
-  size_t start_line = 0;
-  size_t start_col = 0;
-  size_t end_line = 0;
-  size_t end_col = 0;
-  size_t context_start_pos = 0;
-  size_t context_end_pos = 0;
+  std::size_t start_line = 0;
+  std::size_t start_col = 0;
+  std::size_t end_line = 0;
+  std::size_t end_col = 0;
+  std::size_t context_start_pos = 0;
+  std::size_t context_end_pos = 0;
   get_location_info(
     source_name,
     source,
@@ -109,16 +109,16 @@ Poi::Error::Error(
   const std::string &message,
   const std::string &source_name,
   const std::string &source,
-  size_t start_pos,
-  size_t end_pos
+  std::size_t start_pos,
+  std::size_t end_pos
 ) {
   // Report the location of the error.
-  size_t start_line = 0;
-  size_t start_col = 0;
-  size_t end_line = 0;
-  size_t end_col = 0;
-  size_t context_start_pos = 0;
-  size_t context_end_pos = 0;
+  std::size_t start_line = 0;
+  std::size_t start_col = 0;
+  std::size_t end_line = 0;
+  std::size_t end_col = 0;
+  std::size_t context_start_pos = 0;
+  std::size_t context_end_pos = 0;
   get_location_info(
     source_name,
     source,
@@ -161,7 +161,7 @@ Poi::Error::Error(
     // If there was only one line, highlight the offending section with carets.
     if (end_line == start_line) {
       // Before printing the carets, indent until we are at the right column.
-      for (size_t i = 0; i < start_col; ++i) {
+      for (std::size_t i = 0; i < start_col; ++i) {
         if (source[start_pos + i] == '\t') {
           // Assume a tab takes up 8 spaces in whatever program this error
           // message is being displayed in. Not ideal, but what else can we do?
@@ -172,7 +172,7 @@ Poi::Error::Error(
       }
 
       // Add the carets to highlight the problematic code.
-      for (size_t j = 0; j < end_col - start_col; ++j) {
+      for (std::size_t j = 0; j < end_col - start_col; ++j) {
         if (source[start_pos + start_col + j] == '\t') {
           // Assume a tab takes up 8 carets in whatever program this error
           // message is being displayed in. Not ideal, but what else can we do?

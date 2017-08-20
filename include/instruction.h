@@ -51,8 +51,8 @@ namespace Poi {
   //   defined.
   class BeginFixpointArguments {
   public:
-    size_t destination; // (SP - destination) will contain the new fixpoint
-                        // value.
+    std::size_t destination; // (SP - destination) will contain the new
+                             // fixpoint value.
   };
 
   // Name: CALL_NON_TAIL
@@ -64,9 +64,10 @@ namespace Poi {
   //   pointer.
   class CallNonTailArguments {
   public:
-    size_t destination; // (SP - destination) will contain the return value.
-    size_t function; // (SP - function) contains the function to call.
-    size_t argument; // (SP - arugment) contains the argument.
+    std::size_t destination; // (SP - destination) will contain the return
+                             // value.
+    std::size_t function; // (SP - function) contains the function to call.
+    std::size_t argument; // (SP - arugment) contains the argument.
   };
 
   // Name: CALL_TAIL
@@ -80,9 +81,10 @@ namespace Poi {
   //   stack frame.
   class CallTailArguments {
   public:
-    size_t destination; // (SP - destination) will contain the return value.
-    size_t function; // (SP - function) contains the function to call.
-    size_t argument; // (SP - arugment) contains the argument.
+    std::size_t destination; // (SP - destination) will contain the return
+                             // value.
+    std::size_t function; // (SP - function) contains the function to call.
+    std::size_t argument; // (SP - arugment) contains the argument.
   };
 
   // Name: COPY
@@ -93,8 +95,8 @@ namespace Poi {
   //   copies the pointer on the stack.
   class CopyArguments {
   public:
-    size_t destination; // (SP - destination) will contain the result.
-    size_t source; // (SP - source) contains the pointer to copy.
+    std::size_t destination; // (SP - destination) will contain the result.
+    std::size_t source; // (SP - source) contains the pointer to copy.
   };
 
   // Name: CREATE_FUNCTION
@@ -103,12 +105,14 @@ namespace Poi {
   //   Create a function.
   class CreateFunctionArguments {
   public:
-    size_t destination; // (SP - destination) will contain the new function.
-    size_t body; // A pointer to the first instruction of the body
-    size_t frame_size; // The number of slots to allocate on top of the return
-                       // address, including the captures and the argument
-    size_t num_captures; // The number of free variables of the function
-    size_t *captures; // An array of stack indices (counting down from SP)
+    std::size_t destination; // (SP - destination) will contain the new
+                             // function.
+    std::size_t body; // A pointer to the first instruction of the body
+    std::size_t frame_size; // The number of slots to allocate on top of the
+                            // return address, including the captures and the
+                            // argument
+    std::size_t num_captures; // The number of free variables of the function
+    std::size_t *captures; // An array of stack indices (counting down from SP)
                       // which refer to values to be captured
   };
 
@@ -119,8 +123,8 @@ namespace Poi {
   //   to point to the recursive value that was just defined.
   class EndFixpointArguments {
   public:
-    size_t fixpoint; // (SP - fixpoint) contains the fixpoint value.
-    size_t target; // (SP - target) contains the recursive value.
+    std::size_t fixpoint; // (SP - fixpoint) contains the fixpoint value.
+    std::size_t target; // (SP - target) contains the recursive value.
   };
 
   // Name: RETURN
@@ -130,7 +134,7 @@ namespace Poi {
   //   jump to the return address.
   class ReturnArguments {
   public:
-    size_t value; // (SP - value) contains the return value.
+    std::size_t value; // (SP - value) contains the return value.
   };
 
   class Instruction {

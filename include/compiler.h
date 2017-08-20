@@ -11,7 +11,7 @@
 #include <vector>
 
 namespace Poi {
-  size_t compile(
+  std::size_t compile(
     const Poi::Term &term,
     std::vector<Poi::Instruction> &program
   );

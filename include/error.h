@@ -11,8 +11,8 @@ namespace Poi {
   std::string get_location(
     const std::string &source_name,
     const std::string &source,
-    size_t start_pos, // Inclusive
-    size_t end_pos // Exclusive
+    std::size_t start_pos, // Inclusive
+    std::size_t end_pos // Exclusive
   );
 
   class Error {
@@ -36,8 +36,8 @@ namespace Poi {
       const std::string &message, // No trailing line break
       const std::string &source_name,
       const std::string &source,
-      size_t start_pos, // Inclusive
-      size_t end_pos // Exclusive
+      std::size_t start_pos, // Inclusive
+      std::size_t end_pos // Exclusive
     );
     virtual ~Error();
     std::string what() const; // No trailing line break

@@ -2,8 +2,8 @@
 
 Poi::Value * Poi::interpret(
   Poi::Instruction *program,
-  size_t program_size,
-  size_t start
+  std::size_t program_size,
+  std::size_t start
 ) {
   return nullptr;
 }

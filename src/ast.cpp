@@ -9,10 +9,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Node::Node(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos
 ) :
   source_name(source_name),
   source(source),
@@ -28,11 +28,11 @@ Poi::Node::~Node() {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Pattern::Pattern(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> variables
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> variables
 ) : Node(
     source_name,
     source,
@@ -49,12 +49,12 @@ Poi::Pattern::~Pattern() {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::VariablePattern::VariablePattern(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  size_t variable,
-  std::shared_ptr<const std::unordered_set<size_t>> variables
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::size_t variable,
+  std::shared_ptr<const std::unordered_set<std::size_t>> variables
 ) : Pattern(
     source_name,
     source,
@@ -73,15 +73,15 @@ std::string Poi::VariablePattern::show(const Poi::StringPool &pool) const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::ConstructorPattern::ConstructorPattern(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  size_t constructor,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::size_t constructor,
   std::shared_ptr<
     const std::vector<std::shared_ptr<const Poi::Pattern>>
   > parameters,
-  std::shared_ptr<const std::unordered_set<size_t>> variables
+  std::shared_ptr<const std::unordered_set<std::size_t>> variables
 ) : Pattern(
     source_name,
     source,
@@ -111,11 +111,11 @@ std::string Poi::ConstructorPattern::show(const Poi::StringPool &pool) const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Term::Term(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables
 ) : Node(
     source_name,
     source,
@@ -132,12 +132,12 @@ Poi::Term::~Term() {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Variable::Variable(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
-  size_t variable
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
+  std::size_t variable
 ) : Term(
     source_name,
     source,
@@ -151,11 +151,11 @@ std::string Poi::Variable::show(const Poi::StringPool &pool) const {
   return pool.find(variable);
 }
 
-size_t Poi::Variable::emit_instructions(
+std::size_t Poi::Variable::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment,
-  size_t destination,
+  const std::unordered_map<std::size_t, std::size_t> &environment,
+  std::size_t destination,
   bool tail_position
 ) const {
   Instruction copy;
@@ -172,11 +172,11 @@ size_t Poi::Variable::emit_instructions(
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Function::Function(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::shared_ptr<const Poi::Pattern> pattern,
   std::shared_ptr<const Poi::Term> body
 ) : Term(
@@ -192,11 +192,11 @@ std::string Poi::Function::show(const Poi::StringPool &pool) const {
   return "(" + pattern->show(pool) + " -> " + body->show(pool) + ")";
 }
 
-size_t Poi::Function::emit_instructions(
+std::size_t Poi::Function::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment,
-  size_t destination,
+  const std::unordered_map<std::size_t, std::size_t> &environment,
+  std::size_t destination,
   bool tail_position
 ) const {
   Instruction function;
@@ -205,14 +205,16 @@ size_t Poi::Function::emit_instructions(
   function.create_function_args.destination = destination;
   function.create_function_args.body = program.size();
 
-  std::unordered_map<size_t, size_t> body_environment;
+  std::unordered_map<std::size_t, std::size_t> body_environment;
   auto variable = std::dynamic_pointer_cast<
     const VariablePattern
   >(pattern)->variable;
 
-  function.create_function_args.captures = new size_t[free_variables->size()];
+  function.create_function_args.captures = new std::size_t[
+    free_variables->size()
+  ];
   body_environment.insert({ variable, 2 });
-  size_t index = 3;
+  std::size_t index = 3;
   for (auto iter : *free_variables) {
     body_environment.insert({ iter, index });
     function.create_function_args.captures[index - 3] = environment.at(iter);
@@ -245,11 +247,11 @@ size_t Poi::Function::emit_instructions(
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Application::Application(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::shared_ptr<const Poi::Term> function,
   std::shared_ptr<const Poi::Term> operand
 ) : Term(
@@ -265,11 +267,11 @@ std::string Poi::Application::show(const Poi::StringPool &pool) const {
   return "(" + function->show(pool) + " " + operand->show(pool) + ")";
 }
 
-size_t Poi::Application::emit_instructions(
+std::size_t Poi::Application::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment,
-  size_t destination,
+  const std::unordered_map<std::size_t, std::size_t> &environment,
+  std::size_t destination,
   bool tail_position
 ) const {
   auto function_footprint = function->emit_instructions(
@@ -310,11 +312,11 @@ size_t Poi::Application::emit_instructions(
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Binding::Binding(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::shared_ptr<const Poi::Pattern> pattern,
   std::shared_ptr<const Poi::Term> definition,
   std::shared_ptr<const Poi::Term> body
@@ -338,11 +340,11 @@ std::string Poi::Binding::show(const Poi::StringPool &pool) const {
     ")";
 }
 
-size_t Poi::Binding::emit_instructions(
+std::size_t Poi::Binding::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment,
-  size_t destination,
+  const std::unordered_map<std::size_t, std::size_t> &environment,
+  std::size_t destination,
   bool tail_position
 ) const {
   Instruction begin_fixpoint;
@@ -391,7 +393,7 @@ size_t Poi::Binding::emit_instructions(
   copy.copy_args.source = destination + 1;
   expression.push_back(copy);
 
-  return std::max<size_t>(definition_footprint, body_footprint) + 1;
+  return std::max<std::size_t>(definition_footprint, body_footprint) + 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -399,17 +401,17 @@ size_t Poi::Binding::emit_instructions(
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::DataType::DataType(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
-  std::shared_ptr<const std::vector<size_t>> constructor_names,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
+  std::shared_ptr<const std::vector<std::size_t>> constructor_names,
   std::shared_ptr<
-    const std::unordered_map<size_t, std::vector<size_t>>
+    const std::unordered_map<std::size_t, std::vector<std::size_t>>
   > constructor_params,
   std::shared_ptr<
-    const std::unordered_map<size_t, std::shared_ptr<const Poi::Term>>
+    const std::unordered_map<std::size_t, std::shared_ptr<const Poi::Term>>
   > constructors
 ) : Term(
     source_name,
@@ -442,11 +444,11 @@ std::string Poi::DataType::show(const Poi::StringPool &pool) const {
   return result;
 }
 
-size_t Poi::DataType::emit_instructions(
+std::size_t Poi::DataType::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment,
-  size_t destination,
+  const std::unordered_map<std::size_t, std::size_t> &environment,
+  std::size_t destination,
   bool tail_position
 ) const {
   return 0;
@@ -457,13 +459,13 @@ size_t Poi::DataType::emit_instructions(
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Data::Data(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::weak_ptr<const Poi::DataType> data_type,
-  size_t constructor
+  std::size_t constructor
 ) : Term(
     source_name,
     source,
@@ -482,11 +484,11 @@ std::string Poi::Data::show(const Poi::StringPool &pool) const {
     ">";
 }
 
-size_t Poi::Data::emit_instructions(
+std::size_t Poi::Data::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment,
-  size_t destination,
+  const std::unordered_map<std::size_t, std::size_t> &environment,
+  std::size_t destination,
   bool tail_position
 ) const {
   return 0;
@@ -497,13 +499,13 @@ size_t Poi::Data::emit_instructions(
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Member::Member(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::shared_ptr<const Poi::Term> object,
-  size_t field
+  std::size_t field
 ) : Term(
     source_name,
     source,
@@ -517,11 +519,11 @@ std::string Poi::Member::show(const Poi::StringPool &pool) const {
   return "(" + object->show(pool) + "." + pool.find(field) + ")";
 }
 
-size_t Poi::Member::emit_instructions(
+std::size_t Poi::Member::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment,
-  size_t destination,
+  const std::unordered_map<std::size_t, std::size_t> &environment,
+  std::size_t destination,
   bool tail_position
 ) const {
   return 0;
@@ -532,11 +534,11 @@ size_t Poi::Member::emit_instructions(
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Match::Match(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::shared_ptr<const Poi::Term> discriminee,
   std::shared_ptr<
     const std::vector<std::shared_ptr<const Poi::Function>>
@@ -564,11 +566,11 @@ std::string Poi::Match::show(const Poi::StringPool &pool) const {
   return result;
 }
 
-size_t Poi::Match::emit_instructions(
+std::size_t Poi::Match::emit_instructions(
   std::vector<Poi::Instruction> &program,
   std::vector<Poi::Instruction> &expression,
-  const std::unordered_map<size_t, size_t> &environment,
-  size_t destination,
+  const std::unordered_map<std::size_t, std::size_t> &environment,
+  std::size_t destination,
   bool tail_position
 ) const {
   return 0;
