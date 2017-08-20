@@ -20,6 +20,9 @@ void Poi::Bytecode::free() {
       delete [] create_function_args.captures;
       break;
     }
+    case Poi::BytecodeType::DEREF_FIXPOINT: {
+      break;
+    }
     case Poi::BytecodeType::END_FIXPOINT: {
       break;
     }
@@ -79,6 +82,12 @@ std::string Poi::Bytecode::show() const {
         result += std::to_string(create_function_args.captures[i]);
       }
       result += "]";
+      break;
+    }
+    case Poi::BytecodeType::DEREF_FIXPOINT: {
+      result +=
+        " destination=" + std::to_string(deref_fixpoint_args.destination) +
+        " source=" + std::to_string(deref_fixpoint_args.source);
       break;
     }
     case Poi::BytecodeType::END_FIXPOINT: {

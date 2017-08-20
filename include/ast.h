@@ -16,6 +16,12 @@ namespace Poi {
   // A forward declaration to avoid mutually recursive headers
   class Bytecode; // Declared in poi/bytecode.h
 
+  class VariableInfo {
+  public:
+    std::size_t stack_location; // Relative to the top of the stack
+    bool is_fixpoint;
+  };
+
   class Node {
   public:
     const std::size_t source_name;
@@ -100,7 +106,7 @@ namespace Poi {
     virtual std::size_t emit_bytecode(
       std::vector<Poi::Bytecode> &program,
       std::vector<Poi::Bytecode> &expression,
-      const std::unordered_map<std::size_t, std::size_t> &environment,
+      const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
     ) const = 0;
@@ -122,7 +128,7 @@ namespace Poi {
     std::size_t emit_bytecode(
       std::vector<Poi::Bytecode> &program,
       std::vector<Poi::Bytecode> &expression,
-      const std::unordered_map<std::size_t, std::size_t> &environment,
+      const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
     ) const override;
@@ -146,7 +152,7 @@ namespace Poi {
     std::size_t emit_bytecode(
       std::vector<Poi::Bytecode> &program,
       std::vector<Poi::Bytecode> &expression,
-      const std::unordered_map<std::size_t, std::size_t> &environment,
+      const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
     ) const override;
@@ -170,7 +176,7 @@ namespace Poi {
     std::size_t emit_bytecode(
       std::vector<Poi::Bytecode> &program,
       std::vector<Poi::Bytecode> &expression,
-      const std::unordered_map<std::size_t, std::size_t> &environment,
+      const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
     ) const override;
@@ -196,7 +202,7 @@ namespace Poi {
     std::size_t emit_bytecode(
       std::vector<Poi::Bytecode> &program,
       std::vector<Poi::Bytecode> &expression,
-      const std::unordered_map<std::size_t, std::size_t> &environment,
+      const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
     ) const override;
@@ -230,7 +236,7 @@ namespace Poi {
     std::size_t emit_bytecode(
       std::vector<Poi::Bytecode> &program,
       std::vector<Poi::Bytecode> &expression,
-      const std::unordered_map<std::size_t, std::size_t> &environment,
+      const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
     ) const override;
@@ -257,7 +263,7 @@ namespace Poi {
     std::size_t emit_bytecode(
       std::vector<Poi::Bytecode> &program,
       std::vector<Poi::Bytecode> &expression,
-      const std::unordered_map<std::size_t, std::size_t> &environment,
+      const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
     ) const override;
@@ -286,7 +292,7 @@ namespace Poi {
     std::size_t emit_bytecode(
       std::vector<Poi::Bytecode> &program,
       std::vector<Poi::Bytecode> &expression,
-      const std::unordered_map<std::size_t, std::size_t> &environment,
+      const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
     ) const override;
@@ -314,7 +320,7 @@ namespace Poi {
     std::size_t emit_bytecode(
       std::vector<Poi::Bytecode> &program,
       std::vector<Poi::Bytecode> &expression,
-      const std::unordered_map<std::size_t, std::size_t> &environment,
+      const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
     ) const override;
