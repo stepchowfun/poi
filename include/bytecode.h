@@ -112,8 +112,8 @@ namespace Poi {
                             // return address, including the captures and the
                             // argument
     std::size_t num_captures; // The number of free variables of the function
-    std::size_t *captures; // An array of stack indices (counting down from SP)
-                      // which refer to values to be captured
+    std::size_t * captures; // An array of stack indices (counting down from
+                            // SP) which refer to values to be captured
   };
 
   // Name: END_FIXPOINT
@@ -139,8 +139,9 @@ namespace Poi {
 
   class Bytecode {
   public:
-    const Node *node;
+    const Node * node;
     BytecodeType type;
+
     union {
       BeginFixpointArguments begin_fixpoint_args;
       CallNonTailArguments call_non_tail_args;
