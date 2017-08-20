@@ -30,12 +30,12 @@ void Poi::Bytecode::free() {
       std::string name = BytecodeTypeName[
         static_cast<typename std::underlying_type<BytecodeType>::type>(type)
       ];
-      throw Error("free(...) is not implemented for '" + name + "'");
+      throw Error("free(...) is not implemented for '" + name + "'.");
     }
   }
 }
 
-std::string Poi::Bytecode::show(Poi::StringPool &pool) const {
+std::string Poi::Bytecode::show() const {
   std::string result = BytecodeTypeName[
     static_cast<typename std::underlying_type<BytecodeType>::type>(type)
   ];
@@ -93,7 +93,7 @@ std::string Poi::Bytecode::show(Poi::StringPool &pool) const {
       break;
     }
     default: {
-      throw Error("show(...) is not implemented for '" + result + "'");
+      throw Error("show(...) is not implemented for '" + result + "'.");
     }
   }
   return result;

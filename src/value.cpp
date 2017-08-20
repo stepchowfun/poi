@@ -31,7 +31,7 @@ std::string Poi::Value::show() const {
       break;
     }
     default: {
-      throw Error("show(...) is not implemented for '" + result + "'");
+      throw Error("show(...) is not implemented for '" + result + "'.");
     }
   }
 

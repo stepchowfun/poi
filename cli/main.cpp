@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
     std::size_t start = Poi::compile(*term, program);
     if (cli_action == CliAction::EMIT_BYTECODE) {
       for (std::size_t i = 0; i < program.size(); ++i) {
-        std::cout << i << " " << program[i].show(pool);
+        std::cout << i << " " << program[i].show();
         if (i == start) {
           std::cout << " <- START";
         }

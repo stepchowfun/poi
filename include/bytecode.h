@@ -152,7 +152,7 @@ namespace Poi {
     };
 
     void free();
-    std::string show(StringPool &pool) const;
+    std::string show() const;
   };
 }
 
