@@ -30,8 +30,7 @@ Poi::Value * Poi::interpret(
   while (instruction_pointer < program_size) {
     auto bytecode = program[instruction_pointer];
     switch (bytecode.type) {
-      case BytecodeType::BEGIN_FIXPOINT:
-      {
+      case BytecodeType::BEGIN_FIXPOINT: {
         Value * fixpoint_value = new Value;
         fixpoint_value->type = ValueType::FIXPOINT;
         fixpoint_value->fixpoint_members.target = nullptr;
@@ -40,7 +39,7 @@ Poi::Value * Poi::interpret(
         instruction_pointer++;
         break;
       }
-      default:
+      default: {
         std::string bytecode_string = BytecodeTypeName[
           static_cast<typename std::underlying_type<
             BytecodeType>::type
@@ -49,6 +48,7 @@ Poi::Value * Poi::interpret(
         throw Error(
           "interpret(...) is not implemented for '" + bytecode_string + "'"
         );
+      }
     }
   }
 
