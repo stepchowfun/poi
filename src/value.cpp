@@ -2,7 +2,7 @@
 #include <poi/value.h>
 #include <type_traits>
 
-std::string Poi::Value::show(Poi::StringPool &pool) const {
+std::string Poi::Value::show() const {
   std::string result = ValueTypeName[
     static_cast<typename std::underlying_type<ValueType>::type>(type)
   ];
@@ -10,7 +10,7 @@ std::string Poi::Value::show(Poi::StringPool &pool) const {
   switch (type) {
     case Poi::ValueType::FIXPOINT:
       if (fixpoint_members.target) {
-        result += " target=" + fixpoint_members.target->show(pool);
+        result += " target=" + fixpoint_members.target->show();
       } else {
         result += " target=null";
       }
@@ -24,7 +24,7 @@ std::string Poi::Value::show(Poi::StringPool &pool) const {
         if (i != 0) {
           result += ", ";
         }
-        result += function_members.captures[i]->show(pool);
+        result += function_members.captures[i]->show();
       }
       result += "]";
       break;

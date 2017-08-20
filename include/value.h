@@ -46,7 +46,7 @@ namespace Poi {
       FunctionMembers function_members;
     };
 
-    std::string show(StringPool &pool) const;
+    std::string show() const;
   };
 }
 
