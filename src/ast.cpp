@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <poi/ast.h>
 #include <poi/error.h>
 #include <poi/instruction.h>
@@ -681,13 +682,14 @@ size_t Poi::Binding::emit_instructions(
   begin_fixpoint.begin_fixpoint_args.destination = destination;
   expression.push_back(begin_fixpoint);
 
-  auto new_environment = std::unordered_map<
-    size_t, size_t
-  >(environment.begin(), environment.end());
-
+  auto new_environment = environment;
   auto variable = std::dynamic_pointer_cast<
     const VariablePattern
   >(pattern)->variable;
+  auto variable_iter = new_environment.find(variable);
+  if (variable_iter != new_environment.end()) {
+    new_environment.erase(variable_iter);
+  }
   new_environment.insert({ variable, destination });
 
   auto definition_footprint = definition->emit_instructions(
@@ -709,7 +711,7 @@ size_t Poi::Binding::emit_instructions(
     program,
     expression,
     new_environment,
-    destination + 2,
+    destination + 1,
     true
   );
 
@@ -717,10 +719,10 @@ size_t Poi::Binding::emit_instructions(
   copy.node = static_cast<const Poi::Node *>(this);
   copy.type = Poi::InstructionType::COPY;
   copy.copy_args.destination = destination;
-  copy.copy_args.source = destination + 2;
+  copy.copy_args.source = destination + 1;
   expression.push_back(copy);
 
-  return std::max<size_t>(definition_footprint, body_footprint) + 2;
+  return std::max<size_t>(definition_footprint, body_footprint) + 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

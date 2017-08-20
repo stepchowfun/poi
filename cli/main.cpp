@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
     program.insert(program.end(), expression.begin(), expression.end());
     if (cli_action == CliAction::EMIT_BYTECODE) {
       for (size_t i = 0; i < program.size(); ++i) {
-        std::cout << program[i].show(pool);
+        std::cout << i << " " << program[i].show(pool);
         if (i == start) {
           std::cout << " <- START";
         }
