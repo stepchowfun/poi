@@ -1,5 +1,5 @@
-#include <poi/value.h>
 #include <poi/error.h>
+#include <poi/value.h>
 #include <type_traits>
 
 std::string Poi::Value::show(Poi::StringPool &pool) const {
