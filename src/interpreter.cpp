@@ -18,8 +18,7 @@ Poi::Value * Poi::interpret(
         Value * fixpoint_value = new Value;
         fixpoint_value->type = ValueType::FIXPOINT;
         fixpoint_value->fixpoint_members.target = nullptr;
-        value_stack[bytecode.begin_fixpoint_args.destination] =
-          fixpoint_value;
+        value_stack[bytecode.begin_fixpoint_args.destination] = fixpoint_value;
         break;
       }
       default: {
