@@ -95,14 +95,6 @@ namespace Poi {
       std::shared_ptr<const std::unordered_set<size_t>> free_variables
     );
     virtual ~Term();
-    virtual std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
-    ) const = 0;
     virtual size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
@@ -125,14 +117,6 @@ namespace Poi {
       size_t variable
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
-    ) const override;
     size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
@@ -157,14 +141,6 @@ namespace Poi {
       std::shared_ptr<const Term> body
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
-    ) const override;
     size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
@@ -189,14 +165,6 @@ namespace Poi {
       std::shared_ptr<const Term> operand
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
-    ) const override;
     size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
@@ -223,14 +191,6 @@ namespace Poi {
       std::shared_ptr<const Term> body
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
-    ) const override;
     size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
@@ -265,14 +225,6 @@ namespace Poi {
       > constructors
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
-    ) const override;
     size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
@@ -300,14 +252,6 @@ namespace Poi {
       size_t constructor
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
-    ) const override;
     size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
@@ -337,14 +281,6 @@ namespace Poi {
       size_t field
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
-    ) const override;
     size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
@@ -373,14 +309,6 @@ namespace Poi {
       > cases
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
-    ) const override;
     size_t emit_instructions(
       std::vector<Poi::Instruction> &program,
       std::vector<Poi::Instruction> &expression,
