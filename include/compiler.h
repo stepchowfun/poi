@@ -16,6 +16,11 @@ namespace Poi {
     const Poi::Term &term,
     std::vector<Poi::Bytecode> &program
   );
+
+  // Delete all the memory pointed to by the bytecode. Note that the Bytecodes
+  // themselves are owned by the vector and will be freed when its destructor
+  // is called.
+  void free(std::vector<Poi::Bytecode> &program);
 }
 
 #endif

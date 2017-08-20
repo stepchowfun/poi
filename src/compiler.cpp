@@ -20,3 +20,9 @@ std::size_t Poi::compile(
   program.push_back(return_bytecode);
   return start;
 }
+
+void Poi::free(std::vector<Poi::Bytecode> &program) {
+  for (auto &bytecode : program) {
+    bytecode.free();
+  }
+}

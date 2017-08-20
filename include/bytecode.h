@@ -151,6 +151,7 @@ namespace Poi {
       ReturnArguments return_args;
     };
 
+    void free();
     std::string show(StringPool &pool) const;
   };
 }

@@ -136,6 +136,9 @@ int main(int argc, char *argv[]) {
 
     // Evaluate the program.
     // TODO
+
+    // Clean up.
+    Poi::free(program);
   } catch(Poi::Error &e) {
     // There was an error. Print it and exit.
     std::cerr << "Error: " << e.what() << "\n";
