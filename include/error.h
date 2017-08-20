@@ -16,12 +16,10 @@ namespace Poi {
   );
 
   class Error {
-  private:
+  protected:
     std::string message;
 
-  protected:
     explicit Error();
-    void update(const std::string &message);
 
   public:
     explicit Error(

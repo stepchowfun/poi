@@ -101,10 +101,6 @@ Poi::Error::Error(
   this->message = message + "\nLocation: " + source_name;
 }
 
-void Poi::Error::update(const std::string &message) {
-  this->message = message;
-}
-
 Poi::Error::Error(
   const std::string &message,
   const std::string &source_name,
