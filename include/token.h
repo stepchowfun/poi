@@ -5,6 +5,7 @@
 #ifndef POI_TOKENS_H
 #define POI_TOKENS_H
 
+#include <cstddef>
 #include <memory>
 #include <poi/string_pool.h>
 #include <string>

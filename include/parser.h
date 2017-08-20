@@ -5,6 +5,7 @@
 #ifndef POI_PARSER_H
 #define POI_PARSER_H
 
+#include <cstddef>
 #include <memory>
 #include <poi/ast.h>
 #include <poi/string_pool.h>

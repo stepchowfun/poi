@@ -5,6 +5,7 @@
 #ifndef POI_STRING_POOL_H
 #define POI_STRING_POOL_H
 
+#include <cstddef>
 #include <string>
 #include <unordered_map>
 

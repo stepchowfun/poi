@@ -5,6 +5,7 @@
 #ifndef POI_COMPILER_H
 #define POI_COMPILER_H
 
+#include <cstddef>
 #include <memory>
 #include <poi/ast.h>
 #include <poi/bytecode.h>

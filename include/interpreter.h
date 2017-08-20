@@ -5,6 +5,7 @@
 #ifndef POI_INTERPRETER_H
 #define POI_INTERPRETER_H
 
+#include <cstddef>
 #include <poi/bytecode.h>
 #include <poi/value.h>
 #include <vector>

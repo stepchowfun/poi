@@ -5,6 +5,7 @@
 #ifndef POI_TOKENIZER_H
 #define POI_TOKENIZER_H
 
+#include <cstddef>
 #include <poi/string_pool.h>
 #include <poi/token.h>
 

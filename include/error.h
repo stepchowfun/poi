@@ -5,6 +5,7 @@
 #ifndef POI_ERROR_H
 #define POI_ERROR_H
 
+#include <cstddef>
 #include <string>
 
 namespace Poi {

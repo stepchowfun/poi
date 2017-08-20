@@ -5,6 +5,7 @@
 #ifndef POI_AST_H
 #define POI_AST_H
 
+#include <cstddef>
 #include <memory>
 #include <poi/string_pool.h>
 #include <unordered_map>
