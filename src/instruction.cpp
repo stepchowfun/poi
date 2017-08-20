@@ -53,7 +53,7 @@ std::string Poi::Instruction::show(Poi::StringPool &pool) const {
         " value=" + std::to_string(return_args.value);
       break;
     default:
-      throw Error( "show(...) is not implemented for '" + result + "'");
+      throw Error("show(...) is not implemented for '" + result + "'");
   }
   return result;
 }
