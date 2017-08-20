@@ -14,11 +14,18 @@ namespace Poi {
   class Value;
 
   enum class ValueType {
+    FIXPOINT,
     FUNCTION
   };
 
   const char * const ValueTypeName[] = {
+    "FIXPOINT",
     "FUNCTION"
+  };
+
+  class FixpointMembers {
+  public:
+    Value *target;
   };
 
   class FunctionMembers {
@@ -35,6 +42,7 @@ namespace Poi {
   public:
     ValueType type;
     union {
+      FixpointMembers fixpoint_members;
       FunctionMembers function_members;
     };
 

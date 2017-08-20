@@ -8,6 +8,13 @@ std::string Poi::Value::show(Poi::StringPool &pool) const {
   ];
 
   switch (type) {
+    case Poi::ValueType::FIXPOINT:
+      if (fixpoint_members.target) {
+        result += " target=" + fixpoint_members.target->show(pool);
+      } else {
+        result += " target=null";
+      }
+      break;
     case Poi::ValueType::FUNCTION:
       result +=
         " body=" + std::to_string(function_members.body) +
