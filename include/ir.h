@@ -22,7 +22,7 @@ namespace Poi {
       std::vector<const std::shared_ptr<const IrInstruction>>
     > get_instructions();
     std::size_t frame_size() const;
-    std::shared_ptr<std::vector<const Bytecode>> emit_bytecode();
+    std::shared_ptr<std::vector<Bytecode>> emit_bytecode();
     std::string show() const;
 
   private:
@@ -38,9 +38,8 @@ namespace Poi {
     explicit IrInstruction(const std::shared_ptr<const Node> node);
     virtual ~IrInstruction();
     virtual std::size_t max_register() const = 0;
-    virtual std::size_t emit_bytecode(
-      std::vector<const Bytecode> &bytecode,
-      std::size_t destination
+    virtual void emit_bytecode(
+      std::vector<Bytecode> &bytecode
     ) const = 0; // Returns the number of registers used so far
     virtual std::string show() const = 0;
   };
@@ -54,10 +53,7 @@ namespace Poi {
       const std::shared_ptr<const Node> node
     );
     std::size_t max_register() const override;
-    std::size_t emit_bytecode(
-      std::vector<const Bytecode> &bytecode,
-      std::size_t destination
-    ) const override;
+    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
@@ -74,10 +70,7 @@ namespace Poi {
       const std::shared_ptr<const Node> node
     );
     std::size_t max_register() const override;
-    std::size_t emit_bytecode(
-      std::vector<const Bytecode> &bytecode,
-      std::size_t destination
-    ) const override;
+    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
@@ -92,10 +85,7 @@ namespace Poi {
       const std::shared_ptr<const Node> node
     );
     std::size_t max_register() const override;
-    std::size_t emit_bytecode(
-      std::vector<const Bytecode> &bytecode,
-      std::size_t destination
-    ) const override;
+    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
@@ -110,10 +100,7 @@ namespace Poi {
       const std::shared_ptr<const Node> node
     );
     std::size_t max_register() const override;
-    std::size_t emit_bytecode(
-      std::vector<const Bytecode> &bytecode,
-      std::size_t destination
-    ) const override;
+    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
@@ -130,10 +117,7 @@ namespace Poi {
       const std::shared_ptr<const Node> node
     );
     std::size_t max_register() const override;
-    std::size_t emit_bytecode(
-      std::vector<const Bytecode> &bytecode,
-      std::size_t destination
-    ) const override;
+    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
@@ -148,10 +132,7 @@ namespace Poi {
       const std::shared_ptr<const Node> node
     );
     std::size_t max_register() const override;
-    std::size_t emit_bytecode(
-      std::vector<const Bytecode> &bytecode,
-      std::size_t destination
-    ) const override;
+    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
@@ -166,10 +147,7 @@ namespace Poi {
       const std::shared_ptr<const Node> node
     );
     std::size_t max_register() const override;
-    std::size_t emit_bytecode(
-      std::vector<const Bytecode> &bytecode,
-      std::size_t destination
-    ) const override;
+    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
@@ -182,10 +160,7 @@ namespace Poi {
       const std::shared_ptr<const Node> node
     );
     std::size_t max_register() const override;
-    std::size_t emit_bytecode(
-      std::vector<const Bytecode> &bytecode,
-      std::size_t destination
-    ) const override;
+    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
@@ -198,10 +173,7 @@ namespace Poi {
       const std::shared_ptr<const Node> node
     );
     std::size_t max_register() const override;
-    std::size_t emit_bytecode(
-      std::vector<const Bytecode> &bytecode,
-      std::size_t destination
-    ) const override;
+    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 }
