@@ -134,17 +134,17 @@ int main(int argc, char * argv[]) {
     }
 
     // Compile the IR into bytecode.
-    // TODO
+    auto bytecode = block->emit_bytecode();
     if (cli_action == CliAction::EMIT_BYTECODE) {
-      // TODO
+      for (auto &bc : *bytecode) {
+        std::cout << bc.show() << "\n";
+      }
       return 0;
     }
 
     // Run the program.
-    // TODO
-
-    // Clean up.
-    // TODO
+    auto result = Poi::interpret(&bytecode->at(0), block->frame_size());
+    std::cout << result->show(0) << "\n";
   } catch(Poi::Error &e) {
     // There was an error. Print it and exit.
     std::cerr << "Error: " << e.what() << "\n";

@@ -6,6 +6,7 @@
 #define POI_IR_H
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <poi/ast.h>
 #include <poi/bytecode.h>
@@ -21,8 +22,8 @@ namespace Poi {
     std::shared_ptr<
       std::vector<const std::shared_ptr<const IrInstruction>>
     > get_instructions();
-    std::size_t frame_size() const;
-    std::shared_ptr<std::vector<Bytecode>> emit_bytecode();
+    std::uint16_t frame_size() const;
+    std::shared_ptr<std::vector<Bytecode>> emit_bytecode() const;
     std::string show() const;
 
   private:
@@ -37,7 +38,7 @@ namespace Poi {
 
     explicit IrInstruction(const std::shared_ptr<const Node> node);
     virtual ~IrInstruction();
-    virtual std::size_t max_register() const = 0;
+    virtual std::uint16_t max_register() const = 0;
     virtual void emit_bytecode(
       std::vector<Bytecode> &bytecode
     ) const = 0; // Returns the number of registers used so far
@@ -46,133 +47,133 @@ namespace Poi {
 
   class IrBeginFixpoint : public IrInstruction {
   public:
-    const std::size_t destination;
+    const std::uint16_t destination;
 
     explicit IrBeginFixpoint(
-      std::size_t destination,
+      std::uint16_t destination,
       const std::shared_ptr<const Node> node
     );
-    std::size_t max_register() const override;
+    std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
   class IrCallNonTail : public IrInstruction {
   public:
-    const std::size_t destination;
-    const std::size_t function;
-    const std::size_t argument;
+    const std::uint16_t destination;
+    const std::uint16_t function;
+    const std::uint16_t argument;
 
     explicit IrCallNonTail(
-      std::size_t destination,
-      std::size_t function,
-      std::size_t argument,
+      std::uint16_t destination,
+      std::uint16_t function,
+      std::uint16_t argument,
       const std::shared_ptr<const Node> node
     );
-    std::size_t max_register() const override;
+    std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
   class IrCallTail : public IrInstruction {
   public:
-    const std::size_t function;
-    const std::size_t argument;
+    const std::uint16_t function;
+    const std::uint16_t argument;
 
     explicit IrCallTail(
-      std::size_t function,
-      std::size_t argument,
+      std::uint16_t function,
+      std::uint16_t argument,
       const std::shared_ptr<const Node> node
     );
-    std::size_t max_register() const override;
+    std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
   class IrCopy : public IrInstruction {
   public:
-    const std::size_t destination;
-    const std::size_t source;
+    const std::uint16_t destination;
+    const std::uint16_t source;
 
     explicit IrCopy(
-      std::size_t destination,
-      std::size_t source,
+      std::uint16_t destination,
+      std::uint16_t source,
       const std::shared_ptr<const Node> node
     );
-    std::size_t max_register() const override;
+    std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
   class IrCreateFunction : public IrInstruction {
   public:
-    const std::size_t destination;
+    const std::uint16_t destination;
     const std::shared_ptr<const BasicBlock> body;
-    const std::shared_ptr<std::vector<std::size_t>> captures;
+    const std::shared_ptr<std::vector<std::uint16_t>> captures;
 
     explicit IrCreateFunction(
-      std::size_t destination,
+      std::uint16_t destination,
       std::shared_ptr<const BasicBlock> body,
-      std::shared_ptr<std::vector<std::size_t>> captures,
+      std::shared_ptr<std::vector<std::uint16_t>> captures,
       const std::shared_ptr<const Node> node
     );
-    std::size_t max_register() const override;
+    std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
   class IrDerefFixpoint : public IrInstruction {
   public:
-    const std::size_t destination;
-    const std::size_t fixpoint;
+    const std::uint16_t destination;
+    const std::uint16_t fixpoint;
 
     explicit IrDerefFixpoint(
-      std::size_t destination,
-      std::size_t fixpoint,
+      std::uint16_t destination,
+      std::uint16_t fixpoint,
       const std::shared_ptr<const Node> node
     );
-    std::size_t max_register() const override;
+    std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
   class IrEndFixpoint : public IrInstruction {
   public:
-    const std::size_t fixpoint;
-    const std::size_t target;
+    const std::uint16_t fixpoint;
+    const std::uint16_t target;
 
     explicit IrEndFixpoint(
-      std::size_t fixpoint,
-      std::size_t target,
+      std::uint16_t fixpoint,
+      std::uint16_t target,
       const std::shared_ptr<const Node> node
     );
-    std::size_t max_register() const override;
+    std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
   class IrExit : public IrInstruction {
   public:
-    const std::size_t value;
+    const std::uint16_t value;
 
     explicit IrExit(
-      std::size_t value,
+      std::uint16_t value,
       const std::shared_ptr<const Node> node
     );
-    std::size_t max_register() const override;
+    std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
 
   class IrReturn : public IrInstruction {
   public:
-    const std::size_t value;
+    const std::uint16_t value;
 
     explicit IrReturn(
-      std::size_t value,
+      std::uint16_t value,
       const std::shared_ptr<const Node> node
     );
-    std::size_t max_register() const override;
+    std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
   };
