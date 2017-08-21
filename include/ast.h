@@ -37,7 +37,7 @@ namespace Poi {
       std::size_t start_pos,
       std::size_t end_pos
     );
-    virtual ~Node();
+    virtual ~Node() = 0;
     virtual std::string show(const StringPool &pool) const = 0;
   };
 
@@ -52,7 +52,7 @@ namespace Poi {
       std::size_t end_pos,
       std::shared_ptr<const std::unordered_set<std::size_t>> variables
     );
-    virtual ~Pattern();
+    virtual ~Pattern() = 0;
   };
 
   class VariablePattern : public Pattern {
@@ -104,7 +104,7 @@ namespace Poi {
       std::size_t end_pos,
       std::shared_ptr<const std::unordered_set<std::size_t>> free_variables
     );
-    virtual ~Term();
+    virtual ~Term() = 0;
     virtual std::size_t emit_ir(
       std::shared_ptr<const Poi::Term> term,
       BasicBlock &current_block,

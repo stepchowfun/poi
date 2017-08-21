@@ -37,7 +37,7 @@ namespace Poi {
     const std::shared_ptr<const Node> node;
 
     explicit IrInstruction(const std::shared_ptr<const Node> node);
-    virtual ~IrInstruction();
+    virtual ~IrInstruction() = 0;
     virtual std::uint16_t max_register() const = 0;
     virtual void emit_bytecode(
       std::vector<Bytecode> &bytecode
