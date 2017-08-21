@@ -222,22 +222,13 @@ std::size_t Poi::Function::emit_ir(
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  return 0;
-  /*
-  Bytecode function;
-  function.type = BytecodeType::CREATE_FUNCTION;
-  function.create_function_args.destination = destination;
-  function.create_function_args.body = program.size();
-
   std::unordered_map<std::size_t, VariableInfo> body_environment;
   auto variable = std::dynamic_pointer_cast<
     const VariablePattern
   >(pattern)->variable;
-
-  function.create_function_args.captures = new std::uint16_t[
-    free_variables->size()
-  ];
   body_environment.insert({ variable, VariableInfo(0, false) });
+
+  auto captures = std::make_shared<std::vector<std::uint16_t>>();
   std::size_t index = 1;
   for (auto iter : *free_variables) {
     auto capture_info = environment.at(iter);
@@ -245,30 +236,37 @@ std::size_t Poi::Function::emit_ir(
       iter,
       VariableInfo(index, capture_info.is_fixpoint)
     });
-    function.create_function_args.captures[index - 1] =
-      capture_info.stack_location;
+    captures->push_back(capture_info.stack_location);
     index++;
   }
 
-  function.create_function_args.num_captures = free_variables->size();
-  function.create_function_args.frame_size = index + body->emit_ir(
-    program,
-    program,
-    body_environment,
-    index,
-    true
+  auto body_block = std::make_shared<BasicBlock>();
+  body->emit_ir(
+    body,
+    *body_block,
+    1 + index,
+    true,
+    body_environment
   );
 
-  if (program.back().type != BytecodeType::CALL_TAIL) {
-    Bytecode return_bytecode;
-    return_bytecode.type = BytecodeType::RETURN;
-    return_bytecode.return_args.value = index;
-    program.push_back(return_bytecode);
+  auto body_instructions = body_block->get_instructions();
+  if (body_instructions->back()->terminates_block()) {
+    auto return_instruction = std::make_shared<IrReturn>(
+      index,
+      std::static_pointer_cast<const Node>(term)
+    );
+    body_instructions->push_back(return_instruction);
   }
 
-  expression.push_back(function);
+  auto function = std::make_shared<IrCreateFunction>(
+    destination,
+    body_block,
+    captures,
+    std::static_pointer_cast<const Node>(term)
+  );
+
+  current_block.get_instructions()->push_back(function);
   return 1;
-  */
 }
 
 ///////////////////////////////////////////////////////////////////////////////
