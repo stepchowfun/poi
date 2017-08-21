@@ -98,6 +98,12 @@ The continuous integration system also runs an automated test suite, which can b
 
   **Rationale:** Converting constructors are a form of weak typing, and we want to encourage a strong typing discipline to catch as many errors as possible at compile time.
 
+### Visibility
+
+- `protected` members of a class should be declared after all the `public` members, and `private` members should be declared after all the `protected` members.
+
+  **Rationale:** This is somewhat arbitrary, but we want to choose a convention and be consistent everywhere.
+
 ## Bash style guide
 
 ### Comments

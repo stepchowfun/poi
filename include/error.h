@@ -17,11 +17,6 @@ namespace Poi {
   );
 
   class Error {
-  protected:
-    std::string message;
-
-    explicit Error();
-
   public:
     explicit Error(
       const std::string &message // No trailing line break
@@ -40,6 +35,11 @@ namespace Poi {
     );
     virtual ~Error();
     std::string what() const; // No trailing line break
+
+  protected:
+    std::string message;
+
+    explicit Error();
   };
 }
 
