@@ -29,9 +29,9 @@ namespace Poi {
     "CALL_NON_TAIL",
     "CALL_TAIL",
     "COPY",
+    "CREATE_FUNCTION",
     "DEREF_FIXPOINT",
     "END_FIXPOINT",
-    "CREATE_FUNCTION",
     "EXIT",
     "RETURN"
   };
