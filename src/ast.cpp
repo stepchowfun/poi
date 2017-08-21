@@ -2,6 +2,7 @@
 #include <poi/ast.h>
 #include <poi/bytecode.h>
 #include <poi/error.h>
+#include <poi/ir.h>
 #include <poi/value.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -162,30 +163,31 @@ std::string Poi::Variable::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::Variable::emit_ir(
+  std::shared_ptr<const Poi::Term> term,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  return 0;
-  /*
   auto variable_iter = environment.find(variable);
   if (variable_iter->second.is_fixpoint) {
-    Bytecode deref_fixpoint;
-    deref_fixpoint.type = BytecodeType::DEREF_FIXPOINT;
-    deref_fixpoint.deref_fixpoint_args.destination = destination;
-    deref_fixpoint.deref_fixpoint_args.fixpoint =
-      variable_iter->second.stack_location;
-    expression.push_back(deref_fixpoint);
+    current_block.get_instructions()->push_back(
+      std::make_shared<IrDerefFixpoint>(
+        destination,
+        variable_iter->second.stack_location,
+        std::static_pointer_cast<const Node>(term)
+      )
+    );
   } else {
-    Bytecode copy;
-    copy.type = BytecodeType::COPY;
-    copy.copy_args.destination = destination;
-    copy.copy_args.source = variable_iter->second.stack_location;
-    expression.push_back(copy);
+    current_block.get_instructions()->push_back(
+      std::make_shared<IrCopy>(
+        destination,
+        variable_iter->second.stack_location,
+        std::static_pointer_cast<const Node>(term)
+      )
+    );
   }
   return 1;
-  */
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -214,6 +216,7 @@ std::string Poi::Function::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::Function::emit_ir(
+  std::shared_ptr<const Poi::Term> term,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,
@@ -294,6 +297,7 @@ std::string Poi::Application::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::Application::emit_ir(
+  std::shared_ptr<const Poi::Term> term,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,
@@ -367,6 +371,7 @@ std::string Poi::Binding::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::Binding::emit_ir(
+  std::shared_ptr<const Poi::Term> term,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,
@@ -472,6 +477,7 @@ std::string Poi::DataType::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::DataType::emit_ir(
+  std::shared_ptr<const Poi::Term> term,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,
@@ -511,6 +517,7 @@ std::string Poi::Data::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::Data::emit_ir(
+  std::shared_ptr<const Poi::Term> term,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,
@@ -545,6 +552,7 @@ std::string Poi::Member::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::Member::emit_ir(
+  std::shared_ptr<const Poi::Term> term,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,
@@ -591,6 +599,7 @@ std::string Poi::Match::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::Match::emit_ir(
+  std::shared_ptr<const Poi::Term> term,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,

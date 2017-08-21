@@ -10,7 +10,7 @@ std::shared_ptr<Poi::BasicBlock> Poi::compile_to_ir(
 ) {
   auto block = std::make_shared<BasicBlock>();
   std::unordered_map<std::size_t, VariableInfo> environment;
-  term->emit_ir(*block, 0, false, environment);
+  term->emit_ir(term, *block, 0, false, environment);
   block->get_instructions()->push_back(
     std::make_shared<IrExit>(0, std::static_pointer_cast<const Node>(term))
   );
