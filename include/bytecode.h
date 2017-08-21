@@ -1,5 +1,7 @@
 /*
-  This header declares a class for bytecode instructions.
+  This header declares a class for bytecode instructions. NOTE: For
+  performance reasons, all types defined in this header are POD (plain old
+  data) types.
 */
 
 #ifndef POI_BYTECODE_H
