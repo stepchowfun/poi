@@ -303,13 +303,10 @@ std::size_t Poi::Application::emit_ir(
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  std::size_t start_offset = tail_position ? 0 : 1;
-  std::size_t subterm_destination = destination + start_offset;
-
   auto function_footprint = function->emit_ir(
     function,
     current_block,
-    subterm_destination,
+    destination + 1,
     false,
     environment
   );
@@ -317,7 +314,7 @@ std::size_t Poi::Application::emit_ir(
   auto operand_footprint = operand->emit_ir(
     operand,
     current_block,
-    subterm_destination + function_footprint,
+    destination + 1 + function_footprint,
     false,
     environment
   );
@@ -325,8 +322,8 @@ std::size_t Poi::Application::emit_ir(
   if (tail_position) {
     current_block.get_instructions()->push_back(
       std::make_shared<IrCallTail>(
-        subterm_destination,
-        subterm_destination + function_footprint,
+        destination + 1,
+        destination + 1 + function_footprint,
         std::static_pointer_cast<const Node>(term)
       )
     );
@@ -334,14 +331,14 @@ std::size_t Poi::Application::emit_ir(
     current_block.get_instructions()->push_back(
       std::make_shared<IrCallNonTail>(
         destination,
-        subterm_destination,
-        subterm_destination + function_footprint,
+        destination + 1,
+        destination + 1 + function_footprint,
         std::static_pointer_cast<const Node>(term)
       )
     );
   }
 
-  return start_offset + function_footprint + operand_footprint;
+  return destination + 1 + function_footprint + operand_footprint;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -384,12 +381,12 @@ std::size_t Poi::Binding::emit_ir(
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  return 0;
-  /*
-  Bytecode begin_fixpoint;
-  begin_fixpoint.type = BytecodeType::BEGIN_FIXPOINT;
-  begin_fixpoint.begin_fixpoint_args.destination = destination;
-  expression.push_back(begin_fixpoint);
+  current_block.get_instructions()->push_back(
+    std::make_shared<IrBeginFixpoint>(
+      destination + 1,
+      std::static_pointer_cast<const Node>(term)
+    )
+  );
 
   auto new_environment = environment;
   auto variable = std::dynamic_pointer_cast<
@@ -399,40 +396,43 @@ std::size_t Poi::Binding::emit_ir(
   if (variable_iter != new_environment.end()) {
     new_environment.erase(variable_iter);
   }
-  new_environment.insert({ variable, VariableInfo(destination, true) });
+  new_environment.insert({ variable, VariableInfo(destination + 1, true) });
 
   auto definition_footprint = definition->emit_ir(
-    program,
-    expression,
-    new_environment,
-    destination + 1,
-    false
+    definition,
+    current_block,
+    destination + 2,
+    false,
+    new_environment
   );
 
-  Bytecode end_fixpoint;
-  end_fixpoint.type = BytecodeType::END_FIXPOINT;
-  end_fixpoint.end_fixpoint_args.fixpoint = destination;
-  end_fixpoint.end_fixpoint_args.target = destination + 1;
-  expression.push_back(end_fixpoint);
+  current_block.get_instructions()->push_back(
+    std::make_shared<IrEndFixpoint>(
+      destination + 1,
+      destination + 2,
+      std::static_pointer_cast<const Node>(term)
+    )
+  );
 
   auto body_footprint = body->emit_ir(
-    program,
-    expression,
-    new_environment,
-    destination + 1,
-    tail_position
+    body,
+    current_block,
+    destination + 2 + definition_footprint,
+    tail_position,
+    new_environment
   );
 
-  if (expression.back().type != BytecodeType::CALL_TAIL) {
-    Bytecode copy;
-    copy.type = BytecodeType::COPY;
-    copy.copy_args.destination = destination;
-    copy.copy_args.source = destination + 1;
-    expression.push_back(copy);
+  if (!current_block.get_instructions()->back()->terminates_block()) {
+    current_block.get_instructions()->push_back(
+      std::make_shared<IrCopy>(
+        destination,
+        destination + 2 + definition_footprint,
+        std::static_pointer_cast<const Node>(term)
+      )
+    );
   }
 
-  return std::max<std::size_t>(definition_footprint, body_footprint) + 1;
-  */
+  return destination + 2 + definition_footprint + body_footprint;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

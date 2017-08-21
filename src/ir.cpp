@@ -65,6 +65,10 @@ Poi::IrBeginFixpoint::IrBeginFixpoint(
 ) : Poi::IrInstruction(node), destination(destination) {
 }
 
+bool Poi::IrBeginFixpoint::terminates_block() const {
+  return false;
+}
+
 std::uint16_t Poi::IrBeginFixpoint::max_register() const {
   return destination;
 }
@@ -99,6 +103,10 @@ Poi::IrCallNonTail::IrCallNonTail(
   argument(argument) {
 }
 
+bool Poi::IrCallNonTail::terminates_block() const {
+  return false;
+}
+
 std::uint16_t Poi::IrCallNonTail::max_register() const {
   return std::max(destination, std::max(function, argument));
 }
@@ -130,6 +138,10 @@ Poi::IrCallTail::IrCallTail(
   std::uint16_t argument,
   const std::shared_ptr<const Node> node
 ) : Poi::IrInstruction(node), function(function), argument(argument) {
+}
+
+bool Poi::IrCallTail::terminates_block() const {
+  return true;
 }
 
 std::uint16_t Poi::IrCallTail::max_register() const {
@@ -166,6 +178,10 @@ Poi::IrCopy::IrCopy(
   source(source) {
 }
 
+bool Poi::IrCopy::terminates_block() const {
+  return false;
+}
+
 std::uint16_t Poi::IrCopy::max_register() const {
   return std::max(destination, source);
 }
@@ -200,6 +216,10 @@ Poi::IrCreateFunction::IrCreateFunction(
   destination(destination),
   body(body),
   captures(captures) {
+}
+
+bool Poi::IrCreateFunction::terminates_block() const {
+  return false;
 }
 
 std::uint16_t Poi::IrCreateFunction::max_register() const {
@@ -270,6 +290,10 @@ void Poi::IrDerefFixpoint::emit_bytecode(
   bytecode.push_back(bc);
 }
 
+bool Poi::IrDerefFixpoint::terminates_block() const {
+  return false;
+}
+
 std::uint16_t Poi::IrDerefFixpoint::max_register() const {
   return std::max(destination, fixpoint);
 }
@@ -304,6 +328,10 @@ void Poi::IrEndFixpoint::emit_bytecode(
   bytecode.push_back(bc);
 }
 
+bool Poi::IrEndFixpoint::terminates_block() const {
+  return false;
+}
+
 std::uint16_t Poi::IrEndFixpoint::max_register() const {
   return std::max(fixpoint, target);
 }
@@ -324,6 +352,10 @@ Poi::IrExit::IrExit(
 ) :
   Poi::IrInstruction(node),
   value(value) {
+}
+
+bool Poi::IrExit::terminates_block() const {
+  return true;
 }
 
 std::uint16_t Poi::IrExit::max_register() const {
@@ -354,6 +386,10 @@ Poi::IrReturn::IrReturn(
 ) :
   Poi::IrInstruction(node),
   value(value) {
+}
+
+bool Poi::IrReturn::terminates_block() const {
+  return true;
 }
 
 std::uint16_t Poi::IrReturn::max_register() const {

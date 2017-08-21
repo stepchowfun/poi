@@ -38,6 +38,7 @@ namespace Poi {
 
     explicit IrInstruction(const std::shared_ptr<const Node> node);
     virtual ~IrInstruction() = 0;
+    virtual bool terminates_block() const = 0;
     virtual std::uint16_t max_register() const = 0;
     virtual void emit_bytecode(
       std::vector<Bytecode> &bytecode
@@ -53,6 +54,7 @@ namespace Poi {
       std::uint16_t destination,
       const std::shared_ptr<const Node> node
     );
+    bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
@@ -70,6 +72,7 @@ namespace Poi {
       std::uint16_t argument,
       const std::shared_ptr<const Node> node
     );
+    bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
@@ -85,6 +88,7 @@ namespace Poi {
       std::uint16_t argument,
       const std::shared_ptr<const Node> node
     );
+    bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
@@ -100,6 +104,7 @@ namespace Poi {
       std::uint16_t source,
       const std::shared_ptr<const Node> node
     );
+    bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
@@ -117,6 +122,7 @@ namespace Poi {
       std::shared_ptr<std::vector<std::uint16_t>> captures,
       const std::shared_ptr<const Node> node
     );
+    bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
@@ -132,6 +138,7 @@ namespace Poi {
       std::uint16_t fixpoint,
       const std::shared_ptr<const Node> node
     );
+    bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
@@ -147,6 +154,7 @@ namespace Poi {
       std::uint16_t target,
       const std::shared_ptr<const Node> node
     );
+    bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
@@ -160,6 +168,7 @@ namespace Poi {
       std::uint16_t value,
       const std::shared_ptr<const Node> node
     );
+    bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
@@ -173,6 +182,7 @@ namespace Poi {
       std::uint16_t value,
       const std::shared_ptr<const Node> node
     );
+    bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
     std::string show() const override;
