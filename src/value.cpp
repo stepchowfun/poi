@@ -16,7 +16,7 @@ std::string Poi::Value::show(std::size_t depth) const {
   ];
 
   switch (type) {
-    case Poi::ValueType::FIXPOINT: {
+    case ValueType::FIXPOINT: {
       if (fixpoint_members.target) {
         result += " target=" + fixpoint_members.target->show(depth + 1);
       } else {
@@ -24,7 +24,7 @@ std::string Poi::Value::show(std::size_t depth) const {
       }
       break;
     }
-    case Poi::ValueType::FUNCTION: {
+    case ValueType::FUNCTION: {
       result +=
         " body=" + std::to_string(function_members.body) +
         " frame_size=" + std::to_string(function_members.frame_size) +

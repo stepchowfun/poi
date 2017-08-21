@@ -104,8 +104,8 @@ namespace Poi {
     );
     virtual ~Term();
     virtual std::size_t emit_bytecode(
-      std::vector<Poi::Bytecode> &program,
-      std::vector<Poi::Bytecode> &expression,
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &expression,
       const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
@@ -126,8 +126,8 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_bytecode(
-      std::vector<Poi::Bytecode> &program,
-      std::vector<Poi::Bytecode> &expression,
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &expression,
       const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
@@ -150,8 +150,8 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_bytecode(
-      std::vector<Poi::Bytecode> &program,
-      std::vector<Poi::Bytecode> &expression,
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &expression,
       const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
@@ -174,8 +174,8 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_bytecode(
-      std::vector<Poi::Bytecode> &program,
-      std::vector<Poi::Bytecode> &expression,
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &expression,
       const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
@@ -200,8 +200,8 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_bytecode(
-      std::vector<Poi::Bytecode> &program,
-      std::vector<Poi::Bytecode> &expression,
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &expression,
       const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
@@ -234,8 +234,8 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_bytecode(
-      std::vector<Poi::Bytecode> &program,
-      std::vector<Poi::Bytecode> &expression,
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &expression,
       const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
@@ -261,8 +261,8 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_bytecode(
-      std::vector<Poi::Bytecode> &program,
-      std::vector<Poi::Bytecode> &expression,
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &expression,
       const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
@@ -290,8 +290,8 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_bytecode(
-      std::vector<Poi::Bytecode> &program,
-      std::vector<Poi::Bytecode> &expression,
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &expression,
       const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position
@@ -318,8 +318,8 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_bytecode(
-      std::vector<Poi::Bytecode> &program,
-      std::vector<Poi::Bytecode> &expression,
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &expression,
       const std::unordered_map<std::size_t, VariableInfo> &environment,
       std::size_t destination,
       bool tail_position

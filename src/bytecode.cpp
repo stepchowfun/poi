@@ -4,29 +4,29 @@
 
 void Poi::Bytecode::free() {
   switch (type) {
-    case Poi::BytecodeType::BEGIN_FIXPOINT: {
+    case BytecodeType::BEGIN_FIXPOINT: {
       break;
     }
-    case Poi::BytecodeType::CALL_NON_TAIL: {
+    case BytecodeType::CALL_NON_TAIL: {
       break;
     }
-    case Poi::BytecodeType::CALL_TAIL: {
+    case BytecodeType::CALL_TAIL: {
       break;
     }
-    case Poi::BytecodeType::COPY: {
+    case BytecodeType::COPY: {
       break;
     }
-    case Poi::BytecodeType::CREATE_FUNCTION: {
+    case BytecodeType::CREATE_FUNCTION: {
       delete [] create_function_args.captures;
       break;
     }
-    case Poi::BytecodeType::DEREF_FIXPOINT: {
+    case BytecodeType::DEREF_FIXPOINT: {
       break;
     }
-    case Poi::BytecodeType::END_FIXPOINT: {
+    case BytecodeType::END_FIXPOINT: {
       break;
     }
-    case Poi::BytecodeType::RETURN: {
+    case BytecodeType::RETURN: {
       break;
     }
     default: {
@@ -44,31 +44,31 @@ std::string Poi::Bytecode::show() const {
   ];
 
   switch (type) {
-    case Poi::BytecodeType::BEGIN_FIXPOINT: {
+    case BytecodeType::BEGIN_FIXPOINT: {
       result +=
         " destination=" + std::to_string(begin_fixpoint_args.destination);
       break;
     }
-    case Poi::BytecodeType::CALL_NON_TAIL: {
+    case BytecodeType::CALL_NON_TAIL: {
       result +=
         " destination=" + std::to_string(call_non_tail_args.destination) +
         " function=" + std::to_string(call_non_tail_args.function) +
         " argument=" + std::to_string(call_non_tail_args.argument);
       break;
     }
-    case Poi::BytecodeType::CALL_TAIL: {
+    case BytecodeType::CALL_TAIL: {
       result +=
         " function=" + std::to_string(call_tail_args.function) +
         " argument=" + std::to_string(call_tail_args.argument);
       break;
     }
-    case Poi::BytecodeType::COPY: {
+    case BytecodeType::COPY: {
       result +=
         " destination=" + std::to_string(copy_args.destination) +
         " source=" + std::to_string(copy_args.source);
       break;
     }
-    case Poi::BytecodeType::CREATE_FUNCTION: {
+    case BytecodeType::CREATE_FUNCTION: {
       result +=
         " destination=" + std::to_string(create_function_args.destination) +
         " body=" + std::to_string(create_function_args.body) +
@@ -83,19 +83,19 @@ std::string Poi::Bytecode::show() const {
       result += "]";
       break;
     }
-    case Poi::BytecodeType::DEREF_FIXPOINT: {
+    case BytecodeType::DEREF_FIXPOINT: {
       result +=
         " destination=" + std::to_string(deref_fixpoint_args.destination) +
         " source=" + std::to_string(deref_fixpoint_args.source);
       break;
     }
-    case Poi::BytecodeType::END_FIXPOINT: {
+    case BytecodeType::END_FIXPOINT: {
       result +=
         " fixpoint=" + std::to_string(end_fixpoint_args.fixpoint) +
         " target=" + std::to_string(end_fixpoint_args.target);
       break;
     }
-    case Poi::BytecodeType::RETURN: {
+    case BytecodeType::RETURN: {
       result +=
         " value=" + std::to_string(return_args.value);
       break;

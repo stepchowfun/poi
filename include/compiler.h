@@ -13,8 +13,8 @@
 
 namespace Poi {
   void compile(
-    const Poi::Term &term,
-    std::vector<Poi::Bytecode> &program,
+    const Term &term,
+    std::vector<Bytecode> &program,
     std::size_t &start_program_counter, // Output parameter only
     std::size_t &start_stack_size // Output parameter only
   );
@@ -22,7 +22,7 @@ namespace Poi {
   // Delete all the memory pointed to by the bytecode. Note that the Bytecodes
   // themselves are owned by the vector and will be freed when its destructor
   // is called.
-  void free(std::vector<Poi::Bytecode> &program);
+  void free(std::vector<Bytecode> &program);
 }
 
 #endif

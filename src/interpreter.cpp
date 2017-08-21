@@ -85,7 +85,7 @@ Poi::Value * Poi::interpret(
 
   std::size_t call_stack_size = 1;
   std::size_t call_stack_buffer_size = 1024;
-  auto call_stack = new Poi::Frame[call_stack_buffer_size];
+  auto call_stack = new Frame[call_stack_buffer_size];
   call_stack[0].base_pointer = 0;
   call_stack[0].return_address = program_size;
 

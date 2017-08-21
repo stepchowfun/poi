@@ -10,7 +10,7 @@ void Poi::compile(
   std::size_t &start_program_counter,
   std::size_t &start_stack_size
 ) {
-  std::vector<Poi::Bytecode> expression;
+  std::vector<Bytecode> expression;
   std::unordered_map<std::size_t, VariableInfo> environment;
   start_stack_size = term.emit_bytecode(
     program,

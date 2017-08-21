@@ -33,7 +33,7 @@ Poi::Pattern::Pattern(
   std::size_t start_pos,
   std::size_t end_pos,
   std::shared_ptr<const std::unordered_set<std::size_t>> variables
-) : Node(
+) : Poi::Node(
     source_name,
     source,
     start_pos,
@@ -55,7 +55,7 @@ Poi::VariablePattern::VariablePattern(
   std::size_t end_pos,
   std::size_t variable,
   std::shared_ptr<const std::unordered_set<std::size_t>> variables
-) : Pattern(
+) : Poi::Pattern(
     source_name,
     source,
     start_pos,
@@ -82,7 +82,7 @@ Poi::ConstructorPattern::ConstructorPattern(
     const std::vector<std::shared_ptr<const Poi::Pattern>>
   > parameters,
   std::shared_ptr<const std::unordered_set<std::size_t>> variables
-) : Pattern(
+) : Poi::Pattern(
     source_name,
     source,
     start_pos,
@@ -116,7 +116,7 @@ Poi::Term::Term(
   std::size_t start_pos,
   std::size_t end_pos,
   std::shared_ptr<const std::unordered_set<std::size_t>> free_variables
-) : Node(
+) : Poi::Node(
     source_name,
     source,
     start_pos,
@@ -138,7 +138,7 @@ Poi::Variable::Variable(
   std::size_t end_pos,
   std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::size_t variable
-) : Term(
+) : Poi::Term(
     source_name,
     source,
     start_pos,
@@ -161,14 +161,14 @@ std::size_t Poi::Variable::emit_bytecode(
   auto variable_iter = environment.find(variable);
   if (variable_iter->second.is_fixpoint) {
     Bytecode deref_fixpoint;
-    deref_fixpoint.type = Poi::BytecodeType::DEREF_FIXPOINT;
+    deref_fixpoint.type = BytecodeType::DEREF_FIXPOINT;
     deref_fixpoint.deref_fixpoint_args.destination = destination;
     deref_fixpoint.deref_fixpoint_args.source =
       variable_iter->second.stack_location;
     expression.push_back(deref_fixpoint);
   } else {
     Bytecode copy;
-    copy.type = Poi::BytecodeType::COPY;
+    copy.type = BytecodeType::COPY;
     copy.copy_args.destination = destination;
     copy.copy_args.source = variable_iter->second.stack_location;
     expression.push_back(copy);
@@ -188,7 +188,7 @@ Poi::Function::Function(
   std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::shared_ptr<const Poi::Pattern> pattern,
   std::shared_ptr<const Poi::Term> body
-) : Term(
+) : Poi::Term(
     source_name,
     source,
     start_pos,
@@ -209,11 +209,11 @@ std::size_t Poi::Function::emit_bytecode(
   bool tail_position
 ) const {
   Bytecode function;
-  function.type = Poi::BytecodeType::CREATE_FUNCTION;
+  function.type = BytecodeType::CREATE_FUNCTION;
   function.create_function_args.destination = destination;
   function.create_function_args.body = program.size();
 
-  std::unordered_map<std::size_t, Poi::VariableInfo> body_environment;
+  std::unordered_map<std::size_t, VariableInfo> body_environment;
   auto variable = std::dynamic_pointer_cast<
     const VariablePattern
   >(pattern)->variable;
@@ -246,9 +246,9 @@ std::size_t Poi::Function::emit_bytecode(
     true
   );
 
-  if (program.back().type != Poi::BytecodeType::CALL_TAIL) {
+  if (program.back().type != BytecodeType::CALL_TAIL) {
     Bytecode return_bytecode;
-    return_bytecode.type = Poi::BytecodeType::RETURN;
+    return_bytecode.type = BytecodeType::RETURN;
     return_bytecode.return_args.value = index;
     program.push_back(return_bytecode);
   }
@@ -269,7 +269,7 @@ Poi::Application::Application(
   std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::shared_ptr<const Poi::Term> function,
   std::shared_ptr<const Poi::Term> operand
-) : Term(
+) : Poi::Term(
     source_name,
     source,
     start_pos,
@@ -306,11 +306,11 @@ std::size_t Poi::Application::emit_bytecode(
 
   Bytecode call;
   if (tail_position) {
-    call.type = Poi::BytecodeType::CALL_TAIL;
+    call.type = BytecodeType::CALL_TAIL;
     call.call_tail_args.function = destination;
     call.call_tail_args.argument = destination + function_footprint;
   } else {
-    call.type = Poi::BytecodeType::CALL_NON_TAIL;
+    call.type = BytecodeType::CALL_NON_TAIL;
     call.call_non_tail_args.destination = destination;
     call.call_non_tail_args.function = destination;
     call.call_non_tail_args.argument = destination + function_footprint;
@@ -333,7 +333,7 @@ Poi::Binding::Binding(
   std::shared_ptr<const Poi::Pattern> pattern,
   std::shared_ptr<const Poi::Term> definition,
   std::shared_ptr<const Poi::Term> body
-) : Term(
+) : Poi::Term(
     source_name,
     source,
     start_pos,
@@ -361,7 +361,7 @@ std::size_t Poi::Binding::emit_bytecode(
   bool tail_position
 ) const {
   Bytecode begin_fixpoint;
-  begin_fixpoint.type = Poi::BytecodeType::BEGIN_FIXPOINT;
+  begin_fixpoint.type = BytecodeType::BEGIN_FIXPOINT;
   begin_fixpoint.begin_fixpoint_args.destination = destination;
   expression.push_back(begin_fixpoint);
 
@@ -387,7 +387,7 @@ std::size_t Poi::Binding::emit_bytecode(
   );
 
   Bytecode end_fixpoint;
-  end_fixpoint.type = Poi::BytecodeType::END_FIXPOINT;
+  end_fixpoint.type = BytecodeType::END_FIXPOINT;
   end_fixpoint.end_fixpoint_args.fixpoint = destination;
   end_fixpoint.end_fixpoint_args.target = destination + 1;
   expression.push_back(end_fixpoint);
@@ -400,9 +400,9 @@ std::size_t Poi::Binding::emit_bytecode(
     tail_position
   );
 
-  if (expression.back().type != Poi::BytecodeType::CALL_TAIL) {
+  if (expression.back().type != BytecodeType::CALL_TAIL) {
     Bytecode copy;
-    copy.type = Poi::BytecodeType::COPY;
+    copy.type = BytecodeType::COPY;
     copy.copy_args.destination = destination;
     copy.copy_args.source = destination + 1;
     expression.push_back(copy);
@@ -428,7 +428,7 @@ Poi::DataType::DataType(
   std::shared_ptr<
     const std::unordered_map<std::size_t, std::shared_ptr<const Poi::Term>>
   > constructors
-) : Term(
+) : Poi::Term(
     source_name,
     source,
     start_pos,
@@ -481,7 +481,7 @@ Poi::Data::Data(
   std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::weak_ptr<const Poi::DataType> data_type,
   std::size_t constructor
-) : Term(
+) : Poi::Term(
     source_name,
     source,
     start_pos,
@@ -521,7 +521,7 @@ Poi::Member::Member(
   std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::shared_ptr<const Poi::Term> object,
   std::size_t field
-) : Term(
+) : Poi::Term(
     source_name,
     source,
     start_pos,
@@ -558,7 +558,7 @@ Poi::Match::Match(
   std::shared_ptr<
     const std::vector<std::shared_ptr<const Poi::Function>>
   > cases
-) : Term(
+) : Poi::Term(
     source_name,
     source,
     start_pos,
