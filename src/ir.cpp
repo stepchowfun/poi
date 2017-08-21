@@ -19,6 +19,17 @@ std::size_t Poi::BasicBlock::frame_size() const {
   return num_registers;
 }
 
+std::shared_ptr<
+  std::vector<const Poi::Bytecode>
+> Poi::BasicBlock::emit_bytecode() {
+  std::size_t destination = 0;
+  auto bytecode = std::make_shared<std::vector<const Poi::Bytecode>>();
+  for (auto &instruction : *instructions) {
+    destination = instruction->emit_bytecode(*bytecode, destination);
+  }
+  return bytecode;
+}
+
 std::string Poi::BasicBlock::show() const {
   std::string result;
   for (auto &instruction : *instructions) {
@@ -59,6 +70,13 @@ std::size_t Poi::IrBeginFixpoint::max_register() const {
   return destination;
 }
 
+std::size_t Poi::IrBeginFixpoint::emit_bytecode(
+  std::vector<const Poi::Bytecode> &bytecode,
+  std::size_t destination
+) const {
+  return 0;
+}
+
 std::string Poi::IrBeginFixpoint::show() const {
   return std::string("BEGIN_FIXPOINT ") +
     " destination=" + std::to_string(destination);
@@ -84,6 +102,13 @@ std::size_t Poi::IrCallNonTail::max_register() const {
   return std::max(destination, std::max(function, argument));
 }
 
+std::size_t Poi::IrCallNonTail::emit_bytecode(
+  std::vector<const Poi::Bytecode> &bytecode,
+  std::size_t destination
+) const {
+  return 0;
+}
+
 std::string Poi::IrCallNonTail::show() const {
   return std::string("CALL_NON_TAIL ") +
     " destination=" + std::to_string(destination) +
@@ -104,6 +129,13 @@ Poi::IrCallTail::IrCallTail(
 
 std::size_t Poi::IrCallTail::max_register() const {
   return std::max(function, argument);
+}
+
+std::size_t Poi::IrCallTail::emit_bytecode(
+  std::vector<const Poi::Bytecode> &bytecode,
+  std::size_t destination
+) const {
+  return 0;
 }
 
 std::string Poi::IrCallTail::show() const {
@@ -128,6 +160,13 @@ Poi::IrCopy::IrCopy(
 
 std::size_t Poi::IrCopy::max_register() const {
   return std::max(destination, source);
+}
+
+std::size_t Poi::IrCopy::emit_bytecode(
+  std::vector<const Poi::Bytecode> &bytecode,
+  std::size_t destination
+) const {
+  return 0;
 }
 
 std::string Poi::IrCopy::show() const {
@@ -160,6 +199,13 @@ std::size_t Poi::IrCreateFunction::max_register() const {
   return highest_register;
 }
 
+std::size_t Poi::IrCreateFunction::emit_bytecode(
+  std::vector<const Poi::Bytecode> &bytecode,
+  std::size_t destination
+) const {
+  return 0;
+}
+
 std::string Poi::IrCreateFunction::show() const {
   auto result = std::string("CREATE_FUNCTION ") +
     " destination=" + std::to_string(destination) +
@@ -189,6 +235,13 @@ Poi::IrDerefFixpoint::IrDerefFixpoint(
   fixpoint(fixpoint) {
 }
 
+std::size_t Poi::IrDerefFixpoint::emit_bytecode(
+  std::vector<const Poi::Bytecode> &bytecode,
+  std::size_t destination
+) const {
+  return 0;
+}
+
 std::size_t Poi::IrDerefFixpoint::max_register() const {
   return std::max(destination, fixpoint);
 }
@@ -215,6 +268,13 @@ std::size_t Poi::IrExit::max_register() const {
   return value;
 }
 
+std::size_t Poi::IrExit::emit_bytecode(
+  std::vector<const Poi::Bytecode> &bytecode,
+  std::size_t destination
+) const {
+  return 0;
+}
+
 std::string Poi::IrExit::show() const {
   return std::string("EXIT ") +
     " value=" + std::to_string(value);
@@ -234,6 +294,13 @@ Poi::IrReturn::IrReturn(
 
 std::size_t Poi::IrReturn::max_register() const {
   return value;
+}
+
+std::size_t Poi::IrReturn::emit_bytecode(
+  std::vector<const Poi::Bytecode> &bytecode,
+  std::size_t destination
+) const {
+  return 0;
 }
 
 std::string Poi::IrReturn::show() const {

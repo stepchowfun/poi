@@ -2,45 +2,6 @@
 #include <poi/error.h>
 #include <type_traits>
 
-void Poi::Bytecode::free() {
-  switch (type) {
-    case BytecodeType::BEGIN_FIXPOINT: {
-      break;
-    }
-    case BytecodeType::CALL_NON_TAIL: {
-      break;
-    }
-    case BytecodeType::CALL_TAIL: {
-      break;
-    }
-    case BytecodeType::COPY: {
-      break;
-    }
-    case BytecodeType::CREATE_FUNCTION: {
-      delete [] create_function_args.captures;
-      break;
-    }
-    case BytecodeType::DEREF_FIXPOINT: {
-      break;
-    }
-    case BytecodeType::END_FIXPOINT: {
-      break;
-    }
-    case BytecodeType::EXIT: {
-      break;
-    }
-    case BytecodeType::RETURN: {
-      break;
-    }
-    default: {
-      std::string name = BytecodeTypeName[
-        static_cast<typename std::underlying_type<BytecodeType>::type>(type)
-      ];
-      throw Error("free(...) is not implemented for '" + name + "'.");
-    }
-  }
-}
-
 std::string Poi::Bytecode::show() const {
   std::string result = BytecodeTypeName[
     static_cast<typename std::underlying_type<BytecodeType>::type>(type)

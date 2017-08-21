@@ -16,9 +16,3 @@ std::shared_ptr<Poi::BasicBlock> Poi::compile_to_ir(
   );
   return block;
 }
-
-void Poi::free_bytecode(std::vector<Poi::Bytecode> &program) {
-  for (auto &bytecode : program) {
-    bytecode.free();
-  }
-}

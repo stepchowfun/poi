@@ -15,11 +15,6 @@
 namespace Poi {
   // Compile a Term into IR.
   std::shared_ptr<BasicBlock> compile_to_ir(std::shared_ptr<const Term> term);
-
-  // Delete all the memory pointed to by the bytecode program. Note that the
-  // Bytecodes themselves are owned by the vector and will be freed when the
-  // vector's destructor is called.
-  void free_bytecode(std::vector<Bytecode> &program);
 }
 
 #endif
