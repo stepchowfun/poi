@@ -10,6 +10,14 @@ Poi::BasicBlock::BasicBlock() {
   >();
 }
 
+std::string Poi::BasicBlock::show() const {
+  std::string result;
+  for (auto &instruction : *instructions) {
+    result += instruction->show() + "\n";
+  }
+  return result;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // IrInstruction                                                             //
 ///////////////////////////////////////////////////////////////////////////////
@@ -35,8 +43,9 @@ Poi::IrBeginFixpoint::IrBeginFixpoint(
 ) : Poi::IrInstruction(node), destination(destination) {
 }
 
-std::string Poi::IrBeginFixpoint::show(const StringPool &pool) const {
-  return node->show(pool);
+std::string Poi::IrBeginFixpoint::show() const {
+  return std::string("BEGIN_FIXPOINT ") +
+    " destination=" + std::to_string(destination);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -55,8 +64,11 @@ Poi::IrCallNonTail::IrCallNonTail(
   argument(argument) {
 }
 
-std::string Poi::IrCallNonTail::show(const StringPool &pool) const {
-  return node->show(pool);
+std::string Poi::IrCallNonTail::show() const {
+  return std::string("CALL_NON_TAIL ") +
+    " destination=" + std::to_string(destination) +
+    " function=" + std::to_string(function) +
+    " argument=" + std::to_string(argument);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -70,8 +82,10 @@ Poi::IrCallTail::IrCallTail(
 ) : Poi::IrInstruction(node), function(function), argument(argument) {
 }
 
-std::string Poi::IrCallTail::show(const StringPool &pool) const {
-  return node->show(pool);
+std::string Poi::IrCallTail::show() const {
+  return std::string("CALL_TAIL ") +
+    " function=" + std::to_string(function) +
+    " argument=" + std::to_string(argument);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -88,8 +102,10 @@ Poi::IrCopy::IrCopy(
   source(source) {
 }
 
-std::string Poi::IrCopy::show(const StringPool &pool) const {
-  return node->show(pool);
+std::string Poi::IrCopy::show() const {
+  return std::string("COPY ") +
+    " destination=" + std::to_string(destination) +
+    " source=" + std::to_string(source);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -108,8 +124,19 @@ Poi::IrCreateFunction::IrCreateFunction(
   captures(captures) {
 }
 
-std::string Poi::IrCreateFunction::show(const StringPool &pool) const {
-  return node->show(pool);
+std::string Poi::IrCreateFunction::show() const {
+  auto result = std::string("CREATE_FUNCTION ") +
+    " destination=" + std::to_string(destination) +
+    " body=[\n" + body->show() + "]" +
+    " captures=[";
+    for (std::size_t i = 0; i < captures->size(); i++) {
+      if (i != 0) {
+        result += ", ";
+      }
+      result += std::to_string(captures->at(i));
+    }
+    result += "]";
+    return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -126,8 +153,10 @@ Poi::IrDerefFixpoint::IrDerefFixpoint(
   fixpoint(fixpoint) {
 }
 
-std::string Poi::IrDerefFixpoint::show(const StringPool &pool) const {
-  return node->show(pool);
+std::string Poi::IrDerefFixpoint::show() const {
+  return std::string("DEREF_FIXPOINT ") +
+    " destination=" + std::to_string(destination) +
+    " fixpoint=" + std::to_string(fixpoint);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -142,8 +171,9 @@ Poi::IrExit::IrExit(
   value(value) {
 }
 
-std::string Poi::IrExit::show(const StringPool &pool) const {
-  return node->show(pool);
+std::string Poi::IrExit::show() const {
+  return std::string("EXIT ") +
+    " value=" + std::to_string(value);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -158,6 +188,7 @@ Poi::IrReturn::IrReturn(
   value(value) {
 }
 
-std::string Poi::IrReturn::show(const StringPool &pool) const {
-  return node->show(pool);
+std::string Poi::IrReturn::show() const {
+  return std::string("RETURN ") +
+    " value=" + std::to_string(value);
 }

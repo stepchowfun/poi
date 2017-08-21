@@ -7,7 +7,6 @@
 
 #include <memory>
 #include <poi/ast.h>
-#include <poi/string_pool.h>
 #include <vector>
 
 namespace Poi {
@@ -20,6 +19,7 @@ namespace Poi {
     std::shared_ptr<
       std::vector<const std::shared_ptr<const IrInstruction>>
     > getInstructions();
+    std::string show() const;
 
   private:
     std::shared_ptr<
@@ -33,7 +33,7 @@ namespace Poi {
 
     explicit IrInstruction(const std::shared_ptr<const Node> node);
     virtual ~IrInstruction();
-    virtual std::string show(const StringPool &pool) const = 0;
+    virtual std::string show() const = 0;
   };
 
   class IrBeginFixpoint : public IrInstruction {
@@ -44,7 +44,7 @@ namespace Poi {
       std::size_t destination,
       const std::shared_ptr<const Node> node
     );
-    std::string show(const StringPool &pool) const override;
+    std::string show() const override;
   };
 
   class IrCallNonTail : public IrInstruction {
@@ -59,7 +59,7 @@ namespace Poi {
       std::size_t argument,
       const std::shared_ptr<const Node> node
     );
-    std::string show(const StringPool &pool) const override;
+    std::string show() const override;
   };
 
   class IrCallTail : public IrInstruction {
@@ -72,7 +72,7 @@ namespace Poi {
       std::size_t argument,
       const std::shared_ptr<const Node> node
     );
-    std::string show(const StringPool &pool) const override;
+    std::string show() const override;
   };
 
   class IrCopy : public IrInstruction {
@@ -85,7 +85,7 @@ namespace Poi {
       std::size_t source,
       const std::shared_ptr<const Node> node
     );
-    std::string show(const StringPool &pool) const override;
+    std::string show() const override;
   };
 
   class IrCreateFunction : public IrInstruction {
@@ -100,7 +100,7 @@ namespace Poi {
       std::shared_ptr<std::vector<std::size_t>> captures,
       const std::shared_ptr<const Node> node
     );
-    std::string show(const StringPool &pool) const override;
+    std::string show() const override;
   };
 
   class IrDerefFixpoint : public IrInstruction {
@@ -113,7 +113,7 @@ namespace Poi {
       std::size_t fixpoint,
       const std::shared_ptr<const Node> node
     );
-    std::string show(const StringPool &pool) const override;
+    std::string show() const override;
   };
 
   class IrEndFixpoint : public IrInstruction {
@@ -126,7 +126,7 @@ namespace Poi {
       std::size_t target,
       const std::shared_ptr<const Node> node
     );
-    std::string show(const StringPool &pool) const override;
+    std::string show() const override;
   };
 
   class IrExit : public IrInstruction {
@@ -137,7 +137,7 @@ namespace Poi {
       std::size_t value,
       const std::shared_ptr<const Node> node
     );
-    std::string show(const StringPool &pool) const override;
+    std::string show() const override;
   };
 
   class IrReturn : public IrInstruction {
@@ -148,7 +148,7 @@ namespace Poi {
       std::size_t value,
       const std::shared_ptr<const Node> node
     );
-    std::string show(const StringPool &pool) const override;
+    std::string show() const override;
   };
 }
 
