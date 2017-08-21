@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <poi/ir.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -8,6 +9,14 @@ Poi::BasicBlock::BasicBlock() {
   instructions = std::make_shared<
     std::vector<const std::shared_ptr<const IrInstruction>>
   >();
+}
+
+std::size_t Poi::BasicBlock::frame_size() const {
+  std::size_t num_registers = 0;
+  for (auto &instruction : *instructions) {
+    num_registers = std::max(num_registers, instruction->max_register());
+  }
+  return num_registers;
 }
 
 std::string Poi::BasicBlock::show() const {
@@ -24,7 +33,7 @@ std::string Poi::BasicBlock::show() const {
 
 std::shared_ptr<
   std::vector<const std::shared_ptr<const Poi::IrInstruction>>
-> Poi::BasicBlock::getInstructions() {
+> Poi::BasicBlock::get_instructions() {
   return instructions;
 }
 
@@ -44,6 +53,10 @@ Poi::IrBeginFixpoint::IrBeginFixpoint(
   std::size_t destination,
   const std::shared_ptr<const Node> node
 ) : Poi::IrInstruction(node), destination(destination) {
+}
+
+std::size_t Poi::IrBeginFixpoint::max_register() const {
+  return destination;
 }
 
 std::string Poi::IrBeginFixpoint::show() const {
@@ -67,6 +80,10 @@ Poi::IrCallNonTail::IrCallNonTail(
   argument(argument) {
 }
 
+std::size_t Poi::IrCallNonTail::max_register() const {
+  return std::max(destination, std::max(function, argument));
+}
+
 std::string Poi::IrCallNonTail::show() const {
   return std::string("CALL_NON_TAIL ") +
     " destination=" + std::to_string(destination) +
@@ -83,6 +100,10 @@ Poi::IrCallTail::IrCallTail(
   std::size_t argument,
   const std::shared_ptr<const Node> node
 ) : Poi::IrInstruction(node), function(function), argument(argument) {
+}
+
+std::size_t Poi::IrCallTail::max_register() const {
+  return std::max(function, argument);
 }
 
 std::string Poi::IrCallTail::show() const {
@@ -105,6 +126,10 @@ Poi::IrCopy::IrCopy(
   source(source) {
 }
 
+std::size_t Poi::IrCopy::max_register() const {
+  return std::max(destination, source);
+}
+
 std::string Poi::IrCopy::show() const {
   return std::string("COPY ") +
     " destination=" + std::to_string(destination) +
@@ -125,6 +150,14 @@ Poi::IrCreateFunction::IrCreateFunction(
   destination(destination),
   body(body),
   captures(captures) {
+}
+
+std::size_t Poi::IrCreateFunction::max_register() const {
+  std::size_t highest_register = destination;
+  for (auto &capture : *captures) {
+    highest_register = std::max(highest_register, capture);
+  }
+  return highest_register;
 }
 
 std::string Poi::IrCreateFunction::show() const {
@@ -156,6 +189,10 @@ Poi::IrDerefFixpoint::IrDerefFixpoint(
   fixpoint(fixpoint) {
 }
 
+std::size_t Poi::IrDerefFixpoint::max_register() const {
+  return std::max(destination, fixpoint);
+}
+
 std::string Poi::IrDerefFixpoint::show() const {
   return std::string("DEREF_FIXPOINT ") +
     " destination=" + std::to_string(destination) +
@@ -174,6 +211,10 @@ Poi::IrExit::IrExit(
   value(value) {
 }
 
+std::size_t Poi::IrExit::max_register() const {
+  return value;
+}
+
 std::string Poi::IrExit::show() const {
   return std::string("EXIT ") +
     " value=" + std::to_string(value);
@@ -189,6 +230,10 @@ Poi::IrReturn::IrReturn(
 ) :
   Poi::IrInstruction(node),
   value(value) {
+}
+
+std::size_t Poi::IrReturn::max_register() const {
+  return value;
 }
 
 std::string Poi::IrReturn::show() const {

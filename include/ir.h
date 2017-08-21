@@ -5,6 +5,7 @@
 #ifndef POI_IR_H
 #define POI_IR_H
 
+#include <cstddef>
 #include <memory>
 #include <poi/ast.h>
 #include <vector>
@@ -18,7 +19,8 @@ namespace Poi {
     explicit BasicBlock();
     std::shared_ptr<
       std::vector<const std::shared_ptr<const IrInstruction>>
-    > getInstructions();
+    > get_instructions();
+    std::size_t frame_size() const;
     std::string show() const;
 
   private:
@@ -33,6 +35,7 @@ namespace Poi {
 
     explicit IrInstruction(const std::shared_ptr<const Node> node);
     virtual ~IrInstruction();
+    virtual std::size_t max_register() const = 0;
     virtual std::string show() const = 0;
   };
 
@@ -44,6 +47,7 @@ namespace Poi {
       std::size_t destination,
       const std::shared_ptr<const Node> node
     );
+    std::size_t max_register() const override;
     std::string show() const override;
   };
 
@@ -59,6 +63,7 @@ namespace Poi {
       std::size_t argument,
       const std::shared_ptr<const Node> node
     );
+    std::size_t max_register() const override;
     std::string show() const override;
   };
 
@@ -72,6 +77,7 @@ namespace Poi {
       std::size_t argument,
       const std::shared_ptr<const Node> node
     );
+    std::size_t max_register() const override;
     std::string show() const override;
   };
 
@@ -85,6 +91,7 @@ namespace Poi {
       std::size_t source,
       const std::shared_ptr<const Node> node
     );
+    std::size_t max_register() const override;
     std::string show() const override;
   };
 
@@ -100,6 +107,7 @@ namespace Poi {
       std::shared_ptr<std::vector<std::size_t>> captures,
       const std::shared_ptr<const Node> node
     );
+    std::size_t max_register() const override;
     std::string show() const override;
   };
 
@@ -113,6 +121,7 @@ namespace Poi {
       std::size_t fixpoint,
       const std::shared_ptr<const Node> node
     );
+    std::size_t max_register() const override;
     std::string show() const override;
   };
 
@@ -126,6 +135,7 @@ namespace Poi {
       std::size_t target,
       const std::shared_ptr<const Node> node
     );
+    std::size_t max_register() const override;
     std::string show() const override;
   };
 
@@ -137,6 +147,7 @@ namespace Poi {
       std::size_t value,
       const std::shared_ptr<const Node> node
     );
+    std::size_t max_register() const override;
     std::string show() const override;
   };
 
@@ -148,6 +159,7 @@ namespace Poi {
       std::size_t value,
       const std::shared_ptr<const Node> node
     );
+    std::size_t max_register() const override;
     std::string show() const override;
   };
 }
