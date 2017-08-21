@@ -1,6 +1,0 @@
-{
-  "source": "tree = {empty, node left value right}, tree.node (x -> x) (y -> y) (z -> z)",
-  "stdout": "(node (x -> x) (y -> y) (z -> z))\n",
-  "stderr": "",
-  "exit_code": 0
-}

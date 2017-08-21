@@ -1,6 +1,0 @@
-{
-  "source": "nat = {zero, succ n}, add = x -> y -> match x {{zero} -> y, {succ n} -> nat.succ (add n y)}, two = nat.succ (nat.succ nat.zero), three = nat.succ (nat.succ (nat.succ nat.zero)), add two three",
-  "stdout": "(succ (succ (succ (succ (succ (zero))))))\n",
-  "stderr": "",
-  "exit_code": 0
-}
