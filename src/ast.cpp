@@ -5,6 +5,16 @@
 #include <poi/value.h>
 
 ///////////////////////////////////////////////////////////////////////////////
+// VariableInfo                                                              //
+///////////////////////////////////////////////////////////////////////////////
+
+Poi::VariableInfo::VariableInfo(
+  std::size_t stack_location,
+  bool is_fixpoint
+) : stack_location(stack_location), is_fixpoint(is_fixpoint) {
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Node                                                                      //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -221,17 +231,14 @@ std::size_t Poi::Function::emit_bytecode(
   function.create_function_args.captures = new std::size_t[
     free_variables->size()
   ];
-  VariableInfo variable_info;
-  variable_info.stack_location = 0;
-  variable_info.is_fixpoint = false;
-  body_environment.insert({ variable, variable_info });
+  body_environment.insert({ variable, VariableInfo(0, false) });
   std::size_t index = 1;
   for (auto iter : *free_variables) {
     auto capture_info = environment.at(iter);
-    VariableInfo capture_variable_info;
-    capture_variable_info.stack_location = index;
-    capture_variable_info.is_fixpoint = capture_info.is_fixpoint;
-    body_environment.insert({ iter, capture_variable_info });
+    body_environment.insert({
+      iter,
+      VariableInfo(index, capture_info.is_fixpoint)
+    });
     function.create_function_args.captures[index - 1] =
       capture_info.stack_location;
     index++;
@@ -373,10 +380,7 @@ std::size_t Poi::Binding::emit_bytecode(
   if (variable_iter != new_environment.end()) {
     new_environment.erase(variable_iter);
   }
-  VariableInfo variable_info;
-  variable_info.stack_location = destination;
-  variable_info.is_fixpoint = true;
-  new_environment.insert({ variable, variable_info });
+  new_environment.insert({ variable, VariableInfo(destination, true) });
 
   auto definition_footprint = definition->emit_bytecode(
     program,

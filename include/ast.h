@@ -18,8 +18,10 @@ namespace Poi {
 
   class VariableInfo {
   public:
-    std::size_t stack_location; // Relative to the top of the stack
-    bool is_fixpoint;
+    const std::size_t stack_location; // Relative to the top of the stack
+    const bool is_fixpoint;
+
+    explicit VariableInfo(std::size_t stack_location, bool is_fixpoint);
   };
 
   class Node {
