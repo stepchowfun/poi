@@ -94,7 +94,6 @@ namespace Poi {
   class Bytecode {
   public:
     BytecodeType type;
-
     union {
       BeginFixpointArguments begin_fixpoint_args;
       CallNonTailArguments call_non_tail_args;
@@ -107,6 +106,7 @@ namespace Poi {
       ReturnArguments return_args;
     };
 
+    void relocate(std::ptrdiff_t offset); // Shift instruction pointers
     std::string show() const;
   };
 

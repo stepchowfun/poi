@@ -47,7 +47,7 @@ namespace Poi {
     const std::size_t start_pos; // Inclusive
     const std::size_t end_pos; // Exclusive
 
-    const bool explicit_separator; // Only used for SEPARATOR tokens
+    const bool explicit_separator; // Only relevant for SEPARATOR tokens
 
     explicit Token(
       TokenType type,

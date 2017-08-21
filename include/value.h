@@ -10,7 +10,6 @@
 #include <string>
 
 namespace Poi {
-  // A forward declaration for the member classes
   class Value;
 
   enum class ValueType {

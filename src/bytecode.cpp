@@ -2,6 +2,46 @@
 #include <poi/error.h>
 #include <type_traits>
 
+void Poi::Bytecode::relocate(std::ptrdiff_t offset) {
+  std::string type_name = BytecodeTypeName[
+    static_cast<typename std::underlying_type<BytecodeType>::type>(type)
+  ];
+
+  switch (type) {
+    case BytecodeType::BEGIN_FIXPOINT: {
+      break;
+    }
+    case BytecodeType::CALL_NON_TAIL: {
+      break;
+    }
+    case BytecodeType::CALL_TAIL: {
+      break;
+    }
+    case BytecodeType::COPY: {
+      break;
+    }
+    case BytecodeType::CREATE_FUNCTION: {
+      create_function_args.body += offset;
+      break;
+    }
+    case BytecodeType::DEREF_FIXPOINT: {
+      break;
+    }
+    case BytecodeType::END_FIXPOINT: {
+      break;
+    }
+    case BytecodeType::EXIT: {
+      break;
+    }
+    case BytecodeType::RETURN: {
+      break;
+    }
+    default: {
+      throw Error("relocate(...) is not implemented for '" + type_name + "'.");
+    }
+  }
+}
+
 std::string Poi::Bytecode::show() const {
   std::string result = BytecodeTypeName[
     static_cast<typename std::underlying_type<BytecodeType>::type>(type)

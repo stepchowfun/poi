@@ -247,11 +247,13 @@ Poi::Value * Poi::interpret(
             value_stack_size - 1 - bytecode.deref_fixpoint_args.fixpoint
           ]->type == ValueType::FIXPOINT
         );
-        value_stack[
-          value_stack_size - 1 - bytecode.deref_fixpoint_args.destination
-        ] = value_stack[
+        auto target = value_stack[
           value_stack_size - 1 - bytecode.deref_fixpoint_args.fixpoint
         ]->fixpoint_members.target;
+        assert(target != nullptr);
+        value_stack[
+          value_stack_size - 1 - bytecode.deref_fixpoint_args.destination
+        ] = target;
         break;
       }
       case BytecodeType::END_FIXPOINT: {

@@ -9,6 +9,7 @@
 #include <poi/ir.h>
 #include <poi/parser.h>
 #include <poi/string_pool.h>
+#include <poi/token.h>
 #include <poi/tokenizer.h>
 #include <poi/value.h>
 #include <poi/version.h>
@@ -19,7 +20,7 @@ enum class CliAction {
   EMIT_TOKENS,
   EMIT_AST,
   EMIT_IR,
-  EMIT_BYTECODE,
+  EMIT_BC,
   RUN
 };
 
@@ -47,7 +48,7 @@ int main(int argc, char * argv[]) {
       "  poi --emit-tokens source\n"
       "  poi --emit-ast source\n"
       "  poi --emit-ir source\n"
-      "  poi --emit-bytecode source\n"
+      "  poi --emit-bc source\n"
       "  poi --run source\n";
     return 0;
   }
@@ -80,8 +81,8 @@ int main(int argc, char * argv[]) {
       cli_action = CliAction::EMIT_AST;
     } else if (std::string(argv[1]) == "--emit-ir") {
       cli_action = CliAction::EMIT_IR;
-    } else if (std::string(argv[1]) == "--emit-bytecode") {
-      cli_action = CliAction::EMIT_BYTECODE;
+    } else if (std::string(argv[1]) == "--emit-bc") {
+      cli_action = CliAction::EMIT_BC;
     } else if (std::string(argv[1]) == "--run") {
       cli_action = CliAction::RUN;
     } else {
@@ -127,15 +128,15 @@ int main(int argc, char * argv[]) {
     }
 
     // Compile the AST into IR.
-    auto block = Poi::compile_to_ir(term);
+    auto block = Poi::compile_ast_to_ir(term);
     if (cli_action == CliAction::EMIT_IR) {
       std::cout << block->show() << "\n";
       return 0;
     }
 
-    // Compile the IR into bytecode.
-    auto bytecode = block->emit_bytecode();
-    if (cli_action == CliAction::EMIT_BYTECODE) {
+    // Compile the IR into BC.
+    auto bytecode = compile_ir_to_bc(*block);
+    if (cli_action == CliAction::EMIT_BC) {
       for (auto &bc : *bytecode) {
         std::cout << bc.show() << "\n";
       }

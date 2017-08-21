@@ -13,7 +13,6 @@
 #include <vector>
 
 namespace Poi {
-  // A forward declaration for IR instructions
   class IrInstruction;
 
   class BasicBlock {
@@ -23,7 +22,10 @@ namespace Poi {
       std::vector<std::shared_ptr<const IrInstruction>>
     > get_instructions();
     std::uint16_t frame_size() const;
-    std::shared_ptr<std::vector<Bytecode>> emit_bytecode() const;
+    void emit_bytecode(
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &bytecode
+    ) const;
     std::string show() const;
 
   private:
@@ -41,6 +43,7 @@ namespace Poi {
     virtual bool terminates_block() const = 0;
     virtual std::uint16_t max_register() const = 0;
     virtual void emit_bytecode(
+      std::vector<Bytecode> &program,
       std::vector<Bytecode> &bytecode
     ) const = 0; // Returns the number of registers used so far
     virtual std::string show() const = 0;
@@ -56,7 +59,10 @@ namespace Poi {
     );
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
-    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
+    void emit_bytecode(
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &bytecode
+    ) const override;
     std::string show() const override;
   };
 
@@ -74,7 +80,10 @@ namespace Poi {
     );
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
-    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
+    void emit_bytecode(
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &bytecode
+    ) const override;
     std::string show() const override;
   };
 
@@ -90,7 +99,10 @@ namespace Poi {
     );
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
-    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
+    void emit_bytecode(
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &bytecode
+    ) const override;
     std::string show() const override;
   };
 
@@ -106,7 +118,10 @@ namespace Poi {
     );
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
-    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
+    void emit_bytecode(
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &bytecode
+    ) const override;
     std::string show() const override;
   };
 
@@ -124,7 +139,10 @@ namespace Poi {
     );
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
-    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
+    void emit_bytecode(
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &bytecode
+    ) const override;
     std::string show() const override;
   };
 
@@ -140,7 +158,10 @@ namespace Poi {
     );
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
-    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
+    void emit_bytecode(
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &bytecode
+    ) const override;
     std::string show() const override;
   };
 
@@ -156,7 +177,10 @@ namespace Poi {
     );
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
-    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
+    void emit_bytecode(
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &bytecode
+    ) const override;
     std::string show() const override;
   };
 
@@ -170,7 +194,10 @@ namespace Poi {
     );
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
-    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
+    void emit_bytecode(
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &bytecode
+    ) const override;
     std::string show() const override;
   };
 
@@ -184,7 +211,10 @@ namespace Poi {
     );
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
-    void emit_bytecode(std::vector<Bytecode> &bytecode) const override;
+    void emit_bytecode(
+      std::vector<Bytecode> &program,
+      std::vector<Bytecode> &bytecode
+    ) const override;
     std::string show() const override;
   };
 }

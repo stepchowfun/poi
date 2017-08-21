@@ -11,7 +11,7 @@
 #include <vector>
 
 namespace Poi {
-  // Interpret a bytecode program.
+  // Interpret a BC program.
   Value * interpret(
     Bytecode * program,
     std::size_t start_stack_size // Number of stack locations (not bytes)
