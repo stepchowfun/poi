@@ -6,6 +6,7 @@
 #define POI_BYTECODE_H
 
 #include <cstddef>
+#include <cstdint>
 #include <poi/string_pool.h>
 #include <string>
 #include <type_traits>
@@ -35,56 +36,57 @@ namespace Poi {
 
   class BeginFixpointArguments {
   public:
-    std::size_t destination; // (SP - destination) will contain the new
-                             // fixpoint value.
+    std::uint16_t destination; // (SP - destination) will contain the new
+                               // fixpoint value.
   };
 
   class CallNonTailArguments {
   public:
-    std::size_t destination; // (SP - destination) will contain the return
-                             // value.
-    std::size_t function; // (SP - function) contains the function to call.
-    std::size_t argument; // (SP - arugment) contains the argument.
+    std::uint16_t destination; // (SP - destination) will contain the return
+                               // value.
+    std::uint16_t function; // (SP - function) contains the function to call.
+    std::uint16_t argument; // (SP - arugment) contains the argument.
   };
 
   class CallTailArguments {
   public:
-    std::size_t function; // (SP - function) contains the function to call.
-    std::size_t argument; // (SP - arugment) contains the argument.
+    std::uint16_t function; // (SP - function) contains the function to call.
+    std::uint16_t argument; // (SP - arugment) contains the argument.
   };
 
   class CopyArguments {
   public:
-    std::size_t destination; // (SP - destination) will contain the result.
-    std::size_t source; // (SP - source) contains the pointer to copy.
+    std::uint16_t destination; // (SP - destination) will contain the result.
+    std::uint16_t source; // (SP - source) is the slot to copy.
   };
 
   class CreateFunctionArguments {
   public:
-    std::size_t destination; // (SP - destination) will contain the new
-                             // function.
-    std::size_t body; // A pointer to the first bytecode of the body
-    std::size_t frame_size; // The number of slots to allocate on the stack
-    std::size_t num_captures; // The number of free variables of the function
-    std::size_t * captures; // An array of stack indices (counting down from
-                            // SP) which refer to values to be captured
+    std::uint16_t destination; // (SP - destination) will contain the new
+                               // function.
+    std::uint16_t frame_size; // The number of slots to allocate on the stack
+    std::uint16_t num_captures; // The number of free variables of the function
+    std::uint16_t * captures; // An array of stack indices (counting down from
+                              // SP) which refer to values to be captured
+    std::size_t body; // The index of the first bytecode of the body
   };
 
   class DerefFixpointArguments {
   public:
-    std::size_t destination; // (SP - destination) will contain the result.
-    std::size_t source; // (SP - source) contains the fixpoint to dereference.
+    std::uint16_t destination; // (SP - destination) will contain the result.
+    std::uint16_t source; // (SP - source) contains the fixpoint to
+                          // dereference.
   };
 
   class EndFixpointArguments {
   public:
-    std::size_t fixpoint; // (SP - fixpoint) contains the fixpoint value.
-    std::size_t target; // (SP - target) contains the recursive value.
+    std::uint16_t fixpoint; // (SP - fixpoint) contains the fixpoint value.
+    std::uint16_t target; // (SP - target) contains the recursive value.
   };
 
   class ReturnArguments {
   public:
-    std::size_t value; // (SP - value) contains the return value.
+    std::uint16_t value; // (SP - value) contains the return value.
   };
 
   class Bytecode {

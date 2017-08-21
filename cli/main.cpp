@@ -23,7 +23,7 @@ enum class CliAction {
 
 // The logic for the command line interface is here.
 // Run `poi --help` for instructions.
-int main(int argc, char *argv[]) {
+int main(int argc, char * argv[]) {
   // Print this message if we are unable to parse the input.
   const std::string parse_error = "Try poi --help for more information.\n";
 

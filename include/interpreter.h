@@ -13,10 +13,10 @@
 namespace Poi {
   // Interpret a bytecode program.
   Value * interpret(
-    Bytecode *program,
-    std::size_t program_size,
+    Bytecode * program,
+    std::size_t program_size, // Number of Bytecodes (not bytes)
     std::size_t start_program_counter,
-    std::size_t start_stack_size
+    std::size_t start_stack_size // Number of stack locations (not bytes)
   );
 }
 

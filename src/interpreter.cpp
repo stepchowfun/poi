@@ -10,6 +10,7 @@
 
 namespace Poi {
   const std::size_t stack_allocation_factor = 16;
+  const std::size_t min_stack_size = 1024;
 
   class Frame {
     public:
@@ -23,6 +24,9 @@ template <typename T> void resize_buffer_if_needed(
   std::size_t &current_logical_size,
   std::size_t &current_physical_size,
   T * &buffer
+  #ifndef NDEBUG
+    , std::string buffer_name
+  #endif
 ) {
   std::size_t new_physical_size = current_physical_size
     ? current_physical_size
@@ -35,20 +39,19 @@ template <typename T> void resize_buffer_if_needed(
       requested_logical_size *
       Poi::stack_allocation_factor *
       Poi::stack_allocation_factor
-    ) <= new_physical_size && new_physical_size >= Poi::stack_allocation_factor
+    ) <= new_physical_size &&
+    new_physical_size >= Poi::min_stack_size * Poi::stack_allocation_factor
   ) {
     new_physical_size /= Poi::stack_allocation_factor;
   }
   if (current_physical_size != new_physical_size) {
     #ifndef NDEBUG
       std::cout
-        << "reallocating:\n";
-      std::cout
-        << "  current_physical_size: "
+        << "REALLOCATING "
+        << buffer_name
+        << ": "
         << current_physical_size
-        << "\n";
-      std::cout
-        << "  new_physical_size: "
+        << " -> "
         << new_physical_size
         << "\n\n";
     #endif
@@ -81,6 +84,9 @@ Poi::Value * Poi::interpret(
     value_stack_size,
     value_stack_buffer_size,
     value_stack
+    #ifndef NDEBUG
+      , "VALUE_STACK"
+    #endif
   );
 
   std::size_t call_stack_size = 1;
@@ -89,7 +95,7 @@ Poi::Value * Poi::interpret(
   call_stack[0].base_pointer = 0;
   call_stack[0].return_address = program_size;
 
-  std::uintptr_t program_counter = start_program_counter;
+  std::size_t program_counter = start_program_counter;
   while (program_counter < program_size) {
     auto bytecode = program[program_counter];
 
@@ -111,7 +117,7 @@ Poi::Value * Poi::interpret(
         }
       }
       std::cout
-        << "\ninstruction: "
+        << "\n"
         << program_counter
         << " "
         << bytecode.show()
@@ -148,9 +154,12 @@ Poi::Value * Poi::interpret(
           value_stack_size,
           value_stack_buffer_size,
           value_stack
+          #ifndef NDEBUG
+            , "VALUE_STACK"
+          #endif
         );
         value_stack[value_stack_size - 1] = argument;
-        for (std::size_t i = 0; i < function_members.num_captures; ++i) {
+        for (std::uint16_t i = 0; i < function_members.num_captures; ++i) {
           value_stack[value_stack_size - 2 - i] = function_members.captures[i];
         }
 
@@ -160,6 +169,9 @@ Poi::Value * Poi::interpret(
           call_stack_size,
           call_stack_buffer_size,
           call_stack
+          #ifndef NDEBUG
+            , "CALL_STACK"
+          #endif
         );
         call_stack[call_stack_size - 1].base_pointer = base_pointer;
         call_stack[call_stack_size - 1].return_address =
@@ -188,9 +200,12 @@ Poi::Value * Poi::interpret(
           value_stack_size,
           value_stack_buffer_size,
           value_stack
+          #ifndef NDEBUG
+            , "VALUE_STACK"
+          #endif
         );
         value_stack[value_stack_size - 1] = argument;
-        for (std::size_t i = 0; i < function_members.num_captures; ++i) {
+        for (std::uint16_t i = 0; i < function_members.num_captures; ++i) {
           value_stack[value_stack_size - 2 - i] = function_members.captures[i];
         }
 
@@ -215,7 +230,7 @@ Poi::Value * Poi::interpret(
           bytecode.create_function_args.num_captures
         ];
         for (
-          std::size_t i = 0;
+          std::uint16_t i = 0;
           i < bytecode.create_function_args.num_captures;
           ++i
         ) {
@@ -266,6 +281,9 @@ Poi::Value * Poi::interpret(
           value_stack_size,
           value_stack_buffer_size,
           value_stack
+          #ifndef NDEBUG
+            , "VALUE_STACK"
+          #endif
         );
         program_counter = call_stack[call_stack_size - 1].return_address;
         std::size_t new_call_stack_size = call_stack_size - 1;
@@ -274,6 +292,9 @@ Poi::Value * Poi::interpret(
           call_stack_size,
           call_stack_buffer_size,
           call_stack
+          #ifndef NDEBUG
+            , "CALL_STACK"
+          #endif
         );
         assert(
           program[program_counter - 1].type == BytecodeType::CALL_NON_TAIL

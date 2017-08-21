@@ -228,7 +228,7 @@ std::size_t Poi::Function::emit_bytecode(
     const VariablePattern
   >(pattern)->variable;
 
-  function.create_function_args.captures = new std::size_t[
+  function.create_function_args.captures = new std::uint16_t[
     free_variables->size()
   ];
   body_environment.insert({ variable, VariableInfo(0, false) });

@@ -25,17 +25,15 @@ namespace Poi {
 
   class FixpointMembers {
   public:
-    Value *target;
+    Value * target;
   };
 
   class FunctionMembers {
   public:
-    std::size_t body; // A pointer to the first bytecode of the body
-    std::size_t frame_size; // The number of slots to allocate on top of the
-                            // return address, including the captures and the
-                            // argument
+    std::size_t body; // The index of the first bytecode of the body
+    std::size_t frame_size; // The number of slots to allocate on the stack
     std::size_t num_captures; // The number of captures
-    Value **captures; // The capture list
+    Value ** captures; // The capture list
   };
 
   class Value {
