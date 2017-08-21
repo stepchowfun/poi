@@ -17,9 +17,10 @@ namespace Poi {
     CALL_NON_TAIL,
     CALL_TAIL,
     COPY,
+    CREATE_FUNCTION,
     DEREF_FIXPOINT,
     END_FIXPOINT,
-    CREATE_FUNCTION,
+    EXIT,
     RETURN
   };
 
@@ -31,6 +32,7 @@ namespace Poi {
     "DEREF_FIXPOINT",
     "END_FIXPOINT",
     "CREATE_FUNCTION",
+    "EXIT",
     "RETURN"
   };
 
@@ -74,14 +76,19 @@ namespace Poi {
   class DerefFixpointArguments {
   public:
     std::uint16_t destination; // (SP - destination) will contain the result.
-    std::uint16_t source; // (SP - source) contains the fixpoint to
-                          // dereference.
+    std::uint16_t fixpoint; // (SP - source) contains the fixpoint to
+                            // dereference.
   };
 
   class EndFixpointArguments {
   public:
     std::uint16_t fixpoint; // (SP - fixpoint) contains the fixpoint value.
     std::uint16_t target; // (SP - target) contains the recursive value.
+  };
+
+  class ExitArguments {
+  public:
+    std::uint16_t value; // (SP - value) contains the exit value.
   };
 
   class ReturnArguments {
@@ -101,6 +108,7 @@ namespace Poi {
       CreateFunctionArguments create_function_args;
       DerefFixpointArguments deref_fixpoint_args;
       EndFixpointArguments end_fixpoint_args;
+      ExitArguments exit_args;
       ReturnArguments return_args;
     };
 

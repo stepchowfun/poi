@@ -26,6 +26,9 @@ void Poi::Bytecode::free() {
     case BytecodeType::END_FIXPOINT: {
       break;
     }
+    case BytecodeType::EXIT: {
+      break;
+    }
     case BytecodeType::RETURN: {
       break;
     }
@@ -86,13 +89,18 @@ std::string Poi::Bytecode::show() const {
     case BytecodeType::DEREF_FIXPOINT: {
       result +=
         " destination=" + std::to_string(deref_fixpoint_args.destination) +
-        " source=" + std::to_string(deref_fixpoint_args.source);
+        " source=" + std::to_string(deref_fixpoint_args.fixpoint);
       break;
     }
     case BytecodeType::END_FIXPOINT: {
       result +=
         " fixpoint=" + std::to_string(end_fixpoint_args.fixpoint) +
         " target=" + std::to_string(end_fixpoint_args.target);
+      break;
+    }
+    case BytecodeType::EXIT: {
+      result +=
+        " value=" + std::to_string(exit_args.value);
       break;
     }
     case BytecodeType::RETURN: {

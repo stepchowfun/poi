@@ -173,7 +173,7 @@ std::size_t Poi::Variable::emit_bytecode(
     Bytecode deref_fixpoint;
     deref_fixpoint.type = BytecodeType::DEREF_FIXPOINT;
     deref_fixpoint.deref_fixpoint_args.destination = destination;
-    deref_fixpoint.deref_fixpoint_args.source =
+    deref_fixpoint.deref_fixpoint_args.fixpoint =
       variable_iter->second.stack_location;
     expression.push_back(deref_fixpoint);
   } else {

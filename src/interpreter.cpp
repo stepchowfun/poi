@@ -246,13 +246,13 @@ Poi::Value * Poi::interpret(
       case BytecodeType::DEREF_FIXPOINT: {
         assert(
           value_stack[
-            value_stack_size - 1 - bytecode.deref_fixpoint_args.source
+            value_stack_size - 1 - bytecode.deref_fixpoint_args.fixpoint
           ]->type == ValueType::FIXPOINT
         );
         value_stack[
           value_stack_size - 1 - bytecode.deref_fixpoint_args.destination
         ] = value_stack[
-          value_stack_size - 1 - bytecode.deref_fixpoint_args.source
+          value_stack_size - 1 - bytecode.deref_fixpoint_args.fixpoint
         ]->fixpoint_members.target;
         break;
       }
@@ -268,6 +268,14 @@ Poi::Value * Poi::interpret(
           value_stack_size - 1 - bytecode.end_fixpoint_args.target
         ];
         break;
+      }
+      case BytecodeType::EXIT: {
+        auto result = value_stack[
+          value_stack_size - 1 - bytecode.exit_args.value
+        ];
+        delete [] value_stack;
+        delete [] call_stack;
+        return result;
       }
       case BytecodeType::RETURN: {
         auto return_value = value_stack[
@@ -313,10 +321,6 @@ Poi::Value * Poi::interpret(
     program_counter++;
   }
 
-  auto result = value_stack[0];
-
-  delete [] value_stack;
-  delete [] call_stack;
-
-  return result;
+  assert(false);
+  return nullptr;
 }

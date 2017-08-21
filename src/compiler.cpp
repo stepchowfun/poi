@@ -21,6 +21,10 @@ void Poi::compile(
   );
   start_program_counter = program.size();
   program.insert(program.end(), expression.begin(), expression.end());
+  Bytecode exit_bytecode;
+  exit_bytecode.type = Poi::BytecodeType::EXIT;
+  exit_bytecode.return_args.value = 0;
+  program.push_back(exit_bytecode);
 }
 
 void Poi::free(std::vector<Poi::Bytecode> &program) {
