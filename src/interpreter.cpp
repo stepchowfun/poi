@@ -28,9 +28,9 @@ template <typename T> void resize_buffer_if_needed(
     , std::string buffer_name
   #endif
 ) {
-  std::size_t new_physical_size = current_physical_size
-    ? current_physical_size
-    : 1;
+  std::size_t new_physical_size = (current_physical_size == 0)
+    ? 1
+    : current_physical_size;
   while (requested_logical_size > new_physical_size) {
     new_physical_size *= Poi::stack_allocation_factor;
   }
@@ -96,20 +96,22 @@ Poi::Value * Poi::interpret(
     auto bytecode = program[program_counter];
 
     #ifndef NDEBUG
-      for (std::size_t i = value_stack_size - 1; true; --i) {
-        if (value_stack[i]) {
-          std::cout
-            << value_stack_size - 1 - i
-            << " "
-            << value_stack[i]->show(0)
-            << "\n";
-        } else {
-          std::cout
-            << value_stack_size - 1 - i
-            << " NULL\n";
-        }
-        if (i == 0) {
-          break;
+      if (value_stack_size > 0) {
+        for (std::size_t i = value_stack_size - 1; true; --i) {
+          if (value_stack[i]) {
+            std::cout
+              << value_stack_size - 1 - i
+              << " "
+              << value_stack[i]->show(0)
+              << "\n";
+          } else {
+            std::cout
+              << value_stack_size - 1 - i
+              << " NULL\n";
+          }
+          if (i == 0) {
+            break;
+          }
         }
       }
       std::cout

@@ -7,7 +7,7 @@
 
 Poi::BasicBlock::BasicBlock() {
   instructions = std::make_shared<
-    std::vector<const std::shared_ptr<const IrInstruction>>
+    std::vector<std::shared_ptr<const IrInstruction>>
   >();
 }
 
@@ -37,15 +37,15 @@ std::string Poi::BasicBlock::show() const {
   return result;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// IrInstruction                                                             //
-///////////////////////////////////////////////////////////////////////////////
-
 std::shared_ptr<
-  std::vector<const std::shared_ptr<const Poi::IrInstruction>>
+  std::vector<std::shared_ptr<const Poi::IrInstruction>>
 > Poi::BasicBlock::get_instructions() {
   return instructions;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// IrInstruction                                                             //
+///////////////////////////////////////////////////////////////////////////////
 
 Poi::IrInstruction::IrInstruction(
   const std::shared_ptr<const Node> node

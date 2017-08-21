@@ -20,7 +20,7 @@ namespace Poi {
   public:
     explicit BasicBlock();
     std::shared_ptr<
-      std::vector<const std::shared_ptr<const IrInstruction>>
+      std::vector<std::shared_ptr<const IrInstruction>>
     > get_instructions();
     std::uint16_t frame_size() const;
     std::shared_ptr<std::vector<Bytecode>> emit_bytecode() const;
@@ -28,7 +28,7 @@ namespace Poi {
 
   private:
     std::shared_ptr<
-      std::vector<const std::shared_ptr<const IrInstruction>>
+      std::vector<std::shared_ptr<const IrInstruction>>
     > instructions;
   };
 
