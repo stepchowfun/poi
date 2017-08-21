@@ -303,38 +303,45 @@ std::size_t Poi::Application::emit_ir(
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  return 0;
-  /*
+  std::size_t start_offset = tail_position ? 0 : 1;
+  std::size_t subterm_destination = destination + start_offset;
+
   auto function_footprint = function->emit_ir(
-    program,
-    expression,
-    environment,
-    destination,
-    false
-  );
-  auto operand_footprint = operand->emit_ir(
-    program,
-    expression,
-    environment,
-    destination + function_footprint,
-    false
+    function,
+    current_block,
+    subterm_destination,
+    false,
+    environment
   );
 
-  Bytecode call;
+  auto operand_footprint = operand->emit_ir(
+    operand,
+    current_block,
+    subterm_destination + function_footprint,
+    false,
+    environment
+  );
+
   if (tail_position) {
-    call.type = BytecodeType::CALL_TAIL;
-    call.call_tail_args.function = destination;
-    call.call_tail_args.argument = destination + function_footprint;
+    current_block.get_instructions()->push_back(
+      std::make_shared<IrCallTail>(
+        subterm_destination,
+        subterm_destination + function_footprint,
+        std::static_pointer_cast<const Node>(term)
+      )
+    );
   } else {
-    call.type = BytecodeType::CALL_NON_TAIL;
-    call.call_non_tail_args.destination = destination;
-    call.call_non_tail_args.function = destination;
-    call.call_non_tail_args.argument = destination + function_footprint;
+    current_block.get_instructions()->push_back(
+      std::make_shared<IrCallNonTail>(
+        destination,
+        subterm_destination,
+        subterm_destination + function_footprint,
+        std::static_pointer_cast<const Node>(term)
+      )
+    );
   }
 
-  expression.push_back(call);
-  return function_footprint + operand_footprint;
-  */
+  return start_offset + function_footprint + operand_footprint;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
