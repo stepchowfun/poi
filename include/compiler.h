@@ -9,14 +9,12 @@
 #include <memory>
 #include <poi/ast.h>
 #include <poi/bytecode.h>
+#include <poi/ir.h>
 #include <vector>
 
 namespace Poi {
   // Compile a Term into IR.
-  void compile_to_ir(
-    std::shared_ptr<const Term> term,
-    std::vector<BasicBlock> &basic_blocks // The last block will be the start
-  );
+  std::shared_ptr<BasicBlock> compile_to_ir(std::shared_ptr<const Term> term);
 
   // Delete all the memory pointed to by the bytecode program. Note that the
   // Bytecodes themselves are owned by the vector and will be freed when the

@@ -5,17 +5,16 @@
 #include <poi/ir.h>
 #include <vector>
 
-void Poi::compile_to_ir(
-  std::shared_ptr<const Term> term,
-  std::vector<BasicBlock> &basic_blocks
+std::shared_ptr<Poi::BasicBlock> Poi::compile_to_ir(
+  std::shared_ptr<const Poi::Term> term
 ) {
-  BasicBlock starting_block;
+  auto block = std::make_shared<BasicBlock>();
   std::unordered_map<std::size_t, VariableInfo> environment;
-  term->emit_ir(basic_blocks, starting_block, 0, false, environment);
-  starting_block.get_instructions()->push_back(
+  term->emit_ir(*block, 0, false, environment);
+  block->get_instructions()->push_back(
     std::make_shared<IrExit>(0, std::static_pointer_cast<const Node>(term))
   );
-  basic_blocks.push_back(starting_block);
+  return block;
 }
 
 void Poi::free_bytecode(std::vector<Poi::Bytecode> &program) {

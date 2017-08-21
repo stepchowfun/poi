@@ -127,10 +127,9 @@ int main(int argc, char * argv[]) {
     }
 
     // Compile the AST into IR.
-    std::vector<Poi::BasicBlock> basic_blocks;
-    Poi::compile_to_ir(term, basic_blocks);
+    auto block = Poi::compile_to_ir(term);
     if (cli_action == CliAction::EMIT_IR) {
-      std::cout << basic_blocks.back().show() << "\n";
+      std::cout << block->show() << "\n";
       return 0;
     }
 

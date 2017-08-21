@@ -162,7 +162,6 @@ std::string Poi::Variable::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::Variable::emit_ir(
-  std::vector<BasicBlock> &basic_blocks,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,
@@ -215,7 +214,6 @@ std::string Poi::Function::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::Function::emit_ir(
-  std::vector<BasicBlock> &basic_blocks,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,
@@ -296,7 +294,6 @@ std::string Poi::Application::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::Application::emit_ir(
-  std::vector<BasicBlock> &basic_blocks,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,
@@ -370,7 +367,6 @@ std::string Poi::Binding::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::Binding::emit_ir(
-  std::vector<BasicBlock> &basic_blocks,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,
@@ -476,7 +472,6 @@ std::string Poi::DataType::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::DataType::emit_ir(
-  std::vector<BasicBlock> &basic_blocks,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,
@@ -516,7 +511,6 @@ std::string Poi::Data::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::Data::emit_ir(
-  std::vector<BasicBlock> &basic_blocks,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,
@@ -551,7 +545,6 @@ std::string Poi::Member::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::Member::emit_ir(
-  std::vector<BasicBlock> &basic_blocks,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,
@@ -598,7 +591,6 @@ std::string Poi::Match::show(const Poi::StringPool &pool) const {
 }
 
 std::size_t Poi::Match::emit_ir(
-  std::vector<BasicBlock> &basic_blocks,
   BasicBlock &current_block,
   std::size_t destination,
   bool tail_position,

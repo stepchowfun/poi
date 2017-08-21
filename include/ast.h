@@ -106,7 +106,6 @@ namespace Poi {
     );
     virtual ~Term();
     virtual std::size_t emit_ir(
-      std::vector<BasicBlock> &basic_blocks,
       BasicBlock &current_block,
       std::size_t destination,
       bool tail_position,
@@ -128,7 +127,6 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
-      std::vector<BasicBlock> &basic_blocks,
       BasicBlock &current_block,
       std::size_t destination,
       bool tail_position,
@@ -152,7 +150,6 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
-      std::vector<BasicBlock> &basic_blocks,
       BasicBlock &current_block,
       std::size_t destination,
       bool tail_position,
@@ -176,7 +173,6 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
-      std::vector<BasicBlock> &basic_blocks,
       BasicBlock &current_block,
       std::size_t destination,
       bool tail_position,
@@ -202,7 +198,6 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
-      std::vector<BasicBlock> &basic_blocks,
       BasicBlock &current_block,
       std::size_t destination,
       bool tail_position,
@@ -236,7 +231,6 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
-      std::vector<BasicBlock> &basic_blocks,
       BasicBlock &current_block,
       std::size_t destination,
       bool tail_position,
@@ -263,7 +257,6 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
-      std::vector<BasicBlock> &basic_blocks,
       BasicBlock &current_block,
       std::size_t destination,
       bool tail_position,
@@ -292,7 +285,6 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
-      std::vector<BasicBlock> &basic_blocks,
       BasicBlock &current_block,
       std::size_t destination,
       bool tail_position,
@@ -320,7 +312,6 @@ namespace Poi {
     );
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
-      std::vector<BasicBlock> &basic_blocks,
       BasicBlock &current_block,
       std::size_t destination,
       bool tail_position,
