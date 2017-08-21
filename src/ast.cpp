@@ -244,13 +244,13 @@ std::size_t Poi::Function::emit_ir(
   body->emit_ir(
     body,
     *body_block,
-    1 + index,
+    index,
     true,
     body_environment
   );
 
   auto body_instructions = body_block->get_instructions();
-  if (body_instructions->back()->terminates_block()) {
+  if (!body_instructions->back()->terminates_block()) {
     auto return_instruction = std::make_shared<IrReturn>(
       index,
       std::static_pointer_cast<const Node>(term)
