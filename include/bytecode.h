@@ -1,7 +1,5 @@
 /*
-  This header declares a class for bytecode instructions. NOTE: For
-  performance reasons, all types defined in this header are POD (plain old
-  data) types.
+  This header declares a class for bytecode instructions.
 */
 
 #ifndef POI_BYTECODE_H
@@ -10,6 +8,7 @@
 #include <cstddef>
 #include <poi/string_pool.h>
 #include <string>
+#include <type_traits>
 
 namespace Poi {
   enum class BytecodeType {
@@ -106,6 +105,11 @@ namespace Poi {
     void free();
     std::string show() const;
   };
+
+  static_assert(
+    std::is_pod<Bytecode>::value,
+    "Poi::Bytecode must be a POD type."
+  );
 }
 
 #endif
