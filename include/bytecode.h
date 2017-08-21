@@ -38,62 +38,57 @@ namespace Poi {
 
   class BeginFixpointArguments {
   public:
-    std::uint16_t destination; // (SP - destination) will contain the new
-                               // fixpoint value.
+    std::uint16_t destination;
   };
 
   class CallNonTailArguments {
   public:
-    std::uint16_t destination; // (SP - destination) will contain the return
-                               // value.
-    std::uint16_t function; // (SP - function) contains the function to call.
-    std::uint16_t argument; // (SP - arugment) contains the argument.
+    std::uint16_t destination;
+    std::uint16_t function;
+    std::uint16_t argument;
   };
 
   class CallTailArguments {
   public:
-    std::uint16_t function; // (SP - function) contains the function to call.
-    std::uint16_t argument; // (SP - arugment) contains the argument.
+    std::uint16_t function;
+    std::uint16_t argument;
   };
 
   class CopyArguments {
   public:
-    std::uint16_t destination; // (SP - destination) will contain the result.
-    std::uint16_t source; // (SP - source) is the slot to copy.
+    std::uint16_t destination;
+    std::uint16_t source;
   };
 
   class CreateFunctionArguments {
   public:
-    std::uint16_t destination; // (SP - destination) will contain the new
-                               // function.
-    std::uint16_t frame_size; // The number of slots to allocate on the stack
-    std::uint16_t num_captures; // The number of free variables of the function
-    std::uint16_t * captures; // An array of stack indices (counting down from
-                              // SP) which refer to values to be captured
-    std::size_t body; // The index of the first bytecode of the body
+    std::uint16_t destination;
+    std::uint16_t frame_size;
+    std::uint16_t num_captures;
+    std::uint16_t * captures;
+    std::size_t body;
   };
 
   class DerefFixpointArguments {
   public:
-    std::uint16_t destination; // (SP - destination) will contain the result.
-    std::uint16_t fixpoint; // (SP - source) contains the fixpoint to
-                            // dereference.
+    std::uint16_t destination;
+    std::uint16_t fixpoint;
   };
 
   class EndFixpointArguments {
   public:
-    std::uint16_t fixpoint; // (SP - fixpoint) contains the fixpoint value.
-    std::uint16_t target; // (SP - target) contains the recursive value.
+    std::uint16_t fixpoint;
+    std::uint16_t target;
   };
 
   class ExitArguments {
   public:
-    std::uint16_t value; // (SP - value) contains the exit value.
+    std::uint16_t value;
   };
 
   class ReturnArguments {
   public:
-    std::uint16_t value; // (SP - value) contains the return value.
+    std::uint16_t value;
   };
 
   class Bytecode {

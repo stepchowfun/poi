@@ -12,17 +12,16 @@
 #include <vector>
 
 namespace Poi {
-  void compile(
-    const Term &term,
-    std::vector<Bytecode> &program,
-    std::size_t &start_program_counter, // Output parameter only
-    std::size_t &start_stack_size // Output parameter only
+  // Compile a Term into IR.
+  void compile_to_ir(
+    std::shared_ptr<const Term> term,
+    std::vector<BasicBlock> &basic_blocks // The last block will be the start
   );
 
-  // Delete all the memory pointed to by the bytecode. Note that the Bytecodes
-  // themselves are owned by the vector and will be freed when its destructor
-  // is called.
-  void free(std::vector<Bytecode> &program);
+  // Delete all the memory pointed to by the bytecode program. Note that the
+  // Bytecodes themselves are owned by the vector and will be freed when the
+  // vector's destructor is called.
+  void free_bytecode(std::vector<Bytecode> &program);
 }
 
 #endif

@@ -14,7 +14,7 @@
 
 namespace Poi {
   // A forward declaration to avoid mutually recursive headers
-  class Bytecode; // Declared in poi/bytecode.h
+  class BasicBlock; // Declared in poi/ir.h
 
   class VariableInfo {
   public:
@@ -105,12 +105,12 @@ namespace Poi {
       std::shared_ptr<const std::unordered_set<std::size_t>> free_variables
     );
     virtual ~Term();
-    virtual std::size_t emit_bytecode(
-      std::vector<Bytecode> &program,
-      std::vector<Bytecode> &expression,
-      const std::unordered_map<std::size_t, VariableInfo> &environment,
+    virtual std::size_t emit_ir(
+      std::vector<BasicBlock> &basic_blocks,
+      BasicBlock &current_block,
       std::size_t destination,
-      bool tail_position
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const = 0;
   };
 
@@ -127,12 +127,12 @@ namespace Poi {
       std::size_t variable
     );
     std::string show(const StringPool &pool) const override;
-    std::size_t emit_bytecode(
-      std::vector<Bytecode> &program,
-      std::vector<Bytecode> &expression,
-      const std::unordered_map<std::size_t, VariableInfo> &environment,
+    std::size_t emit_ir(
+      std::vector<BasicBlock> &basic_blocks,
+      BasicBlock &current_block,
       std::size_t destination,
-      bool tail_position
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 
@@ -151,12 +151,12 @@ namespace Poi {
       std::shared_ptr<const Term> body
     );
     std::string show(const StringPool &pool) const override;
-    std::size_t emit_bytecode(
-      std::vector<Bytecode> &program,
-      std::vector<Bytecode> &expression,
-      const std::unordered_map<std::size_t, VariableInfo> &environment,
+    std::size_t emit_ir(
+      std::vector<BasicBlock> &basic_blocks,
+      BasicBlock &current_block,
       std::size_t destination,
-      bool tail_position
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 
@@ -175,12 +175,12 @@ namespace Poi {
       std::shared_ptr<const Term> operand
     );
     std::string show(const StringPool &pool) const override;
-    std::size_t emit_bytecode(
-      std::vector<Bytecode> &program,
-      std::vector<Bytecode> &expression,
-      const std::unordered_map<std::size_t, VariableInfo> &environment,
+    std::size_t emit_ir(
+      std::vector<BasicBlock> &basic_blocks,
+      BasicBlock &current_block,
       std::size_t destination,
-      bool tail_position
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 
@@ -201,12 +201,12 @@ namespace Poi {
       std::shared_ptr<const Term> body
     );
     std::string show(const StringPool &pool) const override;
-    std::size_t emit_bytecode(
-      std::vector<Bytecode> &program,
-      std::vector<Bytecode> &expression,
-      const std::unordered_map<std::size_t, VariableInfo> &environment,
+    std::size_t emit_ir(
+      std::vector<BasicBlock> &basic_blocks,
+      BasicBlock &current_block,
       std::size_t destination,
-      bool tail_position
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 
@@ -235,12 +235,12 @@ namespace Poi {
       > constructors
     );
     std::string show(const StringPool &pool) const override;
-    std::size_t emit_bytecode(
-      std::vector<Bytecode> &program,
-      std::vector<Bytecode> &expression,
-      const std::unordered_map<std::size_t, VariableInfo> &environment,
+    std::size_t emit_ir(
+      std::vector<BasicBlock> &basic_blocks,
+      BasicBlock &current_block,
       std::size_t destination,
-      bool tail_position
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 
@@ -262,12 +262,12 @@ namespace Poi {
       std::size_t constructor
     );
     std::string show(const StringPool &pool) const override;
-    std::size_t emit_bytecode(
-      std::vector<Bytecode> &program,
-      std::vector<Bytecode> &expression,
-      const std::unordered_map<std::size_t, VariableInfo> &environment,
+    std::size_t emit_ir(
+      std::vector<BasicBlock> &basic_blocks,
+      BasicBlock &current_block,
       std::size_t destination,
-      bool tail_position
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 
@@ -291,12 +291,12 @@ namespace Poi {
       std::size_t field
     );
     std::string show(const StringPool &pool) const override;
-    std::size_t emit_bytecode(
-      std::vector<Bytecode> &program,
-      std::vector<Bytecode> &expression,
-      const std::unordered_map<std::size_t, VariableInfo> &environment,
+    std::size_t emit_ir(
+      std::vector<BasicBlock> &basic_blocks,
+      BasicBlock &current_block,
       std::size_t destination,
-      bool tail_position
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 
@@ -319,12 +319,12 @@ namespace Poi {
       > cases
     );
     std::string show(const StringPool &pool) const override;
-    std::size_t emit_bytecode(
-      std::vector<Bytecode> &program,
-      std::vector<Bytecode> &expression,
-      const std::unordered_map<std::size_t, VariableInfo> &environment,
+    std::size_t emit_ir(
+      std::vector<BasicBlock> &basic_blocks,
+      BasicBlock &current_block,
       std::size_t destination,
-      bool tail_position
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 }

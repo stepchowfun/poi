@@ -10,7 +10,7 @@
 
 namespace Poi {
   const std::size_t stack_allocation_factor = 16;
-  const std::size_t min_stack_size = 1024;
+  const std::size_t min_stack_buffer_size = 1024;
 
   class Frame {
     public:
@@ -39,8 +39,8 @@ template <typename T> void resize_buffer_if_needed(
       requested_logical_size *
       Poi::stack_allocation_factor *
       Poi::stack_allocation_factor
-    ) <= new_physical_size &&
-    new_physical_size >= Poi::min_stack_size * Poi::stack_allocation_factor
+    ) <= new_physical_size && new_physical_size >=
+      Poi::min_stack_buffer_size * Poi::stack_allocation_factor
   ) {
     new_physical_size /= Poi::stack_allocation_factor;
   }
@@ -69,12 +69,10 @@ template <typename T> void resize_buffer_if_needed(
 
 Poi::Value * Poi::interpret(
   Poi::Bytecode * program,
-  std::size_t program_size,
-  std::size_t start_program_counter,
   std::size_t start_stack_size
 ) {
   std::size_t value_stack_size = start_stack_size;
-  std::size_t value_stack_buffer_size = 1024;
+  std::size_t value_stack_buffer_size = Poi::min_stack_buffer_size;
   auto value_stack = new Value * [value_stack_buffer_size];
   #ifndef NDEBUG
     memset(value_stack, 0, value_stack_buffer_size * sizeof(Value *));
@@ -89,14 +87,12 @@ Poi::Value * Poi::interpret(
     #endif
   );
 
-  std::size_t call_stack_size = 1;
-  std::size_t call_stack_buffer_size = 1024;
+  std::size_t call_stack_size = 0;
+  std::size_t call_stack_buffer_size = Poi::min_stack_buffer_size;
   auto call_stack = new Frame[call_stack_buffer_size];
-  call_stack[0].base_pointer = 0;
-  call_stack[0].return_address = program_size;
 
-  std::size_t program_counter = start_program_counter;
-  while (program_counter < program_size) {
+  std::size_t program_counter = 0;
+  while (true) {
     auto bytecode = program[program_counter];
 
     #ifndef NDEBUG

@@ -161,13 +161,15 @@ std::string Poi::Variable::show(const Poi::StringPool &pool) const {
   return pool.find(variable);
 }
 
-std::size_t Poi::Variable::emit_bytecode(
-  std::vector<Poi::Bytecode> &program,
-  std::vector<Poi::Bytecode> &expression,
-  const std::unordered_map<std::size_t, Poi::VariableInfo> &environment,
+std::size_t Poi::Variable::emit_ir(
+  std::vector<BasicBlock> &basic_blocks,
+  BasicBlock &current_block,
   std::size_t destination,
-  bool tail_position
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
+  return 0;
+  /*
   auto variable_iter = environment.find(variable);
   if (variable_iter->second.is_fixpoint) {
     Bytecode deref_fixpoint;
@@ -184,6 +186,7 @@ std::size_t Poi::Variable::emit_bytecode(
     expression.push_back(copy);
   }
   return 1;
+  */
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -211,13 +214,15 @@ std::string Poi::Function::show(const Poi::StringPool &pool) const {
   return "(" + pattern->show(pool) + " -> " + body->show(pool) + ")";
 }
 
-std::size_t Poi::Function::emit_bytecode(
-  std::vector<Poi::Bytecode> &program,
-  std::vector<Poi::Bytecode> &expression,
-  const std::unordered_map<std::size_t, Poi::VariableInfo> &environment,
+std::size_t Poi::Function::emit_ir(
+  std::vector<BasicBlock> &basic_blocks,
+  BasicBlock &current_block,
   std::size_t destination,
-  bool tail_position
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
+  return 0;
+  /*
   Bytecode function;
   function.type = BytecodeType::CREATE_FUNCTION;
   function.create_function_args.destination = destination;
@@ -245,7 +250,7 @@ std::size_t Poi::Function::emit_bytecode(
   }
 
   function.create_function_args.num_captures = free_variables->size();
-  function.create_function_args.frame_size = index + body->emit_bytecode(
+  function.create_function_args.frame_size = index + body->emit_ir(
     program,
     program,
     body_environment,
@@ -262,6 +267,7 @@ std::size_t Poi::Function::emit_bytecode(
 
   expression.push_back(function);
   return 1;
+  */
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -289,21 +295,23 @@ std::string Poi::Application::show(const Poi::StringPool &pool) const {
   return "(" + function->show(pool) + " " + operand->show(pool) + ")";
 }
 
-std::size_t Poi::Application::emit_bytecode(
-  std::vector<Poi::Bytecode> &program,
-  std::vector<Poi::Bytecode> &expression,
-  const std::unordered_map<std::size_t, Poi::VariableInfo> &environment,
+std::size_t Poi::Application::emit_ir(
+  std::vector<BasicBlock> &basic_blocks,
+  BasicBlock &current_block,
   std::size_t destination,
-  bool tail_position
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  auto function_footprint = function->emit_bytecode(
+  return 0;
+  /*
+  auto function_footprint = function->emit_ir(
     program,
     expression,
     environment,
     destination,
     false
   );
-  auto operand_footprint = operand->emit_bytecode(
+  auto operand_footprint = operand->emit_ir(
     program,
     expression,
     environment,
@@ -325,6 +333,7 @@ std::size_t Poi::Application::emit_bytecode(
 
   expression.push_back(call);
   return function_footprint + operand_footprint;
+  */
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -360,13 +369,15 @@ std::string Poi::Binding::show(const Poi::StringPool &pool) const {
     ")";
 }
 
-std::size_t Poi::Binding::emit_bytecode(
-  std::vector<Poi::Bytecode> &program,
-  std::vector<Poi::Bytecode> &expression,
-  const std::unordered_map<std::size_t, Poi::VariableInfo> &environment,
+std::size_t Poi::Binding::emit_ir(
+  std::vector<BasicBlock> &basic_blocks,
+  BasicBlock &current_block,
   std::size_t destination,
-  bool tail_position
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
+  return 0;
+  /*
   Bytecode begin_fixpoint;
   begin_fixpoint.type = BytecodeType::BEGIN_FIXPOINT;
   begin_fixpoint.begin_fixpoint_args.destination = destination;
@@ -382,7 +393,7 @@ std::size_t Poi::Binding::emit_bytecode(
   }
   new_environment.insert({ variable, VariableInfo(destination, true) });
 
-  auto definition_footprint = definition->emit_bytecode(
+  auto definition_footprint = definition->emit_ir(
     program,
     expression,
     new_environment,
@@ -396,7 +407,7 @@ std::size_t Poi::Binding::emit_bytecode(
   end_fixpoint.end_fixpoint_args.target = destination + 1;
   expression.push_back(end_fixpoint);
 
-  auto body_footprint = body->emit_bytecode(
+  auto body_footprint = body->emit_ir(
     program,
     expression,
     new_environment,
@@ -413,6 +424,7 @@ std::size_t Poi::Binding::emit_bytecode(
   }
 
   return std::max<std::size_t>(definition_footprint, body_footprint) + 1;
+  */
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -463,12 +475,12 @@ std::string Poi::DataType::show(const Poi::StringPool &pool) const {
   return result;
 }
 
-std::size_t Poi::DataType::emit_bytecode(
-  std::vector<Poi::Bytecode> &program,
-  std::vector<Poi::Bytecode> &expression,
-  const std::unordered_map<std::size_t, Poi::VariableInfo> &environment,
+std::size_t Poi::DataType::emit_ir(
+  std::vector<BasicBlock> &basic_blocks,
+  BasicBlock &current_block,
   std::size_t destination,
-  bool tail_position
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
   return 0;
 }
@@ -503,12 +515,12 @@ std::string Poi::Data::show(const Poi::StringPool &pool) const {
     ">";
 }
 
-std::size_t Poi::Data::emit_bytecode(
-  std::vector<Poi::Bytecode> &program,
-  std::vector<Poi::Bytecode> &expression,
-  const std::unordered_map<std::size_t, Poi::VariableInfo> &environment,
+std::size_t Poi::Data::emit_ir(
+  std::vector<BasicBlock> &basic_blocks,
+  BasicBlock &current_block,
   std::size_t destination,
-  bool tail_position
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
   return 0;
 }
@@ -538,12 +550,12 @@ std::string Poi::Member::show(const Poi::StringPool &pool) const {
   return "(" + object->show(pool) + "." + pool.find(field) + ")";
 }
 
-std::size_t Poi::Member::emit_bytecode(
-  std::vector<Poi::Bytecode> &program,
-  std::vector<Poi::Bytecode> &expression,
-  const std::unordered_map<std::size_t, Poi::VariableInfo> &environment,
+std::size_t Poi::Member::emit_ir(
+  std::vector<BasicBlock> &basic_blocks,
+  BasicBlock &current_block,
   std::size_t destination,
-  bool tail_position
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
   return 0;
 }
@@ -585,12 +597,12 @@ std::string Poi::Match::show(const Poi::StringPool &pool) const {
   return result;
 }
 
-std::size_t Poi::Match::emit_bytecode(
-  std::vector<Poi::Bytecode> &program,
-  std::vector<Poi::Bytecode> &expression,
-  const std::unordered_map<std::size_t, Poi::VariableInfo> &environment,
+std::size_t Poi::Match::emit_ir(
+  std::vector<BasicBlock> &basic_blocks,
+  BasicBlock &current_block,
   std::size_t destination,
-  bool tail_position
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
   return 0;
 }

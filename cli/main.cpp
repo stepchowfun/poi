@@ -6,6 +6,7 @@
 #include <poi/compiler.h>
 #include <poi/error.h>
 #include <poi/interpreter.h>
+#include <poi/ir.h>
 #include <poi/parser.h>
 #include <poi/string_pool.h>
 #include <poi/tokenizer.h>
@@ -17,8 +18,9 @@
 enum class CliAction {
   EMIT_TOKENS,
   EMIT_AST,
+  EMIT_IR,
   EMIT_BYTECODE,
-  EVAL
+  RUN
 };
 
 // The logic for the command line interface is here.
@@ -44,8 +46,9 @@ int main(int argc, char * argv[]) {
       "  poi source\n"
       "  poi --emit-tokens source\n"
       "  poi --emit-ast source\n"
+      "  poi --emit-ir source\n"
       "  poi --emit-bytecode source\n"
-      "  poi --eval source\n";
+      "  poi --run source\n";
     return 0;
   }
 
@@ -69,16 +72,18 @@ int main(int argc, char * argv[]) {
 
   // Determine what the user wants us to do.
   std::string input_path = argv[1];
-  auto cli_action = CliAction::EVAL;
+  auto cli_action = CliAction::RUN;
   if (argc == 3) {
     if (std::string(argv[1]) == "--emit-tokens") {
       cli_action = CliAction::EMIT_TOKENS;
     } else if (std::string(argv[1]) == "--emit-ast") {
       cli_action = CliAction::EMIT_AST;
+    } else if (std::string(argv[1]) == "--emit-ir") {
+      cli_action = CliAction::EMIT_IR;
     } else if (std::string(argv[1]) == "--emit-bytecode") {
       cli_action = CliAction::EMIT_BYTECODE;
-    } else if (std::string(argv[1]) == "--eval") {
-      cli_action = CliAction::EVAL;
+    } else if (std::string(argv[1]) == "--run") {
+      cli_action = CliAction::RUN;
     } else {
       // We didn't recognize the syntax.
       std::cerr << parse_error;
@@ -121,38 +126,26 @@ int main(int argc, char * argv[]) {
       return 0;
     }
 
-    // Compile the AST into bytecode.
-    std::vector<Poi::Bytecode> program;
-    std::size_t start_program_counter = 0;
-    std::size_t start_stack_size = 0;
-    Poi::compile(
-      *term,
-      program,
-      start_program_counter,
-      start_stack_size
-    );
-    if (cli_action == CliAction::EMIT_BYTECODE) {
-      for (std::size_t i = 0; i < program.size(); ++i) {
-        std::cout << i << " " << program[i].show();
-        if (i == start_program_counter) {
-          std::cout << " <- START";
-        }
-        std::cout << "\n";
-      }
+    // Compile the AST into IR.
+    std::vector<Poi::BasicBlock> basic_blocks;
+    Poi::compile_to_ir(term, basic_blocks);
+    if (cli_action == CliAction::EMIT_IR) {
+      std::cout << basic_blocks.back().show() << "\n";
       return 0;
     }
 
-    // Evaluate the program.
-    auto result = Poi::interpret(
-      &program[0],
-      program.size(),
-      start_program_counter,
-      start_stack_size
-    );
-    std::cout << result->show(0) << "\n";
+    // Compile the IR into bytecode.
+    // TODO
+    if (cli_action == CliAction::EMIT_BYTECODE) {
+      // TODO
+      return 0;
+    }
+
+    // Run the program.
+    // TODO
 
     // Clean up.
-    Poi::free(program);
+    // TODO
   } catch(Poi::Error &e) {
     // There was an error. Print it and exit.
     std::cerr << "Error: " << e.what() << "\n";

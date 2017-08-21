@@ -2,32 +2,23 @@
 #include <poi/ast.h>
 #include <poi/bytecode.h>
 #include <poi/compiler.h>
+#include <poi/ir.h>
 #include <vector>
 
-void Poi::compile(
-  const Poi::Term &term,
-  std::vector<Poi::Bytecode> &program,
-  std::size_t &start_program_counter,
-  std::size_t &start_stack_size
+void Poi::compile_to_ir(
+  std::shared_ptr<const Term> term,
+  std::vector<BasicBlock> &basic_blocks
 ) {
-  std::vector<Bytecode> expression;
+  BasicBlock starting_block;
   std::unordered_map<std::size_t, VariableInfo> environment;
-  start_stack_size = term.emit_bytecode(
-    program,
-    expression,
-    environment,
-    0,
-    false
+  term->emit_ir(basic_blocks, starting_block, 0, false, environment);
+  starting_block.getInstructions()->push_back(
+    std::make_shared<IrExit>(0, std::static_pointer_cast<const Node>(term))
   );
-  start_program_counter = program.size();
-  program.insert(program.end(), expression.begin(), expression.end());
-  Bytecode exit_bytecode;
-  exit_bytecode.type = Poi::BytecodeType::EXIT;
-  exit_bytecode.return_args.value = 0;
-  program.push_back(exit_bytecode);
+  basic_blocks.push_back(starting_block);
 }
 
-void Poi::free(std::vector<Poi::Bytecode> &program) {
+void Poi::free_bytecode(std::vector<Poi::Bytecode> &program) {
   for (auto &bytecode : program) {
     bytecode.free();
   }
