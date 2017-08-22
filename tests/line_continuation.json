@@ -1,6 +1,6 @@
 {
   "source": "x -> \\\nx",
-  "stdout": "(x -> x)\n",
+  "stdout": "FUNCTION body=2 frame_size=2 captures=[]\n",
   "stderr": "",
   "exit_code": 0
 }
