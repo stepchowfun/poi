@@ -18,7 +18,7 @@ std::string Poi::Value::show(std::size_t depth) const {
   switch (type) {
     case ValueType::FIXPOINT: {
       if (fixpoint_members.target) {
-        result += " target=" + fixpoint_members.target->show(depth + 1);
+        result += " target=[" + fixpoint_members.target->show(depth + 1) + "]";
       } else {
         result += " target=null";
       }

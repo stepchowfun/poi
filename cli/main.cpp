@@ -137,8 +137,8 @@ int main(int argc, char * argv[]) {
     // Compile the IR into BC.
     auto bytecode = compile_ir_to_bc(*block);
     if (cli_action == CliAction::EMIT_BC) {
-      for (auto &bc : *bytecode) {
-        std::cout << bc.show() << "\n";
+      for (std::size_t i = 0; i < bytecode->size(); ++i) {
+        std::cout << i << " " << bytecode->at(i).show() << "\n";
       }
       return 0;
     }
