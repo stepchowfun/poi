@@ -269,7 +269,9 @@ Poi::Value * Poi::interpret(
         auto target = value_stack[
           value_stack_size - 1 - bytecode.deref_fixpoint_args.fixpoint
         ]->fixpoint_members.target;
-        assert(target != nullptr);
+        if (target == nullptr) {
+          throw Error("Recursive references must occur in function bodies.");
+        }
         value_stack[
           value_stack_size - 1 - bytecode.deref_fixpoint_args.destination
         ] = target;
