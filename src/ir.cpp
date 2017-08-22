@@ -14,7 +14,10 @@ Poi::BasicBlock::BasicBlock() {
 std::uint16_t Poi::BasicBlock::frame_size() const {
   std::uint16_t num_registers = 0;
   for (auto &instruction : *instructions) {
-    num_registers = std::max(num_registers, instruction->max_register());
+    num_registers = std::max(
+      num_registers,
+      static_cast<std::uint16_t>(instruction->max_register() + 1)
+    );
   }
   return num_registers;
 }

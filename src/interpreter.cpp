@@ -308,7 +308,8 @@ Poi::Value * Poi::interpret(
           program[program_counter - 1].type == BytecodeType::CALL_NON_TAIL
         );
         value_stack[
-          program[program_counter - 1].call_non_tail_args.destination
+          value_stack_size - 1 -
+            program[program_counter - 1].call_non_tail_args.destination
         ] = return_value;
         continue;
       }
