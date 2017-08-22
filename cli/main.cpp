@@ -130,7 +130,7 @@ int main(int argc, char * argv[]) {
     // Compile the AST into IR.
     auto block = Poi::compile_ast_to_ir(term);
     if (cli_action == CliAction::EMIT_IR) {
-      std::cout << block->show() << "\n";
+      std::cout << block->show();
       return 0;
     }
 
