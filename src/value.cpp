@@ -7,7 +7,7 @@ namespace Poi {
 }
 
 std::string Poi::Value::show(std::size_t depth) const {
-  if (depth > Poi::max_value_show_depth) {
+  if (depth > max_value_show_depth) {
     return "...";
   }
 
