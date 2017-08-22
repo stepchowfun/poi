@@ -2021,7 +2021,6 @@ std::shared_ptr<const Poi::Term> Poi::parse(
         pool.find(token_stream.source)
       );
     }
-    throw Error(term.error->message);
   }
 
   // Make sure we parsed the whole file.
