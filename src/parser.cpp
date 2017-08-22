@@ -90,37 +90,52 @@ namespace Poi {
          // on anyway).
   };
 
-  // This is just like Poi::Error, except it also includes a confidence level.
-  class ParseError : public Error {
+  // We use this instead of Poi::Error because it is vastly more efficient.
+  // Poi::Error computes line numbers and formats a nice error message for the
+  // user. In contrast, this class simply records the message, confidence, and
+  // location of the error. The formatting will happen once, when parsing is
+  // complete.
+  class ParseError {
   public:
+    const std::string message; // No trailing line break
     const ErrorConfidence confidence;
+    const bool has_pos; // Whether start_pos and end_pos are present
+    const std::size_t start_pos; // Inclusive
+    const std::size_t end_pos; // Exclusive
 
     explicit ParseError(
       const std::string &message, // No trailing line break
-      ErrorConfidence confidence
-    ) : Error(message), confidence(confidence) {
-    };
-
-    explicit ParseError(
-      const std::string &message, // No trailing line break
-      const std::string &source_name,
-      const std::string &source,
       ErrorConfidence confidence
     ) :
-      Error (message, source_name, source),
-      confidence(confidence) {
+      message(message),
+      confidence(confidence),
+      has_pos(false),
+      start_pos(0),
+      end_pos(0) {
     };
 
     explicit ParseError(
       const std::string &message, // No trailing line break
-      const std::string &source_name,
-      const std::string &source,
+      ErrorConfidence confidence,
       std::size_t start_pos, // Inclusive
-      std::size_t end_pos, // Exclusive
+      std::size_t end_pos // Exclusive
+    ) :
+      message(message),
+      confidence(confidence),
+      has_pos(true),
+      start_pos(start_pos),
+      end_pos(end_pos) {
+    };
+
+    explicit ParseError(
+      const ParseError &error,
       ErrorConfidence confidence
     ) :
-      Error (message, source_name, source, start_pos, end_pos),
-      confidence(confidence) {
+      message(error.message),
+      confidence(confidence),
+      has_pos(error.has_pos),
+      start_pos(error.start_pos),
+      end_pos(error.end_pos) {
     };
   };
 
@@ -396,8 +411,6 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "No pattern to parse.",
-          pool.find(token_stream.source_name),
-          pool.find(token_stream.source),
           ErrorConfidence::LOW
         )
       );
@@ -407,11 +420,9 @@ namespace Poi {
     auto pattern = ParseResult<Pattern>(
       std::make_shared<ParseError>(
         "Unexpected token.",
-        pool.find(iter->source_name),
-        pool.find(iter->source),
+        ErrorConfidence::LOW,
         iter->start_pos,
-        iter->end_pos,
-        ErrorConfidence::LOW
+        iter->end_pos
       )
     ).choose(
       parse_variable_pattern(
@@ -451,8 +462,6 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "No variable pattern to parse.",
-          pool.find(token_stream.source_name),
-          pool.find(token_stream.source),
           ErrorConfidence::LOW
         )
       );
@@ -465,11 +474,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "A variable pattern must be an identifier.",
-          pool.find(iter->source_name),
-          pool.find(iter->source),
+          ErrorConfidence::LOW,
           iter->start_pos,
-          iter->end_pos,
-          ErrorConfidence::LOW
+          iter->end_pos
         )
       );
     }
@@ -522,8 +529,6 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "No constructor pattern to parse.",
-          pool.find(token_stream.source_name),
-          pool.find(token_stream.source),
           ErrorConfidence::LOW
         )
       );
@@ -536,11 +541,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "Expected '{' to introduce this constructor pattern.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          ErrorConfidence::LOW,
           start->start_pos,
-          iter->end_pos,
-          ErrorConfidence::LOW
+          iter->end_pos
         )
       );
     }
@@ -553,11 +556,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "A constructor pattern must begin with the name of a constructor.",
-          pool.find(iter->source_name),
-          pool.find(iter->source),
+          ErrorConfidence::MED,
           iter->start_pos,
-          iter->end_pos,
-          ErrorConfidence::MED
+          iter->end_pos
         )
       );
     }
@@ -574,11 +575,9 @@ namespace Poi {
       auto parameter = ParseResult<Pattern>(
         std::make_shared<ParseError>(
           "Unexpected token.",
-          pool.find(iter->source_name),
-          pool.find(iter->source),
+          ErrorConfidence::LOW,
           iter->start_pos,
-          iter->end_pos,
-          ErrorConfidence::LOW
+          iter->end_pos
         )
       ).choose(
         parse_pattern(
@@ -593,10 +592,7 @@ namespace Poi {
         return memo_error<ConstructorPattern>(
           memo,
           key,
-          std::make_shared<ParseError>(
-            parameter.error->what(),
-            ErrorConfidence::MED
-          )
+          std::make_shared<ParseError>(*parameter.error, ErrorConfidence::MED)
         );
       }
       iter = parameter.next;
@@ -608,11 +604,9 @@ namespace Poi {
             key,
             std::make_shared<ParseError>(
               "Duplicate variable '" + pool.find(variable) + "' in pattern.",
-              pool.find(parameter.node->source_name),
-              pool.find(parameter.node->source),
+              ErrorConfidence::MED,
               parameter.node->start_pos,
-              parameter.node->end_pos,
-              ErrorConfidence::MED
+              parameter.node->end_pos
             )
           );
         }
@@ -664,12 +658,7 @@ namespace Poi {
       return memo_error<Term>(
         memo,
         key,
-        std::make_shared<ParseError>(
-          "No term to parse.",
-          pool.find(token_stream.source_name),
-          pool.find(token_stream.source),
-          ErrorConfidence::LOW
-        )
+        std::make_shared<ParseError>("No term to parse.", ErrorConfidence::LOW)
       );
     }
 
@@ -677,11 +666,9 @@ namespace Poi {
     auto term = ParseResult<Term>(
       std::make_shared<ParseError>(
         "Unexpected token.",
-        pool.find(iter->source_name),
-        pool.find(iter->source),
+        ErrorConfidence::LOW,
         iter->start_pos,
-        iter->end_pos,
-        ErrorConfidence::LOW
+        iter->end_pos
       )
     ).choose(
       parse_variable(
@@ -745,8 +732,6 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "No variable to parse.",
-          pool.find(token_stream.source_name),
-          pool.find(token_stream.source),
           ErrorConfidence::LOW
         )
       );
@@ -759,11 +744,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "A variable must be an identifier.",
-          pool.find(iter->source_name),
-          pool.find(iter->source),
+          ErrorConfidence::LOW,
           iter->start_pos,
-          iter->end_pos,
-          ErrorConfidence::LOW
+          iter->end_pos
         )
       );
     }
@@ -785,11 +768,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "Undefined variable '" + pool.find(variable_name) + "'.",
-          pool.find(iter->source_name),
-          pool.find(iter->source),
+          confidence,
           iter->start_pos,
-          iter->end_pos,
-          confidence
+          iter->end_pos
         )
       );
     }
@@ -835,8 +816,6 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "No function to parse.",
-          pool.find(token_stream.source_name),
-          pool.find(token_stream.source),
           ErrorConfidence::LOW
         )
       );
@@ -846,11 +825,9 @@ namespace Poi {
     auto pattern = ParseResult<Pattern>(
       std::make_shared<ParseError>(
         "No pattern found for this binding.",
-        pool.find(start->source_name),
-        pool.find(start->source),
+        ErrorConfidence::LOW,
         start->start_pos,
-        iter->end_pos,
-        ErrorConfidence::LOW
+        iter->end_pos
       )
     ).choose(parse_pattern(memo, pool, token_stream, environment, iter));
     if (pattern.error) {
@@ -868,11 +845,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "Expected '->' in this function.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          ErrorConfidence::LOW,
           start->start_pos,
-          (iter - 1)->end_pos,
-          ErrorConfidence::LOW
+          (iter - 1)->end_pos
         )
       );
     }
@@ -889,21 +864,16 @@ namespace Poi {
     auto body = ParseResult<Term>(
       std::make_shared<ParseError>(
         "No body found for this function.",
-        pool.find(start->source_name),
-        pool.find(start->source),
+        ErrorConfidence::LOW,
         start->start_pos,
-        (iter - 1)->end_pos,
-        ErrorConfidence::LOW
+        (iter - 1)->end_pos
       )
     ).choose(parse_term(memo, pool, token_stream, new_environment, iter));
     if (body.error) {
       return memo_error<Function>(
         memo,
         key,
-        std::make_shared<ParseError>(
-          body.error->what(),
-          ErrorConfidence::HIGH
-        )
+        std::make_shared<ParseError>(*body.error, ErrorConfidence::HIGH)
       );
     }
     iter = body.next;
@@ -953,8 +923,6 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "No left subterm to parse.",
-          pool.find(token_stream.source_name),
-          pool.find(token_stream.source),
           ErrorConfidence::LOW
         )
       );
@@ -964,11 +932,9 @@ namespace Poi {
     auto left = ParseResult<Term>(
       std::make_shared<ParseError>(
         "Unexpected token.",
-        pool.find(iter->source_name),
-        pool.find(iter->source),
+        ErrorConfidence::LOW,
         iter->start_pos,
-        iter->end_pos,
-        ErrorConfidence::LOW
+        iter->end_pos
       )
     ).choose(
       parse_variable(
@@ -1003,8 +969,6 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "No right subterm to parse.",
-          pool.find(token_stream.source_name),
-          pool.find(token_stream.source),
           ErrorConfidence::LOW
         )
       );
@@ -1015,11 +979,9 @@ namespace Poi {
       ParseResult<Term>(
         std::make_shared<ParseError>(
           "Unexpected token.",
-          pool.find(iter->source_name),
-          pool.find(iter->source),
+          ErrorConfidence::LOW,
           iter->start_pos,
-          iter->end_pos,
-          ErrorConfidence::LOW
+          iter->end_pos
         )
       ).choose(
         parse_variable(
@@ -1200,8 +1162,6 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "No binding to parse.",
-          pool.find(token_stream.source_name),
-          pool.find(token_stream.source),
           ErrorConfidence::LOW
         )
       );
@@ -1211,21 +1171,16 @@ namespace Poi {
     auto pattern = ParseResult<Pattern>(
       std::make_shared<ParseError>(
         "No pattern found for this binding.",
-        pool.find(start->source_name),
-        pool.find(start->source),
+        ErrorConfidence::LOW,
         start->start_pos,
-        iter->end_pos,
-        ErrorConfidence::LOW
+        iter->end_pos
       )
     ).choose(parse_pattern(memo, pool, token_stream, environment, iter));
     if (pattern.error) {
       return memo_error<Binding>(
         memo,
         key,
-        std::make_shared<ParseError>(
-          pattern.error->what(),
-          ErrorConfidence::LOW
-        )
+        std::make_shared<ParseError>(*pattern.error, ErrorConfidence::LOW)
       );
     }
     iter = pattern.next;
@@ -1240,11 +1195,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "Expected '=' in this binding.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          ErrorConfidence::LOW,
           start->start_pos,
-          (iter - 1)->end_pos,
-          ErrorConfidence::LOW
+          (iter - 1)->end_pos
         )
       );
     }
@@ -1261,21 +1214,16 @@ namespace Poi {
     auto definition = ParseResult<Term>(
       std::make_shared<ParseError>(
         "No definition found for this binding.",
-        pool.find(start->source_name),
-        pool.find(start->source),
+        ErrorConfidence::LOW,
         start->start_pos,
-        (iter - 1)->end_pos,
-        ErrorConfidence::LOW
+        (iter - 1)->end_pos
       )
     ).choose(parse_term(memo, pool, token_stream, new_environment, iter));
     if (definition.error) {
       return memo_error<Binding>(
         memo,
         key,
-        std::make_shared<ParseError>(
-          definition.error->what(),
-          ErrorConfidence::HIGH
-        )
+        std::make_shared<ParseError>(*definition.error, ErrorConfidence::HIGH)
       );
     }
     iter = definition.next;
@@ -1290,11 +1238,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "Expected a body for this binding.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          ErrorConfidence::HIGH,
           start->start_pos,
-          (iter - 1)->end_pos,
-          ErrorConfidence::HIGH
+          (iter - 1)->end_pos
         )
       );
     }
@@ -1304,21 +1250,16 @@ namespace Poi {
     auto body = ParseResult<Term>(
       std::make_shared<ParseError>(
         "No body found for this binding.",
-        pool.find(start->source_name),
-        pool.find(start->source),
+        ErrorConfidence::LOW,
         start->start_pos,
-        (iter - 1)->end_pos,
-        ErrorConfidence::LOW
+        (iter - 1)->end_pos
       )
     ).choose(parse_term(memo, pool, token_stream, new_environment, iter));
     if (body.error) {
       return memo_error<Binding>(
         memo,
         key,
-        std::make_shared<ParseError>(
-          body.error->what(),
-          ErrorConfidence::HIGH
-        )
+        std::make_shared<ParseError>(*body.error, ErrorConfidence::HIGH)
       );
     }
     iter = body.next;
@@ -1375,8 +1316,6 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "No data type to parse.",
-          pool.find(token_stream.source_name),
-          pool.find(token_stream.source),
           ErrorConfidence::LOW
         )
       );
@@ -1389,11 +1328,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "Expected '{' to introduce a data type.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          ErrorConfidence::LOW,
           start->start_pos,
-          iter->end_pos,
-          ErrorConfidence::LOW
+          iter->end_pos
         )
       );
     }
@@ -1428,11 +1365,9 @@ namespace Poi {
           key,
           std::make_shared<ParseError>(
             "Invalid data constructor.",
-            pool.find(constructor_start->source_name),
-            pool.find(constructor_start->source),
+            ErrorConfidence::MED,
             constructor_start->start_pos,
-            iter->end_pos,
-            ErrorConfidence::MED
+            iter->end_pos
           )
         );
       }
@@ -1452,11 +1387,9 @@ namespace Poi {
             key,
             std::make_shared<ParseError>(
               "Invalid data constructor.",
-              pool.find(constructor_start->source_name),
-              pool.find(constructor_start->source),
+              ErrorConfidence::MED,
               constructor_start->start_pos,
-              iter->end_pos,
-              ErrorConfidence::MED
+              iter->end_pos
             )
           );
         }
@@ -1473,11 +1406,9 @@ namespace Poi {
                  "' in data constructor '" +
                  pool.find(name) +
                  "'.",
-              pool.find(iter->source_name),
-              pool.find(iter->source),
+              ErrorConfidence::MED,
               iter->start_pos,
-              iter->end_pos,
-              ErrorConfidence::MED
+              iter->end_pos
             )
           );
         }
@@ -1497,11 +1428,9 @@ namespace Poi {
             "Duplicate constructor '" +
              pool.find(name) +
              "' in data type.",
-            pool.find(constructor_start->source_name),
-            pool.find(constructor_start->source),
+            ErrorConfidence::MED,
             constructor_start->start_pos,
-            (iter - 1)->end_pos,
-            ErrorConfidence::MED
+            (iter - 1)->end_pos
           )
         );
       }
@@ -1615,8 +1544,6 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "No member to parse.",
-          pool.find(token_stream.source_name),
-          pool.find(token_stream.source),
           ErrorConfidence::LOW
         )
       );
@@ -1626,11 +1553,9 @@ namespace Poi {
     auto object = ParseResult<Term>(
       std::make_shared<ParseError>(
         "Unexpected token.",
-        pool.find(iter->source_name),
-        pool.find(iter->source),
+        ErrorConfidence::LOW,
         iter->start_pos,
-        iter->end_pos,
-        ErrorConfidence::LOW
+        iter->end_pos
       )
     ).choose(
       parse_variable(
@@ -1660,11 +1585,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "Expected '.' for this member access.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          ErrorConfidence::LOW,
           start->start_pos,
-          (iter - 1)->end_pos,
-          ErrorConfidence::LOW
+          (iter - 1)->end_pos
         )
       );
     }
@@ -1680,11 +1603,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "Invalid member access.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          ErrorConfidence::HIGH,
           start->start_pos,
-          (iter - 1)->end_pos,
-          ErrorConfidence::HIGH
+          (iter - 1)->end_pos
         )
       );
     }
@@ -1725,11 +1646,9 @@ namespace Poi {
           key,
           std::make_shared<ParseError>(
             "Invalid member access.",
-            pool.find(start->source_name),
-            pool.find(start->source),
+            ErrorConfidence::HIGH,
             start->start_pos,
-            (iter - 1)->end_pos,
-            ErrorConfidence::HIGH
+            (iter - 1)->end_pos
           )
         );
       }
@@ -1781,8 +1700,6 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "No match expression to parse.",
-          pool.find(token_stream.source_name),
-          pool.find(token_stream.source),
           ErrorConfidence::LOW
         )
       );
@@ -1795,11 +1712,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "Expected 'match' to start this match expression.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          ErrorConfidence::LOW,
           start->start_pos,
-          iter->end_pos,
-          ErrorConfidence::LOW
+          iter->end_pos
         )
       );
     }
@@ -1812,11 +1727,9 @@ namespace Poi {
       ParseResult<Term>(
         std::make_shared<ParseError>(
           "No discriminee found for this match expression.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          ErrorConfidence::LOW,
           start->start_pos,
-          (iter - 1)->end_pos,
-          ErrorConfidence::LOW
+          (iter - 1)->end_pos
         )
       )
     );
@@ -1824,10 +1737,7 @@ namespace Poi {
       return memo_error<Match>(
         memo,
         key,
-        std::make_shared<ParseError>(
-          discriminee.error->what(),
-          ErrorConfidence::HIGH
-        )
+        std::make_shared<ParseError>(*discriminee.error, ErrorConfidence::HIGH)
       );
     }
     auto free_variables = std::make_shared<std::unordered_set<std::size_t>>();
@@ -1847,11 +1757,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "Expected '{' to begin the cases for this match expression.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          ErrorConfidence::HIGH,
           start->start_pos,
-          (iter - 1)->end_pos,
-          ErrorConfidence::HIGH
+          (iter - 1)->end_pos
         )
       );
     }
@@ -1874,11 +1782,9 @@ namespace Poi {
             key,
             std::make_shared<ParseError>(
               "Invalid case in this match expression.",
-              pool.find(iter->source_name),
-              pool.find(iter->source),
+              ErrorConfidence::HIGH,
               iter->start_pos,
-              iter->end_pos,
-              ErrorConfidence::HIGH
+              iter->end_pos
             )
           );
         }
@@ -1889,21 +1795,16 @@ namespace Poi {
       auto c = ParseResult<Function>(
         std::make_shared<ParseError>(
           "Invalid case in this match expression.",
-          pool.find(iter->source_name),
-          pool.find(iter->source),
+          ErrorConfidence::LOW,
           iter->start_pos,
-          iter->end_pos,
-          ErrorConfidence::LOW
+          iter->end_pos
         )
       ).choose(parse_function(memo, pool, token_stream, environment, iter));
       if (c.error) {
         return memo_error<Match>(
           memo,
           key,
-          std::make_shared<ParseError>(
-            c.error->what(),
-            ErrorConfidence::HIGH
-          )
+          std::make_shared<ParseError>(*c.error, ErrorConfidence::HIGH)
         );
       }
       free_variables->insert(
@@ -1921,11 +1822,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "A match expression must have at least one case.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          ErrorConfidence::HIGH,
           start->start_pos,
-          iter->end_pos,
-          ErrorConfidence::HIGH
+          iter->end_pos
         )
       );
     }
@@ -1972,8 +1871,6 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "No group to parse.",
-          pool.find(token_stream.source_name),
-          pool.find(token_stream.source),
           ErrorConfidence::LOW
         )
       );
@@ -1986,11 +1883,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "Expected '(' to start this group.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          ErrorConfidence::LOW,
           start->start_pos,
-          iter->end_pos,
-          ErrorConfidence::LOW
+          iter->end_pos
         )
       );
     }
@@ -2003,11 +1898,9 @@ namespace Poi {
       ParseResult<Term>(
         std::make_shared<ParseError>(
           "No body found for this group.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          ErrorConfidence::LOW,
           start->start_pos,
-          (iter - 1)->end_pos,
-          ErrorConfidence::LOW
+          (iter - 1)->end_pos
         )
       )
     );
@@ -2015,10 +1908,7 @@ namespace Poi {
       return memo_error<Term>(
         memo,
         key,
-        std::make_shared<ParseError>(
-          body.error->what(),
-          ErrorConfidence::HIGH
-        )
+        std::make_shared<ParseError>(*body.error, ErrorConfidence::HIGH)
       );
     }
     iter = body.next;
@@ -2033,11 +1923,9 @@ namespace Poi {
         key,
         std::make_shared<ParseError>(
           "Expected ')' to close this group.",
-          pool.find(start->source_name),
-          pool.find(start->source),
+          ErrorConfidence::HIGH,
           start->start_pos,
-          (iter - 1)->end_pos,
-          ErrorConfidence::HIGH
+          (iter - 1)->end_pos
         )
       );
     }
@@ -2118,7 +2006,22 @@ std::shared_ptr<const Poi::Term> Poi::parse(
 
   // Check if there was an error.
   if (term.error) {
-    throw Error(term.error->what());
+    if (term.error->has_pos) {
+      throw Error(
+        term.error->message,
+        pool.find(token_stream.source_name),
+        pool.find(token_stream.source),
+        term.error->start_pos,
+        term.error->end_pos
+      );
+    } else {
+      throw Error(
+        term.error->message,
+        pool.find(token_stream.source_name),
+        pool.find(token_stream.source)
+      );
+    }
+    throw Error(term.error->message);
   }
 
   // Make sure we parsed the whole file.
