@@ -9,6 +9,7 @@
 #include <string>
 
 namespace Poi {
+  // Constructs a location string like "example.poi @ 4:10 - 4:12".
   std::string get_location(
     const std::string &source_name,
     const std::string &source,
