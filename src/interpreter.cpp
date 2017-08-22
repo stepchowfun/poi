@@ -96,16 +96,35 @@ Poi::Value * Poi::interpret(
     auto bytecode = program[program_counter];
 
     #ifndef NDEBUG
+      std::cout << "CALL STACK:\n";
+      if (call_stack_size > 0) {
+        for (std::size_t i = call_stack_size - 1; true; --i) {
+          std::cout
+            << "  "
+            << call_stack_size - 1 - i
+            << " base_pointer="
+            << call_stack[i].base_pointer
+            << " return_address="
+            << call_stack[i].return_address
+            << "\n";
+          if (i == 0) {
+            break;
+          }
+        }
+      }
+      std::cout << "\nVALUE STACK:\n";
       if (value_stack_size > 0) {
         for (std::size_t i = value_stack_size - 1; true; --i) {
           if (value_stack[i]) {
             std::cout
+              << "  "
               << value_stack_size - 1 - i
               << " "
               << value_stack[i]->show(0)
               << "\n";
           } else {
             std::cout
+              << "  "
               << value_stack_size - 1 - i
               << " NULL\n";
           }
@@ -115,7 +134,7 @@ Poi::Value * Poi::interpret(
         }
       }
       std::cout
-        << "\n"
+        << "\nEXECUTING: "
         << program_counter
         << " "
         << bytecode.show()
