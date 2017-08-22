@@ -17,54 +17,54 @@ namespace Poi {
       std::size_t base_pointer;
       std::size_t return_address;
   };
-}
 
-template <typename T> void resize_buffer_if_needed(
-  std::size_t requested_logical_size,
-  std::size_t &current_logical_size,
-  std::size_t &current_physical_size,
-  T * &buffer
-  #ifndef NDEBUG
-    , std::string buffer_name
-  #endif
-) {
-  std::size_t new_physical_size = (current_physical_size == 0)
-    ? 1
-    : current_physical_size;
-  while (requested_logical_size > new_physical_size) {
-    new_physical_size *= Poi::stack_allocation_factor;
-  }
-  while (
-    (
-      requested_logical_size *
-      Poi::stack_allocation_factor *
-      Poi::stack_allocation_factor
-    ) <= new_physical_size && new_physical_size >=
-      Poi::min_stack_buffer_size * Poi::stack_allocation_factor
+  template <typename T> void resize_buffer_if_needed(
+    std::size_t requested_logical_size,
+    std::size_t &current_logical_size,
+    std::size_t &current_physical_size,
+    T * &buffer
+    #ifndef NDEBUG
+      , std::string buffer_name
+    #endif
   ) {
-    new_physical_size /= Poi::stack_allocation_factor;
+    std::size_t new_physical_size = (current_physical_size == 0)
+      ? 1
+      : current_physical_size;
+    while (requested_logical_size > new_physical_size) {
+      new_physical_size *= stack_allocation_factor;
+    }
+    while (
+      (
+        requested_logical_size *
+        stack_allocation_factor *
+        stack_allocation_factor
+      ) <= new_physical_size && new_physical_size >=
+        min_stack_buffer_size * stack_allocation_factor
+    ) {
+      new_physical_size /= stack_allocation_factor;
+    }
+    if (current_physical_size != new_physical_size) {
+      #ifndef NDEBUG
+        std::cout
+          << "REALLOCATING "
+          << buffer_name
+          << ": "
+          << current_physical_size
+          << " -> "
+          << new_physical_size
+          << "\n\n";
+      #endif
+      auto new_buffer = new T[new_physical_size];
+      #ifndef NDEBUG
+        memset(new_buffer, 0, new_physical_size * sizeof(T));
+      #endif
+      memcpy(new_buffer, buffer, sizeof(T) * current_logical_size);
+      delete [] buffer;
+      buffer = new_buffer;
+      current_physical_size = new_physical_size;
+    }
+    current_logical_size = requested_logical_size;
   }
-  if (current_physical_size != new_physical_size) {
-    #ifndef NDEBUG
-      std::cout
-        << "REALLOCATING "
-        << buffer_name
-        << ": "
-        << current_physical_size
-        << " -> "
-        << new_physical_size
-        << "\n\n";
-    #endif
-    auto new_buffer = new T[new_physical_size];
-    #ifndef NDEBUG
-      memset(new_buffer, 0, new_physical_size * sizeof(T));
-    #endif
-    memcpy(new_buffer, buffer, sizeof(T) * current_logical_size);
-    delete [] buffer;
-    buffer = new_buffer;
-    current_physical_size = new_physical_size;
-  }
-  current_logical_size = requested_logical_size;
 }
 
 Poi::Value * Poi::interpret(
@@ -72,7 +72,7 @@ Poi::Value * Poi::interpret(
   std::size_t start_stack_size
 ) {
   std::size_t value_stack_size = start_stack_size;
-  std::size_t value_stack_buffer_size = Poi::min_stack_buffer_size;
+  std::size_t value_stack_buffer_size = min_stack_buffer_size;
   auto value_stack = new Value * [value_stack_buffer_size];
   #ifndef NDEBUG
     memset(value_stack, 0, value_stack_buffer_size * sizeof(Value *));
@@ -88,7 +88,7 @@ Poi::Value * Poi::interpret(
   );
 
   std::size_t call_stack_size = 0;
-  std::size_t call_stack_buffer_size = Poi::min_stack_buffer_size;
+  std::size_t call_stack_buffer_size = min_stack_buffer_size;
   auto call_stack = new Frame[call_stack_buffer_size];
 
   std::size_t program_counter = 0;

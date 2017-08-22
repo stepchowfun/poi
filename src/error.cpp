@@ -1,50 +1,52 @@
 #include <poi/error.h>
 
-void get_location_info(
-  const std::string &source_name,
-  const std::string &source,
-  std::size_t start_pos, // Inclusive
-  std::size_t end_pos, // Exclusive
-  std::size_t &start_line,
-  std::size_t &start_col,
-  std::size_t &end_line,
-  std::size_t &end_col,
-  std::size_t &context_start_pos,
-  std::size_t &context_end_pos
-) {
-  start_line = 0;
-  start_col = 0;
-  end_line = 0;
-  end_col = 0;
-  context_start_pos = 0;
-  context_end_pos = source.size();
-  std::size_t line_number = 0;
-  std::size_t col_number = 0;
-  bool found_start = false;
-  bool found_end = false;
-  for (std::size_t pos = 0; pos <= source.size(); ++pos) {
-    if (pos == start_pos) {
-      start_line = line_number;
-      start_col = col_number;
-      found_start = true;
-    }
-    if (pos == end_pos) {
-      end_line = line_number;
-      end_col = col_number;
-      found_end = true;
-    }
-    if (pos == source.size() || source[pos] == '\n') {
-      ++line_number;
-      col_number = 0;
-      if (!found_start) {
-        context_start_pos = pos + 1;
+namespace Poi {
+  void get_location_info(
+    const std::string &source_name,
+    const std::string &source,
+    std::size_t start_pos, // Inclusive
+    std::size_t end_pos, // Exclusive
+    std::size_t &start_line,
+    std::size_t &start_col,
+    std::size_t &end_line,
+    std::size_t &end_col,
+    std::size_t &context_start_pos,
+    std::size_t &context_end_pos
+  ) {
+    start_line = 0;
+    start_col = 0;
+    end_line = 0;
+    end_col = 0;
+    context_start_pos = 0;
+    context_end_pos = source.size();
+    std::size_t line_number = 0;
+    std::size_t col_number = 0;
+    bool found_start = false;
+    bool found_end = false;
+    for (std::size_t pos = 0; pos <= source.size(); ++pos) {
+      if (pos == start_pos) {
+        start_line = line_number;
+        start_col = col_number;
+        found_start = true;
       }
-      if (found_end) {
-        context_end_pos = pos;
-        break;
+      if (pos == end_pos) {
+        end_line = line_number;
+        end_col = col_number;
+        found_end = true;
       }
-    } else {
-      ++col_number;
+      if (pos == source.size() || source[pos] == '\n') {
+        ++line_number;
+        col_number = 0;
+        if (!found_start) {
+          context_start_pos = pos + 1;
+        }
+        if (found_end) {
+          context_end_pos = pos;
+          break;
+        }
+      } else {
+        ++col_number;
+      }
     }
   }
 }

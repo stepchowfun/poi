@@ -2,11 +2,13 @@
 #include <poi/tokenizer.h>
 #include <unordered_map>
 
-enum class LineContinuationStatus {
-  LCS_DEFAULT,
-  LCS_WAIT_FOR_NEWLINE,
-  LCS_WAIT_FOR_TOKEN
-};
+namespace Poi {
+  enum class LineContinuationStatus {
+    LCS_DEFAULT,
+    LCS_WAIT_FOR_NEWLINE,
+    LCS_WAIT_FOR_TOKEN
+  };
+}
 
 Poi::TokenStream Poi::tokenize(
   std::size_t source_name,

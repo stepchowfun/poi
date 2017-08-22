@@ -20,8 +20,8 @@ std::shared_ptr<Poi::BasicBlock> Poi::compile_ast_to_ir(
 std::shared_ptr<std::vector<Poi::Bytecode>> Poi::compile_ir_to_bc(
   const Poi::BasicBlock &basic_block
 ) {
-  std::vector<Poi::Bytecode> program;
-  auto bytecode = std::make_shared<std::vector<Poi::Bytecode>>();
+  std::vector<Bytecode> program;
+  auto bytecode = std::make_shared<std::vector<Bytecode>>();
   basic_block.emit_bytecode(program, *bytecode);
   std::ptrdiff_t offset = bytecode->size();
   bytecode->insert(bytecode->end(), program.begin(), program.end());
