@@ -386,22 +386,27 @@ std::size_t Poi::Binding::emit_ir(
     )
   );
 
-  auto new_environment = environment;
   auto variable = std::dynamic_pointer_cast<
     const VariablePattern
   >(pattern)->variable;
+
+  auto new_environment = environment;
   auto variable_iter = new_environment.find(variable);
   if (variable_iter != new_environment.end()) {
     new_environment.erase(variable_iter);
   }
-  new_environment.insert({ variable, VariableInfo(destination + 1, true) });
 
+  auto definition_environment = new_environment;
+  definition_environment.insert({
+    variable,
+    VariableInfo(destination + 1, true)
+  });
   auto definition_footprint = definition->emit_ir(
     definition,
     current_block,
     destination + 2,
     false,
-    new_environment
+    definition_environment
   );
 
   current_block.get_instructions()->push_back(
@@ -412,12 +417,17 @@ std::size_t Poi::Binding::emit_ir(
     )
   );
 
+  auto body_environment = new_environment;
+  body_environment.insert({
+    variable,
+    VariableInfo(destination + 2, false)
+  });
   auto body_footprint = body->emit_ir(
     body,
     current_block,
     destination + 2 + definition_footprint,
     tail_position,
-    new_environment
+    body_environment
   );
 
   if (!current_block.get_instructions()->back()->terminates_block()) {
