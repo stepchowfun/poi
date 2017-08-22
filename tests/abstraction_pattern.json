@@ -1,6 +1,0 @@
-{
-  "source": "option = {none, some value}, ({some x} -> x) (option.some (x -> x))",
-  "stdout": "(x -> x)\n",
-  "stderr": "",
-  "exit_code": 0
-}

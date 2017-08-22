@@ -126,7 +126,7 @@ $(BUILD_PREFIX)/poi/obj/%.o: %.cpp $(HEADERS_DIST)
 	  $$( \
 	    echo $(BUILD_TYPE) | grep -qi 'debug' && \
 	    echo '-g -O0' || \
-	    echo '-O3' \
+	    echo '-O3 -DNDEBUG' \
 	  ) \
 	  -std=c++11 \
 	  -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter \
@@ -151,7 +151,7 @@ $(BUILD_PREFIX)/dist/bin/poi: \
 	  $$( \
 	    echo $(BUILD_TYPE) | grep -qi 'debug' && \
 	    echo '-g -O0' || \
-	    echo '-flto -O3' \
+	    echo '-flto -O3 -DNDEBUG' \
 	  ) \
 	  -std=c++11 \
 	  -Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter \

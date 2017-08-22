@@ -5,6 +5,7 @@
 #ifndef POI_STRING_POOL_H
 #define POI_STRING_POOL_H
 
+#include <cstddef>
 #include <string>
 #include <unordered_map>
 
@@ -14,13 +15,13 @@ namespace Poi {
   class StringPool {
   public:
     explicit StringPool();
-    size_t insert(const std::string &s);
-    std::string find(size_t id) const;
+    std::size_t insert(const std::string &s);
+    std::string find(std::size_t id) const;
 
   private:
-    std::unordered_map<std::string, size_t> forward_pool;
-    std::unordered_map<size_t, std::string> reverse_pool;
-    size_t counter;
+    std::unordered_map<std::string, std::size_t> forward_pool;
+    std::unordered_map<std::size_t, std::string> reverse_pool;
+    std::size_t counter;
   };
 }
 

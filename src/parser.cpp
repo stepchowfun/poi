@@ -114,8 +114,8 @@ public:
     const std::string &message, // No trailing line break
     const std::string &source_name,
     const std::string &source,
-    size_t start_pos, // Inclusive
-    size_t end_pos, // Exclusive
+    std::size_t start_pos, // Inclusive
+    std::size_t end_pos, // Exclusive
     ErrorConfidence confidence
   ) :
     Error (message, source_name, source, start_pos, end_pos),
@@ -234,7 +234,7 @@ using MemoKey = std::tuple<
 using MemoMap = std::unordered_map<
   MemoKey,
   ParseResult<Poi::Node>,
-  std::function<size_t(const MemoKey &key)>
+  std::function<std::size_t(const MemoKey &key)>
 >;
 
 // A helper function for constructing a memoization key
@@ -279,7 +279,7 @@ ParseResult<Poi::Pattern> parse_pattern(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 );
 
@@ -287,7 +287,7 @@ ParseResult<Poi::VariablePattern> parse_variable_pattern(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 );
 
@@ -295,7 +295,7 @@ ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 );
 
@@ -303,7 +303,7 @@ ParseResult<Poi::Term> parse_term(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 );
 
@@ -311,7 +311,7 @@ ParseResult<Poi::Variable> parse_variable(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 );
 
@@ -319,7 +319,7 @@ ParseResult<Poi::Function> parse_function(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 );
 
@@ -327,7 +327,7 @@ ParseResult<Poi::Application> parse_application(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter,
   std::shared_ptr<const Poi::Term> application_prior
 );
@@ -336,7 +336,7 @@ ParseResult<Poi::Binding> parse_binding(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 );
 
@@ -344,7 +344,7 @@ ParseResult<Poi::DataType> parse_data_type(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 );
 
@@ -352,7 +352,7 @@ ParseResult<Poi::Member> parse_member(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 );
 
@@ -360,7 +360,7 @@ ParseResult<Poi::Match> parse_match(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 );
 
@@ -368,7 +368,7 @@ ParseResult<Poi::Term> parse_group(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 );
 
@@ -378,7 +378,7 @@ ParseResult<Poi::Pattern> parse_pattern(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 ) {
   // Check if we can reuse a memoized result.
@@ -433,7 +433,7 @@ ParseResult<Poi::VariablePattern> parse_variable_pattern(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 ) {
   // Check if we can reuse a memoized result.
@@ -474,9 +474,9 @@ ParseResult<Poi::VariablePattern> parse_variable_pattern(
   }
 
   // Construct the VariablePattern.
-  auto variables = std::make_shared<const std::unordered_set<size_t>>();
+  auto variables = std::make_shared<const std::unordered_set<std::size_t>>();
   std::const_pointer_cast<
-    std::unordered_set<size_t>
+    std::unordered_set<std::size_t>
   >(variables)->insert(iter->literal);
   auto variable_pattern = std::make_shared<Poi::VariablePattern>(
     iter->source_name,
@@ -496,7 +496,7 @@ ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 ) {
   // Check if we can reuse a memoized result.
@@ -563,7 +563,7 @@ ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
   auto parameters = std::make_shared<
     std::vector<std::shared_ptr<const Poi::Pattern>>
   >();
-  auto variables = std::make_shared<const std::unordered_set<size_t>>();
+  auto variables = std::make_shared<const std::unordered_set<std::size_t>>();
   while (iter->type != Poi::TokenType::RIGHT_CURLY) {
     auto parameter = ParseResult<Poi::Pattern>(
       std::make_shared<ParseError>(
@@ -611,7 +611,7 @@ ParseResult<Poi::ConstructorPattern> parse_constructor_pattern(
         );
       }
       std::const_pointer_cast<
-        std::unordered_set<size_t>
+        std::unordered_set<std::size_t>
       >(variables)->insert(variable);
     }
   }
@@ -643,7 +643,7 @@ ParseResult<Poi::Term> parse_term(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 ) {
   // Check if we can reuse a memoized result.
@@ -722,7 +722,7 @@ ParseResult<Poi::Variable> parse_variable(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 ) {
   // Check if we can reuse a memoized result.
@@ -790,7 +790,7 @@ ParseResult<Poi::Variable> parse_variable(
   ++iter;
 
   // Construct the Variable.
-  auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+  auto free_variables = std::make_shared<std::unordered_set<std::size_t>>();
   free_variables->insert(variable_name);
   auto variable = std::make_shared<Poi::Variable>(
     (iter - 1)->source_name,
@@ -809,7 +809,7 @@ ParseResult<Poi::Function> parse_function(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 ) {
   // Check if we can reuse a memoized result.
@@ -903,7 +903,7 @@ ParseResult<Poi::Function> parse_function(
   iter = body.next;
 
   // Construct the Function.
-  auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+  auto free_variables = std::make_shared<std::unordered_set<std::size_t>>();
   free_variables->insert(
     body.node->free_variables->begin(),
     body.node->free_variables->end()
@@ -929,7 +929,7 @@ ParseResult<Poi::Application> parse_application(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter,
   std::shared_ptr<const Poi::Term> application_prior
 ) {
@@ -1039,7 +1039,7 @@ ParseResult<Poi::Application> parse_application(
   );
   if (application_prior) {
     auto prior_of_left_free_variables = std::make_shared<
-      std::unordered_set<size_t>
+      std::unordered_set<std::size_t>
     >();
     prior_of_left_free_variables->insert(
       application_prior->free_variables->begin(),
@@ -1100,7 +1100,7 @@ ParseResult<Poi::Application> parse_application(
   } else {
     if (application_prior) {
       auto prior_of_left_free_variables = std::make_shared<
-        std::unordered_set<size_t>
+        std::unordered_set<std::size_t>
       >();
       prior_of_left_free_variables->insert(
         application_prior->free_variables->begin(),
@@ -1121,7 +1121,7 @@ ParseResult<Poi::Application> parse_application(
       );
 
       auto free_variables = std::make_shared<
-        std::unordered_set<size_t>
+        std::unordered_set<std::size_t>
       >();
       free_variables->insert(
         prior_of_left->free_variables->begin(),
@@ -1142,7 +1142,9 @@ ParseResult<Poi::Application> parse_application(
         right->node
       );
     } else {
-      auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+      auto free_variables = std::make_shared<
+        std::unordered_set<std::size_t>
+      >();
       free_variables->insert(
         left.node->free_variables->begin(),
         left.node->free_variables->end()
@@ -1171,7 +1173,7 @@ ParseResult<Poi::Binding> parse_binding(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 ) {
   // Check if we can reuse a memoized result.
@@ -1315,7 +1317,7 @@ ParseResult<Poi::Binding> parse_binding(
   iter = body.next;
 
   // Construct the Binding.
-  auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+  auto free_variables = std::make_shared<std::unordered_set<std::size_t>>();
   free_variables->insert(
     definition.node->free_variables->begin(),
     definition.node->free_variables->end()
@@ -1346,7 +1348,7 @@ ParseResult<Poi::DataType> parse_data_type(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 ) {
   // Check if we can reuse a memoized result.
@@ -1392,12 +1394,12 @@ ParseResult<Poi::DataType> parse_data_type(
 
   // Parse the constructors. Note that the lexical analyzer guarantees
   // parentheses are matched.
-  auto constructor_names = std::make_shared<std::vector<size_t>>();
+  auto constructor_names = std::make_shared<std::vector<std::size_t>>();
   auto constructor_params = std::make_shared<
-    std::unordered_map<size_t, std::vector<size_t>>
+    std::unordered_map<std::size_t, std::vector<std::size_t>>
   >();
   auto constructors = std::make_shared<
-    std::unordered_map<size_t, std::shared_ptr<const Poi::Term>>
+    std::unordered_map<std::size_t, std::shared_ptr<const Poi::Term>>
   >();
   std::vector<std::shared_ptr<Poi::Data>> data_terms;
   bool first = true;
@@ -1431,8 +1433,8 @@ ParseResult<Poi::DataType> parse_data_type(
     ++iter;
 
     // Parse the parameters.
-    std::vector<size_t> params;
-    std::unordered_set<size_t> params_set;
+    std::vector<std::size_t> params;
+    std::unordered_set<std::size_t> params_set;
     while (
       iter->type != Poi::TokenType::SEPARATOR &&
       iter->type != Poi::TokenType::RIGHT_CURLY
@@ -1502,7 +1504,7 @@ ParseResult<Poi::DataType> parse_data_type(
     constructor_params->insert({ name, params });
 
     // Construct the constructor.
-    auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+    auto free_variables = std::make_shared<std::unordered_set<std::size_t>>();
     free_variables->insert(
       params.begin(),
       params.end()
@@ -1519,15 +1521,17 @@ ParseResult<Poi::DataType> parse_data_type(
     data_terms.push_back(data_term);
     auto constructor = std::static_pointer_cast<Poi::Term>(data_term);
     for (auto iter = params.rbegin(); iter != params.rend(); ++iter) {
-      free_variables = std::make_shared<std::unordered_set<size_t>>();
+      free_variables = std::make_shared<std::unordered_set<std::size_t>>();
       free_variables->insert(
         constructor->free_variables->begin(),
         constructor->free_variables->end()
       );
       free_variables->erase(*iter);
-      auto variables = std::make_shared<const std::unordered_set<size_t>>();
+      auto variables = std::make_shared<
+        const std::unordered_set<std::size_t>
+      >();
       std::const_pointer_cast<
-        std::unordered_set<size_t>
+        std::unordered_set<std::size_t>
       >(variables)->insert(*iter);
       auto variable_pattern = std::make_shared<Poi::VariablePattern>(
         constructor->source_name,
@@ -1561,7 +1565,7 @@ ParseResult<Poi::DataType> parse_data_type(
     start->source,
     start->start_pos,
     (iter - 1)->end_pos,
-    std::make_shared<std::unordered_set<size_t>>(),
+    std::make_shared<std::unordered_set<std::size_t>>(),
     constructor_names,
     constructor_params,
     constructors
@@ -1582,7 +1586,7 @@ ParseResult<Poi::Member> parse_member(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 ) {
   // Check if we can reuse a memoized result.
@@ -1679,7 +1683,7 @@ ParseResult<Poi::Member> parse_member(
   ++iter;
 
   // Construct the Member.
-  auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+  auto free_variables = std::make_shared<std::unordered_set<std::size_t>>();
   free_variables->insert(
     object.node->free_variables->begin(),
     object.node->free_variables->end()
@@ -1724,7 +1728,7 @@ ParseResult<Poi::Member> parse_member(
     ++iter;
 
     // Construct the new Member.
-    free_variables = std::make_shared<std::unordered_set<size_t>>();
+    free_variables = std::make_shared<std::unordered_set<std::size_t>>();
     free_variables->insert(
       member->free_variables->begin(),
       member->free_variables->end()
@@ -1748,7 +1752,7 @@ ParseResult<Poi::Match> parse_match(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 ) {
   // Check if we can reuse a memoized result.
@@ -1817,7 +1821,7 @@ ParseResult<Poi::Match> parse_match(
       )
     );
   }
-  auto free_variables = std::make_shared<std::unordered_set<size_t>>();
+  auto free_variables = std::make_shared<std::unordered_set<std::size_t>>();
   free_variables->insert(
     discriminee.node->free_variables->begin(),
     discriminee.node->free_variables->end()
@@ -1939,7 +1943,7 @@ ParseResult<Poi::Term> parse_group(
   MemoMap &memo,
   const Poi::StringPool &pool,
   const Poi::TokenStream &token_stream,
-  const std::unordered_set<size_t> &environment,
+  const std::unordered_set<std::size_t> &environment,
   std::vector<Poi::Token>::const_iterator iter
 ) {
   // Check if we can reuse a memoized result.
@@ -2034,8 +2038,8 @@ ParseResult<Poi::Term> parse_group(
   // important because some Nodes get their spans from their children, and it
   // would be akward (for example) if the last child of a Node were a Group
   // and we didn't include the closing parenthesis.
-  const_cast<size_t &>(body.node->start_pos) = start->start_pos;
-  const_cast<size_t &>(body.node->end_pos) = (iter - 1)->end_pos;
+  const_cast<std::size_t &>(body.node->start_pos) = start->start_pos;
+  const_cast<std::size_t &>(body.node->end_pos) = (iter - 1)->end_pos;
 
   // Memoize and return the result.
   return memo_success<Poi::Term>(memo, key, body.node, iter);
@@ -2050,7 +2054,7 @@ std::shared_ptr<const Poi::Term> Poi::parse(
   const Poi::StringPool &pool
 ) {
   // The environment records which variables are currently in scope.
-  std::unordered_set<size_t> environment;
+  std::unordered_set<std::size_t> environment;
 
   // Memoize the results of recursive descent calls.
   // This is the "packrat parser" technique.
@@ -2062,19 +2066,21 @@ std::shared_ptr<const Poi::Term> Poi::parse(
     auto application_prior = std::get<2>(key);
 
     // Get the hash of each component.
-    size_t memo_type_hash =
+    std::size_t memo_type_hash =
       static_cast<typename std::underlying_type<MemoType>::type>(memo_type);
-    size_t start_hash = 0;
+    std::size_t start_hash = 0;
     if (start != tokens_end) {
-      start_hash = reinterpret_cast<size_t>(&(*start));
+      start_hash = reinterpret_cast<std::size_t>(&(*start));
     }
-    size_t application_prior_hash = 0;
+    std::size_t application_prior_hash = 0;
     if (application_prior) {
-      application_prior_hash = reinterpret_cast<size_t>(&(*application_prior));
+      application_prior_hash = reinterpret_cast<std::size_t>(
+        &(*application_prior)
+      );
     }
 
     // To combine the hashes, we use the hash_combine trick from Boost.
-    size_t combined_hash = memo_type_hash;
+    std::size_t combined_hash = memo_type_hash;
     combined_hash ^= 0x9e3779b9 +
       (combined_hash << 6) + (combined_hash >> 2) + start_hash;
     combined_hash ^= 0x9e3779b9 +

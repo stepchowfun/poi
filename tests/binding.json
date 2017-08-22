@@ -1,6 +1,6 @@
 {
   "source": "f = x -> x, g = y -> f y, g (z -> z)",
-  "stdout": "(z -> z)\n",
+  "stdout": "FUNCTION body=17 frame_size=2 captures=[]\n",
   "stderr": "",
   "exit_code": 0
 }

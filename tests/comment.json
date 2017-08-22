@@ -1,6 +1,6 @@
 {
   "source": "# Comment 1\nx -> x # Comment 2\n# Comment 3",
-  "stdout": "(x -> x)\n",
+  "stdout": "FUNCTION body=2 frame_size=2 captures=[]\n",
   "stderr": "",
   "exit_code": 0
 }

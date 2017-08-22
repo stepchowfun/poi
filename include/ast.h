@@ -5,6 +5,7 @@
 #ifndef POI_AST_H
 #define POI_AST_H
 
+#include <cstddef>
 #include <memory>
 #include <poi/string_pool.h>
 #include <unordered_map>
@@ -12,118 +13,125 @@
 #include <vector>
 
 namespace Poi {
-  // A forward declaration to avoid mutually recursive headers
-  class Value; // Declared in poi/value.h
+  class BasicBlock; // Declared in poi/ir.h
+
+  class VariableInfo {
+  public:
+    const std::size_t stack_location; // Relative to the top of the stack
+    const bool is_fixpoint;
+
+    explicit VariableInfo(std::size_t stack_location, bool is_fixpoint);
+  };
 
   class Node {
   public:
-    const size_t source_name;
-    const size_t source;
-    const size_t start_pos; // Inclusive
-    const size_t end_pos; // Exclusive
+    const std::size_t source_name;
+    const std::size_t source;
+    const std::size_t start_pos; // Inclusive
+    const std::size_t end_pos; // Exclusive
 
     explicit Node(
-      size_t source_name,
-      size_t source,
-      size_t start_pos,
-      size_t end_pos
+      std::size_t source_name,
+      std::size_t source,
+      std::size_t start_pos,
+      std::size_t end_pos
     );
-    virtual ~Node();
+    virtual ~Node() = 0;
     virtual std::string show(const StringPool &pool) const = 0;
   };
 
   class Pattern : public Node {
   public:
-    const std::shared_ptr<const std::unordered_set<size_t>> variables;
+    const std::shared_ptr<const std::unordered_set<std::size_t>> variables;
 
     explicit Pattern(
-      size_t source_name,
-      size_t source,
-      size_t start_pos,
-      size_t end_pos,
-      std::shared_ptr<const std::unordered_set<size_t>> variables
+      std::size_t source_name,
+      std::size_t source,
+      std::size_t start_pos,
+      std::size_t end_pos,
+      std::shared_ptr<const std::unordered_set<std::size_t>> variables
     );
-    virtual ~Pattern();
+    virtual ~Pattern() = 0;
   };
 
   class VariablePattern : public Pattern {
   public:
-    const size_t variable;
+    const std::size_t variable;
 
     explicit VariablePattern(
-      size_t source_name,
-      size_t source,
-      size_t start_pos,
-      size_t end_pos,
-      size_t variable,
-      std::shared_ptr<const std::unordered_set<size_t>> variables
+      std::size_t source_name,
+      std::size_t source,
+      std::size_t start_pos,
+      std::size_t end_pos,
+      std::size_t variable,
+      std::shared_ptr<const std::unordered_set<std::size_t>> variables
     );
     std::string show(const StringPool &pool) const override;
   };
 
   class ConstructorPattern : public Pattern {
   public:
-    const size_t constructor;
+    const std::size_t constructor;
     const std::shared_ptr<
       const std::vector<std::shared_ptr<const Pattern>>
     > parameters;
 
     explicit ConstructorPattern(
-      size_t source_name,
-      size_t source,
-      size_t start_pos,
-      size_t end_pos,
-      size_t constructor,
+      std::size_t source_name,
+      std::size_t source,
+      std::size_t start_pos,
+      std::size_t end_pos,
+      std::size_t constructor,
       std::shared_ptr<
         const std::vector<std::shared_ptr<const Pattern>>
       > parameters,
-      std::shared_ptr<const std::unordered_set<size_t>> variables
+      std::shared_ptr<const std::unordered_set<std::size_t>> variables
     );
     std::string show(const StringPool &pool) const override;
   };
 
   class Term : public Node {
   public:
-    const std::shared_ptr<const std::unordered_set<size_t>> free_variables;
+    const std::shared_ptr<
+      const std::unordered_set<std::size_t>
+    > free_variables;
 
     explicit Term(
-      size_t source_name,
-      size_t source,
-      size_t start_pos,
-      size_t end_pos,
-      std::shared_ptr<const std::unordered_set<size_t>> free_variables
+      std::size_t source_name,
+      std::size_t source,
+      std::size_t start_pos,
+      std::size_t end_pos,
+      std::shared_ptr<const std::unordered_set<std::size_t>> free_variables
     );
-    virtual ~Term();
-    virtual std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
-    ) const = 0;
+    virtual ~Term() = 0;
+    virtual std::size_t emit_ir(
+      std::shared_ptr<const Poi::Term> term,
+      BasicBlock &current_block,
+      std::size_t destination, // Don't touch any registers under this one.
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
+    ) const = 0; // Return the number of new registers used.
   };
 
   class Variable : public Term {
   public:
-    const size_t variable;
+    const std::size_t variable;
 
     explicit Variable(
-      size_t source_name,
-      size_t source,
-      size_t start_pos,
-      size_t end_pos,
-      std::shared_ptr<const std::unordered_set<size_t>> free_variables,
-      size_t variable
+      std::size_t source_name,
+      std::size_t source,
+      std::size_t start_pos,
+      std::size_t end_pos,
+      std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
+      std::size_t variable
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
+    std::size_t emit_ir(
+      std::shared_ptr<const Poi::Term> term,
+      BasicBlock &current_block,
+      std::size_t destination,
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 
@@ -133,22 +141,21 @@ namespace Poi {
     const std::shared_ptr<const Term> body;
 
     explicit Function(
-      size_t source_name,
-      size_t source,
-      size_t start_pos,
-      size_t end_pos,
-      std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+      std::size_t source_name,
+      std::size_t source,
+      std::size_t start_pos,
+      std::size_t end_pos,
+      std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
       std::shared_ptr<const Pattern> pattern,
       std::shared_ptr<const Term> body
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
+    std::size_t emit_ir(
+      std::shared_ptr<const Poi::Term> term,
+      BasicBlock &current_block,
+      std::size_t destination,
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 
@@ -158,22 +165,21 @@ namespace Poi {
     const std::shared_ptr<const Term> operand;
 
     explicit Application(
-      size_t source_name,
-      size_t source,
-      size_t start_pos,
-      size_t end_pos,
-      std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+      std::size_t source_name,
+      std::size_t source,
+      std::size_t start_pos,
+      std::size_t end_pos,
+      std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
       std::shared_ptr<const Term> function,
       std::shared_ptr<const Term> operand
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
+    std::size_t emit_ir(
+      std::shared_ptr<const Poi::Term> term,
+      BasicBlock &current_block,
+      std::size_t destination,
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 
@@ -184,58 +190,56 @@ namespace Poi {
     const std::shared_ptr<const Term> body;
 
     explicit Binding(
-      size_t source_name,
-      size_t source,
-      size_t start_pos,
-      size_t end_pos,
-      std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+      std::size_t source_name,
+      std::size_t source,
+      std::size_t start_pos,
+      std::size_t end_pos,
+      std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
       std::shared_ptr<const Pattern> pattern,
       std::shared_ptr<const Term> definition,
       std::shared_ptr<const Term> body
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
+    std::size_t emit_ir(
+      std::shared_ptr<const Poi::Term> term,
+      BasicBlock &current_block,
+      std::size_t destination,
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 
   class DataType : public Term {
   public:
-    const std::shared_ptr<const std::vector<size_t>> constructor_names;
+    const std::shared_ptr<const std::vector<std::size_t>> constructor_names;
     const std::shared_ptr<
-      const std::unordered_map<size_t, std::vector<size_t>>
+      const std::unordered_map<std::size_t, std::vector<std::size_t>>
     > constructor_params;
     const std::shared_ptr<
-      const std::unordered_map<size_t, std::shared_ptr<const Term>>
+      const std::unordered_map<std::size_t, std::shared_ptr<const Term>>
     > constructors;
 
     explicit DataType(
-      size_t source_name,
-      size_t source,
-      size_t start_pos,
-      size_t end_pos,
-      std::shared_ptr<const std::unordered_set<size_t>> free_variables,
-      std::shared_ptr<const std::vector<size_t>> constructor_names,
+      std::size_t source_name,
+      std::size_t source,
+      std::size_t start_pos,
+      std::size_t end_pos,
+      std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
+      std::shared_ptr<const std::vector<std::size_t>> constructor_names,
       std::shared_ptr<
-        const std::unordered_map<size_t, std::vector<size_t>>
+        const std::unordered_map<std::size_t, std::vector<std::size_t>>
       > constructor_params,
       std::shared_ptr<
-        const std::unordered_map<size_t, std::shared_ptr<const Term>>
+        const std::unordered_map<std::size_t, std::shared_ptr<const Term>>
       > constructors
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
+    std::size_t emit_ir(
+      std::shared_ptr<const Poi::Term> term,
+      BasicBlock &current_block,
+      std::size_t destination,
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 
@@ -245,25 +249,24 @@ namespace Poi {
   class Data : public Term {
   public:
     const std::weak_ptr<const DataType> data_type;
-    const size_t constructor;
+    const std::size_t constructor;
 
     explicit Data(
-      size_t source_name,
-      size_t source,
-      size_t start_pos,
-      size_t end_pos,
-      std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+      std::size_t source_name,
+      std::size_t source,
+      std::size_t start_pos,
+      std::size_t end_pos,
+      std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
       std::weak_ptr<const DataType> data_type,
-      size_t constructor
+      std::size_t constructor
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
+    std::size_t emit_ir(
+      std::shared_ptr<const Poi::Term> term,
+      BasicBlock &current_block,
+      std::size_t destination,
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 
@@ -275,25 +278,24 @@ namespace Poi {
   class Member : public Term {
   public:
     const std::shared_ptr<const Term> object;
-    const size_t field;
+    const std::size_t field;
 
     explicit Member(
-      size_t source_name,
-      size_t source,
-      size_t start_pos,
-      size_t end_pos,
-      std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+      std::size_t source_name,
+      std::size_t source,
+      std::size_t start_pos,
+      std::size_t end_pos,
+      std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
       std::shared_ptr<const Term> object,
-      size_t field
+      std::size_t field
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
+    std::size_t emit_ir(
+      std::shared_ptr<const Poi::Term> term,
+      BasicBlock &current_block,
+      std::size_t destination,
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 
@@ -305,24 +307,23 @@ namespace Poi {
     > cases;
 
     explicit Match(
-      size_t source_name,
-      size_t source,
-      size_t start_pos,
-      size_t end_pos,
-      std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+      std::size_t source_name,
+      std::size_t source,
+      std::size_t start_pos,
+      std::size_t end_pos,
+      std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
       std::shared_ptr<const Term> discriminee,
       std::shared_ptr<
         const std::vector<std::shared_ptr<const Function>>
       > cases
     );
     std::string show(const StringPool &pool) const override;
-    std::shared_ptr<const Value> eval(
-      std::shared_ptr<const Term> term,
-      const std::unordered_map<
-        size_t, std::shared_ptr<const Value>
-      > &environment,
-      std::vector<std::shared_ptr<const Term>> &stack_trace,
-      const StringPool &pool
+    std::size_t emit_ir(
+      std::shared_ptr<const Poi::Term> term,
+      BasicBlock &current_block,
+      std::size_t destination,
+      bool tail_position,
+      const std::unordered_map<std::size_t, VariableInfo> &environment
     ) const override;
   };
 }

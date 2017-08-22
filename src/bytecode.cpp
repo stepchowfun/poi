@@ -1,0 +1,117 @@
+#include <poi/bytecode.h>
+#include <poi/error.h>
+#include <type_traits>
+
+void Poi::Bytecode::relocate(std::ptrdiff_t offset) {
+  std::string type_name = BytecodeTypeName[
+    static_cast<typename std::underlying_type<BytecodeType>::type>(type)
+  ];
+
+  switch (type) {
+    case BytecodeType::BEGIN_FIXPOINT: {
+      break;
+    }
+    case BytecodeType::CALL_NON_TAIL: {
+      break;
+    }
+    case BytecodeType::CALL_TAIL: {
+      break;
+    }
+    case BytecodeType::COPY: {
+      break;
+    }
+    case BytecodeType::CREATE_FUNCTION: {
+      create_function_args.body += offset;
+      break;
+    }
+    case BytecodeType::DEREF_FIXPOINT: {
+      break;
+    }
+    case BytecodeType::END_FIXPOINT: {
+      break;
+    }
+    case BytecodeType::EXIT: {
+      break;
+    }
+    case BytecodeType::RETURN: {
+      break;
+    }
+    default: {
+      throw Error("relocate(...) is not implemented for '" + type_name + "'.");
+    }
+  }
+}
+
+std::string Poi::Bytecode::show() const {
+  std::string result = BytecodeTypeName[
+    static_cast<typename std::underlying_type<BytecodeType>::type>(type)
+  ];
+
+  switch (type) {
+    case BytecodeType::BEGIN_FIXPOINT: {
+      result +=
+        " destination=" + std::to_string(begin_fixpoint_args.destination);
+      break;
+    }
+    case BytecodeType::CALL_NON_TAIL: {
+      result +=
+        " destination=" + std::to_string(call_non_tail_args.destination) +
+        " function=" + std::to_string(call_non_tail_args.function) +
+        " argument=" + std::to_string(call_non_tail_args.argument);
+      break;
+    }
+    case BytecodeType::CALL_TAIL: {
+      result +=
+        " function=" + std::to_string(call_tail_args.function) +
+        " argument=" + std::to_string(call_tail_args.argument);
+      break;
+    }
+    case BytecodeType::COPY: {
+      result +=
+        " destination=" + std::to_string(copy_args.destination) +
+        " source=" + std::to_string(copy_args.source);
+      break;
+    }
+    case BytecodeType::CREATE_FUNCTION: {
+      result +=
+        " destination=" + std::to_string(create_function_args.destination) +
+        " body=" + std::to_string(create_function_args.body) +
+        " frame_size=" + std::to_string(create_function_args.frame_size) +
+        " captures=[";
+      for (std::size_t i = 0; i < create_function_args.num_captures; i++) {
+        if (i != 0) {
+          result += ", ";
+        }
+        result += std::to_string(create_function_args.captures[i]);
+      }
+      result += "]";
+      break;
+    }
+    case BytecodeType::DEREF_FIXPOINT: {
+      result +=
+        " destination=" + std::to_string(deref_fixpoint_args.destination) +
+        " source=" + std::to_string(deref_fixpoint_args.fixpoint);
+      break;
+    }
+    case BytecodeType::END_FIXPOINT: {
+      result +=
+        " fixpoint=" + std::to_string(end_fixpoint_args.fixpoint) +
+        " target=" + std::to_string(end_fixpoint_args.target);
+      break;
+    }
+    case BytecodeType::EXIT: {
+      result +=
+        " value=" + std::to_string(exit_args.value);
+      break;
+    }
+    case BytecodeType::RETURN: {
+      result +=
+        " value=" + std::to_string(return_args.value);
+      break;
+    }
+    default: {
+      throw Error("show(...) is not implemented for '" + result + "'.");
+    }
+  }
+  return result;
+}

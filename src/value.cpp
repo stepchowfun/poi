@@ -1,123 +1,47 @@
-#include <poi/ast.h>
 #include <poi/error.h>
 #include <poi/value.h>
+#include <type_traits>
 
-///////////////////////////////////////////////////////////////////////////////
-// Helpers                                                                   //
-///////////////////////////////////////////////////////////////////////////////
+namespace Poi {
+  const std::size_t max_value_show_depth = 4;
+}
 
-std::shared_ptr<const Poi::Value> Poi::trampoline(
-  std::shared_ptr<const Poi::Value> value,
-  std::vector<std::shared_ptr<const Poi::Term>> &stack_trace,
-  const Poi::StringPool &pool
-) {
-  auto result = value;
-  while (true) {
-    auto thunk_value = std::dynamic_pointer_cast<const ThunkValue>(result);
-    if (thunk_value) {
-      result = thunk_value->term->eval(
-        thunk_value->term,
-        *(thunk_value->environment),
-        stack_trace,
-        pool
-      );
-    } else {
+std::string Poi::Value::show(std::size_t depth) const {
+  if (depth > Poi::max_value_show_depth) {
+    return "...";
+  }
+
+  std::string result = ValueTypeName[
+    static_cast<typename std::underlying_type<ValueType>::type>(type)
+  ];
+
+  switch (type) {
+    case ValueType::FIXPOINT: {
+      if (fixpoint_members.target) {
+        result += " target=[" + fixpoint_members.target->show(depth + 1) + "]";
+      } else {
+        result += " target=null";
+      }
       break;
     }
+    case ValueType::FUNCTION: {
+      result +=
+        " body=" + std::to_string(function_members.body) +
+        " frame_size=" + std::to_string(function_members.frame_size) +
+        " captures=[";
+      for (std::size_t i = 0; i < function_members.num_captures; i++) {
+        if (i != 0) {
+          result += ", ";
+        }
+        result += function_members.captures[i]->show(depth + 1);
+      }
+      result += "]";
+      break;
+    }
+    default: {
+      throw Error("show(...) is not implemented for '" + result + "'.");
+    }
   }
+
   return result;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Value                                                                     //
-///////////////////////////////////////////////////////////////////////////////
-
-Poi::Value::~Value() {
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// FunctionValue                                                             //
-///////////////////////////////////////////////////////////////////////////////
-
-Poi::FunctionValue::FunctionValue(
-  std::shared_ptr<const Poi::Function> function,
-  std::shared_ptr<
-    const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
-  > captures
-) : function(function), captures(captures) {
-}
-
-std::string Poi::FunctionValue::show(const Poi::StringPool &pool) const {
-  return function->show(pool);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// DataTypeValue                                                             //
-///////////////////////////////////////////////////////////////////////////////
-
-Poi::DataTypeValue::DataTypeValue(
-  std::shared_ptr<const Poi::DataType> data_type,
-  const std::shared_ptr<
-    const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
-  > constructors
-) : data_type(data_type), constructors(constructors) {
-}
-
-std::string Poi::DataTypeValue::show(const Poi::StringPool &pool) const {
-  return data_type->show(pool);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// DataValue                                                                 //
-///////////////////////////////////////////////////////////////////////////////
-
-Poi::DataValue::DataValue(
-  std::shared_ptr<const Poi::DataType> data_type,
-  std::size_t constructor,
-  std::shared_ptr<
-    const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
-  > members
-) : data_type(data_type), constructor(constructor), members(members) {
-}
-
-std::string Poi::DataValue::show(const Poi::StringPool &pool) const {
-  std::string result = "(" + pool.find(constructor);
-  for (auto &member : *members) {
-    result += " " + member.second->show(pool);
-  }
-  result += ")";
-  return result;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// ProxyValue                                                                //
-///////////////////////////////////////////////////////////////////////////////
-
-Poi::ProxyValue::ProxyValue(
-  std::shared_ptr<const Poi::Value> value
-) : value(value) {
-}
-
-std::string Poi::ProxyValue::show(const Poi::StringPool &pool) const {
-  if (value) {
-    return value->show(pool);
-  } else {
-    throw Error("Undefined.");
-  }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// ThunkValue                                                                //
-///////////////////////////////////////////////////////////////////////////////
-
-Poi::ThunkValue::ThunkValue(
-  std::shared_ptr<const Poi::Term> term,
-  std::shared_ptr<
-    const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
-  > environment
-) : term(term), environment(environment) {
-}
-
-std::string Poi::ThunkValue::show(const Poi::StringPool &pool) const {
-  return "<" + term->show(pool) + ">";
 }

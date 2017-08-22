@@ -1,176 +1,19 @@
+#include <algorithm>
+#include <cassert>
 #include <poi/ast.h>
+#include <poi/bytecode.h>
 #include <poi/error.h>
+#include <poi/ir.h>
 #include <poi/value.h>
 
 ///////////////////////////////////////////////////////////////////////////////
-// Configuration                                                             //
+// VariableInfo                                                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-const size_t max_evaluation_depth = 1024;
-const size_t tail_call_elimination_min_depth = 100;
-
-///////////////////////////////////////////////////////////////////////////////
-// Error handling                                                            //
-///////////////////////////////////////////////////////////////////////////////
-
-// This is used to signal errors in pattern matching.
-class MatchError : public Poi::Error {
-public:
-  explicit MatchError(
-    const std::string &message // No trailing line break
-  ) : Error(message) {
-  };
-};
-
-// This is used to signal errors in evaluation.
-class EvaluationError : public Poi::Error {
-public:
-  explicit EvaluationError(
-    const std::string &message, // No trailing line break
-    const std::vector<std::shared_ptr<const Poi::Term>> &stack_trace,
-    const Poi::StringPool &pool
-  ) {
-    std::string new_message = message + "\n";
-    for (
-      auto iter = stack_trace.rbegin();
-      iter != stack_trace.rend();
-      ++iter
-    ) {
-      if (std::dynamic_pointer_cast<const Poi::Binding>(*iter)) {
-        // Don't show frames corresponding to Binding expressions, because
-        // those are not very helpful.
-        continue;
-      }
-
-      new_message += "\n" + Poi::get_location(
-        pool.find((*iter)->source_name),
-        pool.find((*iter)->source),
-        (*iter)->start_pos,
-        (*iter)->end_pos
-      );
-    }
-    update(new_message);
-  };
-};
-
-///////////////////////////////////////////////////////////////////////////////
-// Helpers                                                                   //
-///////////////////////////////////////////////////////////////////////////////
-
-void pattern_match(
-  std::unordered_map<
-    size_t, std::shared_ptr<const Poi::Value>
-  > &environment,
-  const std::vector<std::shared_ptr<const Poi::Term>> &stack_trace,
-  const Poi::StringPool &pool,
-  std::shared_ptr<const Poi::Pattern> pattern,
-  std::shared_ptr<const Poi::Value> value
-) {
-  auto variable_pattern = std::dynamic_pointer_cast<
-    const Poi::VariablePattern
-  >(pattern);
-  if (variable_pattern) {
-    auto iter = environment.find(variable_pattern->variable);
-    if (iter != environment.end()) {
-      auto proxy_value = std::dynamic_pointer_cast<const Poi::ProxyValue>(
-        iter->second
-      );
-      if (proxy_value) {
-        const_cast<
-          std::shared_ptr<const Poi::Value> &
-        >(proxy_value->value) = value;
-      }
-      environment.erase(iter);
-    }
-    environment.insert({ variable_pattern->variable, value });
-    return;
-  }
-
-  auto constructor_pattern = std::dynamic_pointer_cast<
-    const Poi::ConstructorPattern
-  >(pattern);
-  if (constructor_pattern) {
-    auto value_data = std::dynamic_pointer_cast<const Poi::DataValue>(value);
-    if (value_data) {
-      if (
-        value_data->data_type->constructor_params->find(
-          constructor_pattern->constructor
-        ) == value_data->data_type->constructor_params->end()
-      ) {
-        throw EvaluationError(
-          "'" + pool.find(constructor_pattern->constructor) +
-            "' is not a constructor of " +
-            value_data->data_type->show(pool) + ".",
-          stack_trace,
-          pool
-        );
-      }
-      if (constructor_pattern->constructor == value_data->constructor) {
-        if (
-          constructor_pattern->parameters->size() ==
-          value_data->data_type->constructor_params->at(
-            value_data->constructor
-          ).size()
-        ) {
-          size_t member_index = 0;
-          for (auto &parameter : *(constructor_pattern->parameters)) {
-            pattern_match(
-              environment,
-              stack_trace,
-              pool,
-              parameter,
-              value_data->members->at(
-                value_data->data_type->constructor_params->at(
-                  value_data->constructor
-                ).at(member_index)
-              )
-            );
-            ++member_index;
-          }
-          return;
-        }
-      }
-    }
-    throw MatchError(
-      "Unable to match " + value->show(pool) + " to this pattern."
-    );
-  }
-}
-
-std::shared_ptr<const Poi::Value> tail_call(
-  std::shared_ptr<const Poi::Term> term,
-  std::vector<std::shared_ptr<const Poi::Term>> &stack_trace,
-  std::shared_ptr<
-    const std::unordered_map<size_t, std::shared_ptr<const Poi::Value>>
-  > environment,
-  const Poi::StringPool &pool
-) {
-  if (stack_trace.size() >= tail_call_elimination_min_depth) {
-    return std::static_pointer_cast<const Poi::Value>(
-      std::make_shared<const Poi::ThunkValue>(term, environment)
-    );
-  } else {
-    return term->eval(term, *environment, stack_trace, pool);
-  }
-}
-
-void enter_frame(
-  std::shared_ptr<const Poi::Term> term,
-  std::vector<std::shared_ptr<const Poi::Term>> &stack_trace,
-  const Poi::StringPool &pool
-) {
-  stack_trace.push_back(term);
-  if (stack_trace.size() >= max_evaluation_depth) {
-    throw EvaluationError(
-      "Maximum evaluation depth exceeded.",
-      stack_trace,
-      pool
-    );
-  }
-}
-
-void leave_frame(std::vector<std::shared_ptr<const Poi::Term>> &stack_trace) {
-  stack_trace.pop_back();
+Poi::VariableInfo::VariableInfo(
+  std::size_t stack_location,
+  bool is_fixpoint
+) : stack_location(stack_location), is_fixpoint(is_fixpoint) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -178,10 +21,10 @@ void leave_frame(std::vector<std::shared_ptr<const Poi::Term>> &stack_trace) {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Node::Node(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos
 ) :
   source_name(source_name),
   source(source),
@@ -197,12 +40,12 @@ Poi::Node::~Node() {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Pattern::Pattern(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> variables
-) : Node(
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> variables
+) : Poi::Node(
     source_name,
     source,
     start_pos,
@@ -218,13 +61,13 @@ Poi::Pattern::~Pattern() {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::VariablePattern::VariablePattern(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  size_t variable,
-  std::shared_ptr<const std::unordered_set<size_t>> variables
-) : Pattern(
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::size_t variable,
+  std::shared_ptr<const std::unordered_set<std::size_t>> variables
+) : Poi::Pattern(
     source_name,
     source,
     start_pos,
@@ -242,16 +85,16 @@ std::string Poi::VariablePattern::show(const Poi::StringPool &pool) const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::ConstructorPattern::ConstructorPattern(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  size_t constructor,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::size_t constructor,
   std::shared_ptr<
     const std::vector<std::shared_ptr<const Poi::Pattern>>
   > parameters,
-  std::shared_ptr<const std::unordered_set<size_t>> variables
-) : Pattern(
+  std::shared_ptr<const std::unordered_set<std::size_t>> variables
+) : Poi::Pattern(
     source_name,
     source,
     start_pos,
@@ -280,12 +123,12 @@ std::string Poi::ConstructorPattern::show(const Poi::StringPool &pool) const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Term::Term(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables
-) : Node(
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables
+) : Poi::Node(
     source_name,
     source,
     start_pos,
@@ -301,13 +144,13 @@ Poi::Term::~Term() {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Variable::Variable(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
-  size_t variable
-) : Term(
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
+  std::size_t variable
+) : Poi::Term(
     source_name,
     source,
     start_pos,
@@ -320,33 +163,32 @@ std::string Poi::Variable::show(const Poi::StringPool &pool) const {
   return pool.find(variable);
 }
 
-std::shared_ptr<const Poi::Value> Poi::Variable::eval(
+std::size_t Poi::Variable::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  const std::unordered_map<
-    size_t, std::shared_ptr<const Poi::Value>
-  > &environment,
-  std::vector<std::shared_ptr<const Poi::Term>> &stack_trace,
-  const Poi::StringPool &pool
+  BasicBlock &current_block,
+  std::size_t destination,
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  enter_frame(term, stack_trace, pool);
-  auto value = environment.at(variable);
-  while (true) {
-    auto proxy_value = std::dynamic_pointer_cast<const ProxyValue>(value);
-    if (proxy_value) {
-      value = proxy_value->value;
-      if (!value) {
-        throw EvaluationError(
-          "Recursive references must occur in function bodies.",
-          stack_trace,
-          pool
-        );
-      }
-    } else {
-      break;
-    }
+  auto variable_iter = environment.find(variable);
+  if (variable_iter->second.is_fixpoint) {
+    current_block.get_instructions()->push_back(
+      std::make_shared<IrDerefFixpoint>(
+        destination,
+        variable_iter->second.stack_location,
+        std::static_pointer_cast<const Node>(term)
+      )
+    );
+  } else {
+    current_block.get_instructions()->push_back(
+      std::make_shared<IrCopy>(
+        destination,
+        variable_iter->second.stack_location,
+        std::static_pointer_cast<const Node>(term)
+      )
+    );
   }
-  leave_frame(stack_trace);
-  return value;
+  return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -354,14 +196,14 @@ std::shared_ptr<const Poi::Value> Poi::Variable::eval(
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Function::Function(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::shared_ptr<const Poi::Pattern> pattern,
   std::shared_ptr<const Poi::Term> body
-) : Term(
+) : Poi::Term(
     source_name,
     source,
     start_pos,
@@ -374,30 +216,61 @@ std::string Poi::Function::show(const Poi::StringPool &pool) const {
   return "(" + pattern->show(pool) + " -> " + body->show(pool) + ")";
 }
 
-std::shared_ptr<const Poi::Value> Poi::Function::eval(
+std::size_t Poi::Function::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  const std::unordered_map<
-    size_t, std::shared_ptr<const Poi::Value>
-  > &environment,
-  std::vector<std::shared_ptr<const Poi::Term>> &stack_trace,
-  const Poi::StringPool &pool
+  BasicBlock &current_block,
+  std::size_t destination,
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  enter_frame(term, stack_trace, pool);
-  auto captures = std::make_shared<
-    const std::unordered_map<size_t, std::shared_ptr<const Value>>
-  >();
+  auto variable_pattern = std::dynamic_pointer_cast<
+    const VariablePattern
+  >(pattern);
+  assert(variable_pattern != nullptr);
+  auto variable = variable_pattern->variable;
+
+  std::unordered_map<std::size_t, VariableInfo> body_environment;
+  body_environment.insert({ variable, VariableInfo(0, false) });
+
+  auto captures = std::make_shared<std::vector<std::uint16_t>>();
+  std::size_t index = 1;
   for (auto iter : *free_variables) {
-    std::const_pointer_cast<
-      std::unordered_map<size_t, std::shared_ptr<const Value>>
-    >(captures)->insert({ iter, environment.at(iter) });
+    auto capture_info = environment.at(iter);
+    body_environment.insert({
+      iter,
+      VariableInfo(index, capture_info.is_fixpoint)
+    });
+    captures->push_back(capture_info.stack_location);
+    index++;
   }
-  leave_frame(stack_trace);
-  return std::static_pointer_cast<const Value>(
-    std::make_shared<FunctionValue>(
-      std::dynamic_pointer_cast<const Function>(term),
-      captures
-    )
+
+  auto body_block = std::make_shared<BasicBlock>();
+  body->emit_ir(
+    body,
+    *body_block,
+    index,
+    true,
+    body_environment
   );
+
+  auto body_instructions = body_block->get_instructions();
+  if (!body_instructions->back()->terminates_block()) {
+    auto return_instruction = std::make_shared<IrReturn>(
+      index,
+      std::static_pointer_cast<const Node>(term)
+    );
+    body_instructions->push_back(return_instruction);
+  }
+
+  auto function = std::make_shared<IrCreateFunction>(
+    destination,
+    body_block,
+    captures,
+    std::static_pointer_cast<const Node>(term)
+  );
+
+  current_block.get_instructions()->push_back(function);
+  return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -405,14 +278,14 @@ std::shared_ptr<const Poi::Value> Poi::Function::eval(
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Application::Application(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::shared_ptr<const Poi::Term> function,
   std::shared_ptr<const Poi::Term> operand
-) : Term(
+) : Poi::Term(
     source_name,
     source,
     start_pos,
@@ -425,64 +298,49 @@ std::string Poi::Application::show(const Poi::StringPool &pool) const {
   return "(" + function->show(pool) + " " + operand->show(pool) + ")";
 }
 
-std::shared_ptr<const Poi::Value> Poi::Application::eval(
+std::size_t Poi::Application::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  const std::unordered_map<
-    size_t, std::shared_ptr<const Poi::Value>
-  > &environment,
-  std::vector<std::shared_ptr<const Poi::Term>> &stack_trace,
-  const Poi::StringPool &pool
+  BasicBlock &current_block,
+  std::size_t destination,
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  enter_frame(term, stack_trace, pool);
-  auto function_value = trampoline(
-    function->eval(function, environment, stack_trace, pool),
-    stack_trace,
-    pool
+  auto function_footprint = function->emit_ir(
+    function,
+    current_block,
+    destination + 1,
+    false,
+    environment
   );
-  auto operand_value = trampoline(
-    operand->eval(operand, environment, stack_trace, pool),
-    stack_trace,
-    pool
+
+  auto operand_footprint = operand->emit_ir(
+    operand,
+    current_block,
+    destination + 1 + function_footprint,
+    false,
+    environment
   );
-  auto function_value_fun = std::dynamic_pointer_cast<
-    const FunctionValue
-  >(function_value);
-  if (!function_value_fun) {
-    throw EvaluationError(
-      function_value->show(pool) + " is not a function.",
-      stack_trace,
-      pool
+
+  if (tail_position) {
+    current_block.get_instructions()->push_back(
+      std::make_shared<IrCallTail>(
+        destination + 1,
+        destination + 1 + function_footprint,
+        std::static_pointer_cast<const Node>(term)
+      )
+    );
+  } else {
+    current_block.get_instructions()->push_back(
+      std::make_shared<IrCallNonTail>(
+        destination,
+        destination + 1,
+        destination + 1 + function_footprint,
+        std::static_pointer_cast<const Node>(term)
+      )
     );
   }
-  auto new_environment = std::make_shared<
-    const std::unordered_map<size_t, std::shared_ptr<const Value>>
-  >();
-  for (auto iter : *(function_value_fun->captures)) {
-    std::const_pointer_cast<
-      std::unordered_map<size_t, std::shared_ptr<const Value>>
-    >(new_environment)->insert(iter);
-  }
-  try {
-    pattern_match(
-      *std::const_pointer_cast<
-        std::unordered_map<size_t, std::shared_ptr<const Value>>
-      >(new_environment),
-      stack_trace,
-      pool,
-      function_value_fun->function->pattern,
-      operand_value
-    );
-  } catch (MatchError &e) {
-    throw EvaluationError(e.what(), stack_trace, pool);
-  }
-  auto result = tail_call(
-    function_value_fun->function->body,
-    stack_trace,
-    new_environment,
-    pool
-  );
-  leave_frame(stack_trace);
-  return result;
+
+  return destination + 1 + function_footprint + operand_footprint;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -490,15 +348,15 @@ std::shared_ptr<const Poi::Value> Poi::Application::eval(
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Binding::Binding(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::shared_ptr<const Poi::Pattern> pattern,
   std::shared_ptr<const Poi::Term> definition,
   std::shared_ptr<const Poi::Term> body
-) : Term(
+) : Poi::Term(
     source_name,
     source,
     start_pos,
@@ -518,49 +376,77 @@ std::string Poi::Binding::show(const Poi::StringPool &pool) const {
     ")";
 }
 
-std::shared_ptr<const Poi::Value> Poi::Binding::eval(
+std::size_t Poi::Binding::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  const std::unordered_map<
-    size_t, std::shared_ptr<const Poi::Value>
-  > &environment,
-  std::vector<std::shared_ptr<const Poi::Term>> &stack_trace,
-  const Poi::StringPool &pool
+  BasicBlock &current_block,
+  std::size_t destination,
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  enter_frame(term, stack_trace, pool);
-  auto new_environment = std::make_shared<
-    const std::unordered_map<size_t, std::shared_ptr<const Value>>
-  >(environment.begin(), environment.end());
-  for (auto &variable : *(pattern->variables)) {
-    std::const_pointer_cast<
-      std::unordered_map<size_t, std::shared_ptr<const Value>>
-    >(new_environment)->insert({
-      variable,
-      std::static_pointer_cast<Value>(
-        std::make_shared<ProxyValue>(nullptr)
-      )
-    });
-  }
-  auto definition_value = trampoline(
-    definition->eval(definition, *new_environment, stack_trace, pool),
-    stack_trace,
-    pool
+  current_block.get_instructions()->push_back(
+    std::make_shared<IrBeginFixpoint>(
+      destination + 1,
+      std::static_pointer_cast<const Node>(term)
+    )
   );
-  try {
-    pattern_match(
-      *std::const_pointer_cast<
-        std::unordered_map<size_t, std::shared_ptr<const Value>>
-      >(new_environment),
-      stack_trace,
-      pool,
-      pattern,
-      definition_value
-    );
-  } catch (MatchError &e) {
-    throw EvaluationError(e.what(), stack_trace, pool);
+
+  auto variable_pattern = std::dynamic_pointer_cast<
+    const VariablePattern
+  >(pattern);
+  assert(variable_pattern != nullptr);
+  auto variable = variable_pattern->variable;
+
+  auto new_environment = environment;
+  auto variable_iter = new_environment.find(variable);
+  if (variable_iter != new_environment.end()) {
+    new_environment.erase(variable_iter);
   }
-  auto result = tail_call(body, stack_trace, new_environment, pool);
-  leave_frame(stack_trace);
-  return result;
+
+  auto definition_environment = new_environment;
+  definition_environment.insert({
+    variable,
+    VariableInfo(destination + 1, true)
+  });
+  auto definition_footprint = definition->emit_ir(
+    definition,
+    current_block,
+    destination + 2,
+    false,
+    definition_environment
+  );
+
+  current_block.get_instructions()->push_back(
+    std::make_shared<IrEndFixpoint>(
+      destination + 1,
+      destination + 2,
+      std::static_pointer_cast<const Node>(term)
+    )
+  );
+
+  auto body_environment = new_environment;
+  body_environment.insert({
+    variable,
+    VariableInfo(destination + 2, false)
+  });
+  auto body_footprint = body->emit_ir(
+    body,
+    current_block,
+    destination + 2 + definition_footprint,
+    tail_position,
+    body_environment
+  );
+
+  if (!current_block.get_instructions()->back()->terminates_block()) {
+    current_block.get_instructions()->push_back(
+      std::make_shared<IrCopy>(
+        destination,
+        destination + 2 + definition_footprint,
+        std::static_pointer_cast<const Node>(term)
+      )
+    );
+  }
+
+  return destination + 2 + definition_footprint + body_footprint;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -568,19 +454,19 @@ std::shared_ptr<const Poi::Value> Poi::Binding::eval(
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::DataType::DataType(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
-  std::shared_ptr<const std::vector<size_t>> constructor_names,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
+  std::shared_ptr<const std::vector<std::size_t>> constructor_names,
   std::shared_ptr<
-    const std::unordered_map<size_t, std::vector<size_t>>
+    const std::unordered_map<std::size_t, std::vector<std::size_t>>
   > constructor_params,
   std::shared_ptr<
-    const std::unordered_map<size_t, std::shared_ptr<const Poi::Term>>
+    const std::unordered_map<std::size_t, std::shared_ptr<const Poi::Term>>
   > constructors
-) : Term(
+) : Poi::Term(
     source_name,
     source,
     start_pos,
@@ -611,62 +497,14 @@ std::string Poi::DataType::show(const Poi::StringPool &pool) const {
   return result;
 }
 
-std::shared_ptr<const Poi::Value> Poi::DataType::eval(
+std::size_t Poi::DataType::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  const std::unordered_map<
-    size_t, std::shared_ptr<const Poi::Value>
-  > &environment,
-  std::vector<std::shared_ptr<const Poi::Term>> &stack_trace,
-  const Poi::StringPool &pool
+  BasicBlock &current_block,
+  std::size_t destination,
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  enter_frame(term, stack_trace, pool);
-  auto constructor_values = std::make_shared<
-    const std::unordered_map<size_t, std::shared_ptr<const Value>>
-  >();
-  for (auto &constructor : *constructors) {
-    auto constructor_function = std::dynamic_pointer_cast<const Function>(
-      constructor.second
-    );
-    if (constructor_function) {
-      std::const_pointer_cast<
-        std::unordered_map<size_t, std::shared_ptr<const Value>>
-      >(constructor_values)->insert({
-        constructor.first,
-        std::static_pointer_cast<const Value>(
-          std::make_shared<FunctionValue>(
-            constructor_function,
-            std::make_shared<
-              std::unordered_map<size_t, std::shared_ptr<const Value>>
-            >()
-          )
-        )
-      });
-    } else {
-      std::const_pointer_cast<
-        std::unordered_map<size_t, std::shared_ptr<const Value>>
-      >(constructor_values)->insert({
-        constructor.first,
-        std::static_pointer_cast<const Value>(
-          std::make_shared<DataValue>(
-            std::dynamic_pointer_cast<const Data>(
-              constructor.second
-            )->data_type.lock(),
-            constructor.first,
-            std::make_shared<
-              std::unordered_map<size_t, std::shared_ptr<const Value>>
-            >()
-          )
-        )
-      });
-    }
-  }
-  leave_frame(stack_trace);
-  return std::static_pointer_cast<const Value>(
-    std::make_shared<DataTypeValue>(
-      std::dynamic_pointer_cast<const DataType>(term),
-      constructor_values
-    )
-  );
+  return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -674,14 +512,14 @@ std::shared_ptr<const Poi::Value> Poi::DataType::eval(
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Data::Data(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::weak_ptr<const Poi::DataType> data_type,
-  size_t constructor
-) : Term(
+  std::size_t constructor
+) : Poi::Term(
     source_name,
     source,
     start_pos,
@@ -699,25 +537,14 @@ std::string Poi::Data::show(const Poi::StringPool &pool) const {
     ">";
 }
 
-std::shared_ptr<const Poi::Value> Poi::Data::eval(
+std::size_t Poi::Data::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  const std::unordered_map<
-    size_t, std::shared_ptr<const Poi::Value>
-  > &environment,
-  std::vector<std::shared_ptr<const Poi::Term>> &stack_trace,
-  const Poi::StringPool &pool
+  BasicBlock &current_block,
+  std::size_t destination,
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  enter_frame(term, stack_trace, pool);
-  auto members = std::make_shared<
-    std::unordered_map<size_t, std::shared_ptr<const Value>>
-  >();
-  for (auto iter : *free_variables) {
-    members->insert({ iter, environment.at(iter) });
-  }
-  leave_frame(stack_trace);
-  return std::static_pointer_cast<const Value>(
-    std::make_shared<DataValue>(data_type.lock(), constructor, members)
-  );
+  return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -725,14 +552,14 @@ std::shared_ptr<const Poi::Value> Poi::Data::eval(
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Member::Member(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::shared_ptr<const Poi::Term> object,
-  size_t field
-) : Term(
+  std::size_t field
+) : Poi::Term(
     source_name,
     source,
     start_pos,
@@ -745,61 +572,14 @@ std::string Poi::Member::show(const Poi::StringPool &pool) const {
   return "(" + object->show(pool) + "." + pool.find(field) + ")";
 }
 
-std::shared_ptr<const Poi::Value> Poi::Member::eval(
+std::size_t Poi::Member::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  const std::unordered_map<
-    size_t, std::shared_ptr<const Poi::Value>
-  > &environment,
-  std::vector<std::shared_ptr<const Poi::Term>> &stack_trace,
-  const Poi::StringPool &pool
+  BasicBlock &current_block,
+  std::size_t destination,
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  enter_frame(term, stack_trace, pool);
-  auto object_value = trampoline(
-    object->eval(object, environment, stack_trace, pool),
-    stack_trace,
-    pool
-  );
-  auto data_type_value = std::dynamic_pointer_cast<const DataTypeValue>(
-    object_value
-  );
-  if (data_type_value) {
-    auto constructor = data_type_value->constructors->find(field);
-    if (constructor == data_type_value->constructors->end()) {
-      throw EvaluationError(
-        "'" + pool.find(field) + "' is not a constructor of " +
-          data_type_value->show(pool),
-        stack_trace,
-        pool
-      );
-    }
-    leave_frame(stack_trace);
-    return constructor->second;
-  } else {
-    auto data_value = std::dynamic_pointer_cast<const DataValue>(
-      object_value
-    );
-    if (data_value) {
-      auto members = data_value->members;
-      auto member = members->find(field);
-      if (member == members->end()) {
-        throw EvaluationError(
-          object_value->show(pool) +
-            " has no member '" + pool.find(field) + "'",
-          stack_trace,
-          pool
-        );
-      } else {
-        leave_frame(stack_trace);
-        return member->second;
-      }
-    } else {
-      throw EvaluationError(
-        object_value->show(pool) + " has no member '" + pool.find(field) + "'",
-        stack_trace,
-        pool
-      );
-    }
-  }
+  return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -807,16 +587,16 @@ std::shared_ptr<const Poi::Value> Poi::Member::eval(
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::Match::Match(
-  size_t source_name,
-  size_t source,
-  size_t start_pos,
-  size_t end_pos,
-  std::shared_ptr<const std::unordered_set<size_t>> free_variables,
+  std::size_t source_name,
+  std::size_t source,
+  std::size_t start_pos,
+  std::size_t end_pos,
+  std::shared_ptr<const std::unordered_set<std::size_t>> free_variables,
   std::shared_ptr<const Poi::Term> discriminee,
   std::shared_ptr<
     const std::vector<std::shared_ptr<const Poi::Function>>
   > cases
-) : Term(
+) : Poi::Term(
     source_name,
     source,
     start_pos,
@@ -839,50 +619,12 @@ std::string Poi::Match::show(const Poi::StringPool &pool) const {
   return result;
 }
 
-std::shared_ptr<const Poi::Value> Poi::Match::eval(
+std::size_t Poi::Match::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  const std::unordered_map<
-    size_t, std::shared_ptr<const Poi::Value>
-  > &environment,
-  std::vector<std::shared_ptr<const Poi::Term>> &stack_trace,
-  const Poi::StringPool &pool
+  BasicBlock &current_block,
+  std::size_t destination,
+  bool tail_position,
+  const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  enter_frame(term, stack_trace, pool);
-  auto discriminee_value = trampoline(
-    discriminee->eval(discriminee, environment, stack_trace, pool),
-    stack_trace,
-    pool
-  );
-
-  std::shared_ptr<const Value> result;
-  for (auto &c : *cases) {
-    auto new_environment = std::make_shared<
-      const std::unordered_map<size_t, std::shared_ptr<const Value>>
-    >(environment.begin(), environment.end());
-    try {
-      pattern_match(
-        *std::const_pointer_cast<
-          std::unordered_map<size_t, std::shared_ptr<const Value>>
-        >(new_environment),
-        stack_trace,
-        pool,
-        c->pattern,
-        discriminee_value
-      );
-    } catch (MatchError &e) {
-      continue;
-    }
-    if (!result) {
-      result = tail_call(c->body, stack_trace, new_environment, pool);
-    }
-  }
-  if (result) {
-    leave_frame(stack_trace);
-    return result;
-  }
-  throw EvaluationError(
-    discriminee_value->show(pool) + " didn't match any of the cases here.",
-    stack_trace,
-    pool
-  );
+  return 0;
 }

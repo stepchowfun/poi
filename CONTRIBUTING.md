@@ -24,8 +24,8 @@ The continuous integration system also runs an automated test suite, which can b
 
   ```c++
   // These bounds define the source region spanned by the token.
-  size_t start_pos; // Inclusive
-  size_t end_pos; // Exclusive
+  std::size_t start_pos; // Inclusive
+  std::size_t end_pos; // Exclusive
   ```
 
   **Rationale:** This is somewhat arbitrary, but we want to choose a convention and be consistent everywhere.
@@ -97,6 +97,12 @@ The continuous integration system also runs an automated test suite, which can b
 - All constructors must be marked `explicit`.
 
   **Rationale:** Converting constructors are a form of weak typing, and we want to encourage a strong typing discipline to catch as many errors as possible at compile time.
+
+### Visibility
+
+- `protected` members of a class should be declared after all the `public` members, and `private` members should be declared after all the `protected` members.
+
+  **Rationale:** This is somewhat arbitrary, but we want to choose a convention and be consistent everywhere.
 
 ## Bash style guide
 
