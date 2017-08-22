@@ -13,7 +13,7 @@
 #include <vector>
 
 namespace Poi {
-  class BasicBlock; // Declared in poi/ir.h
+  class IrBlock; // Declared in poi/ir.h
 
   class VariableInfo {
   public:
@@ -106,7 +106,7 @@ namespace Poi {
     virtual ~Term() = 0;
     virtual std::size_t emit_ir(
       std::shared_ptr<const Poi::Term> term,
-      BasicBlock &current_block,
+      IrBlock &current_block,
       std::size_t destination, // Don't touch any registers under this one.
       bool tail_position,
       const std::unordered_map<std::size_t, VariableInfo> &environment
@@ -128,7 +128,7 @@ namespace Poi {
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
       std::shared_ptr<const Poi::Term> term,
-      BasicBlock &current_block,
+      IrBlock &current_block,
       std::size_t destination,
       bool tail_position,
       const std::unordered_map<std::size_t, VariableInfo> &environment
@@ -152,7 +152,7 @@ namespace Poi {
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
       std::shared_ptr<const Poi::Term> term,
-      BasicBlock &current_block,
+      IrBlock &current_block,
       std::size_t destination,
       bool tail_position,
       const std::unordered_map<std::size_t, VariableInfo> &environment
@@ -176,7 +176,7 @@ namespace Poi {
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
       std::shared_ptr<const Poi::Term> term,
-      BasicBlock &current_block,
+      IrBlock &current_block,
       std::size_t destination,
       bool tail_position,
       const std::unordered_map<std::size_t, VariableInfo> &environment
@@ -202,7 +202,7 @@ namespace Poi {
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
       std::shared_ptr<const Poi::Term> term,
-      BasicBlock &current_block,
+      IrBlock &current_block,
       std::size_t destination,
       bool tail_position,
       const std::unordered_map<std::size_t, VariableInfo> &environment
@@ -236,7 +236,7 @@ namespace Poi {
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
       std::shared_ptr<const Poi::Term> term,
-      BasicBlock &current_block,
+      IrBlock &current_block,
       std::size_t destination,
       bool tail_position,
       const std::unordered_map<std::size_t, VariableInfo> &environment
@@ -263,7 +263,7 @@ namespace Poi {
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
       std::shared_ptr<const Poi::Term> term,
-      BasicBlock &current_block,
+      IrBlock &current_block,
       std::size_t destination,
       bool tail_position,
       const std::unordered_map<std::size_t, VariableInfo> &environment
@@ -292,7 +292,7 @@ namespace Poi {
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
       std::shared_ptr<const Poi::Term> term,
-      BasicBlock &current_block,
+      IrBlock &current_block,
       std::size_t destination,
       bool tail_position,
       const std::unordered_map<std::size_t, VariableInfo> &environment
@@ -320,7 +320,7 @@ namespace Poi {
     std::string show(const StringPool &pool) const override;
     std::size_t emit_ir(
       std::shared_ptr<const Poi::Term> term,
-      BasicBlock &current_block,
+      IrBlock &current_block,
       std::size_t destination,
       bool tail_position,
       const std::unordered_map<std::size_t, VariableInfo> &environment

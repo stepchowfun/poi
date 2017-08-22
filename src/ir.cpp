@@ -2,50 +2,6 @@
 #include <poi/ir.h>
 
 ///////////////////////////////////////////////////////////////////////////////
-// BasicBlock                                                                //
-///////////////////////////////////////////////////////////////////////////////
-
-Poi::BasicBlock::BasicBlock() {
-  instructions = std::make_shared<
-    std::vector<std::shared_ptr<const IrInstruction>>
-  >();
-}
-
-std::uint16_t Poi::BasicBlock::frame_size() const {
-  std::uint16_t num_registers = 0;
-  for (auto &instruction : *instructions) {
-    num_registers = std::max(
-      num_registers,
-      static_cast<std::uint16_t>(instruction->max_register() + 1)
-    );
-  }
-  return num_registers;
-}
-
-void Poi::BasicBlock::emit_bytecode(
-  std::vector<Poi::Bytecode> &archive,
-  std::vector<Poi::Bytecode> &current
-) const {
-  for (auto &instruction : *instructions) {
-    instruction->emit_bytecode(archive, current);
-  }
-}
-
-std::string Poi::BasicBlock::show() const {
-  std::string result;
-  for (auto &instruction : *instructions) {
-    result += instruction->show() + "\n";
-  }
-  return result;
-}
-
-std::shared_ptr<
-  std::vector<std::shared_ptr<const Poi::IrInstruction>>
-> Poi::BasicBlock::get_instructions() {
-  return instructions;
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // IrInstruction                                                             //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -76,13 +32,13 @@ std::uint16_t Poi::IrBeginFixpoint::max_register() const {
 }
 
 void Poi::IrBeginFixpoint::emit_bytecode(
-  std::vector<Poi::Bytecode> &archive,
-  std::vector<Poi::Bytecode> &current
+  Poi::BytecodeBlock &archive,
+  Poi::BytecodeBlock &current
 ) const {
   Bytecode bc;
   bc.type = BytecodeType::BEGIN_FIXPOINT;
   bc.begin_fixpoint_args.destination = destination;
-  current.push_back(bc);
+  current.push(bc, node);
 }
 
 std::string Poi::IrBeginFixpoint::show() const {
@@ -115,15 +71,15 @@ std::uint16_t Poi::IrCallNonTail::max_register() const {
 }
 
 void Poi::IrCallNonTail::emit_bytecode(
-  std::vector<Poi::Bytecode> &archive,
-  std::vector<Poi::Bytecode> &current
+  Poi::BytecodeBlock &archive,
+  Poi::BytecodeBlock &current
 ) const {
   Bytecode bc;
   bc.type = BytecodeType::CALL_NON_TAIL;
   bc.call_non_tail_args.destination = destination;
   bc.call_non_tail_args.function = function;
   bc.call_non_tail_args.argument = argument;
-  current.push_back(bc);
+  current.push(bc, node);
 }
 
 std::string Poi::IrCallNonTail::show() const {
@@ -153,14 +109,14 @@ std::uint16_t Poi::IrCallTail::max_register() const {
 }
 
 void Poi::IrCallTail::emit_bytecode(
-  std::vector<Poi::Bytecode> &archive,
-  std::vector<Poi::Bytecode> &current
+  Poi::BytecodeBlock &archive,
+  Poi::BytecodeBlock &current
 ) const {
   Bytecode bc;
   bc.type = BytecodeType::CALL_TAIL;
   bc.call_tail_args.function = function;
   bc.call_tail_args.argument = argument;
-  current.push_back(bc);
+  current.push(bc, node);
 }
 
 std::string Poi::IrCallTail::show() const {
@@ -192,14 +148,14 @@ std::uint16_t Poi::IrCopy::max_register() const {
 }
 
 void Poi::IrCopy::emit_bytecode(
-  std::vector<Poi::Bytecode> &archive,
-  std::vector<Poi::Bytecode> &current
+  Poi::BytecodeBlock &archive,
+  Poi::BytecodeBlock &current
 ) const {
   Bytecode bc;
   bc.type = BytecodeType::COPY;
   bc.copy_args.destination = destination;
   bc.copy_args.source = source;
-  current.push_back(bc);
+  current.push(bc, node);
 }
 
 std::string Poi::IrCopy::show() const {
@@ -214,7 +170,7 @@ std::string Poi::IrCopy::show() const {
 
 Poi::IrCreateFunction::IrCreateFunction(
   std::uint16_t destination,
-  std::shared_ptr<const BasicBlock> body,
+  std::shared_ptr<const IrBlock> body,
   std::shared_ptr<std::vector<std::uint16_t>> captures,
   const std::shared_ptr<const Node> node
 ) :
@@ -237,17 +193,13 @@ std::uint16_t Poi::IrCreateFunction::max_register() const {
 }
 
 void Poi::IrCreateFunction::emit_bytecode(
-  std::vector<Poi::Bytecode> &archive,
-  std::vector<Poi::Bytecode> &current
+  Poi::BytecodeBlock &archive,
+  Poi::BytecodeBlock &current
 ) const {
-  std::vector<Bytecode> body_bytecode;
-  body->emit_bytecode(archive, body_bytecode);
+  BytecodeBlock body_block;
+  body->emit_bytecode(archive, body_block);
   auto body_location = archive.size();
-  archive.insert(
-    archive.end(),
-    body_bytecode.begin(),
-    body_bytecode.end()
-  );
+  archive.append(body_block);
 
   Bytecode bc;
   bc.type = BytecodeType::CREATE_FUNCTION;
@@ -258,7 +210,7 @@ void Poi::IrCreateFunction::emit_bytecode(
     nullptr :
     &(captures->at(0));
   bc.create_function_args.body = body_location;
-  current.push_back(bc);
+  current.push(bc, node);
 }
 
 std::string Poi::IrCreateFunction::show() const {
@@ -291,14 +243,14 @@ Poi::IrDerefFixpoint::IrDerefFixpoint(
 }
 
 void Poi::IrDerefFixpoint::emit_bytecode(
-  std::vector<Poi::Bytecode> &archive,
-  std::vector<Poi::Bytecode> &current
+  Poi::BytecodeBlock &archive,
+  Poi::BytecodeBlock &current
 ) const {
   Bytecode bc;
   bc.type = BytecodeType::DEREF_FIXPOINT;
   bc.deref_fixpoint_args.destination = destination;
   bc.deref_fixpoint_args.fixpoint = fixpoint;
-  current.push_back(bc);
+  current.push(bc, node);
 }
 
 bool Poi::IrDerefFixpoint::terminates_block() const {
@@ -330,14 +282,14 @@ Poi::IrEndFixpoint::IrEndFixpoint(
 }
 
 void Poi::IrEndFixpoint::emit_bytecode(
-  std::vector<Poi::Bytecode> &archive,
-  std::vector<Poi::Bytecode> &current
+  Poi::BytecodeBlock &archive,
+  Poi::BytecodeBlock &current
 ) const {
   Bytecode bc;
   bc.type = BytecodeType::END_FIXPOINT;
   bc.end_fixpoint_args.fixpoint = fixpoint;
   bc.end_fixpoint_args.target = target;
-  current.push_back(bc);
+  current.push(bc, node);
 }
 
 bool Poi::IrEndFixpoint::terminates_block() const {
@@ -375,13 +327,13 @@ std::uint16_t Poi::IrExit::max_register() const {
 }
 
 void Poi::IrExit::emit_bytecode(
-  std::vector<Poi::Bytecode> &archive,
-  std::vector<Poi::Bytecode> &current
+  Poi::BytecodeBlock &archive,
+  Poi::BytecodeBlock &current
 ) const {
   Bytecode bc;
   bc.type = BytecodeType::EXIT;
   bc.exit_args.value = value;
-  current.push_back(bc);
+  current.push(bc, node);
 }
 
 std::string Poi::IrExit::show() const {
@@ -410,16 +362,60 @@ std::uint16_t Poi::IrReturn::max_register() const {
 }
 
 void Poi::IrReturn::emit_bytecode(
-  std::vector<Poi::Bytecode> &archive,
-  std::vector<Poi::Bytecode> &current
+  Poi::BytecodeBlock &archive,
+  Poi::BytecodeBlock &current
 ) const {
   Bytecode bc;
   bc.type = BytecodeType::RETURN;
   bc.return_args.value = value;
-  current.push_back(bc);
+  current.push(bc, node);
 }
 
 std::string Poi::IrReturn::show() const {
   return std::string("RETURN") +
     " value=" + std::to_string(value);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// IrBlock                                                                   //
+///////////////////////////////////////////////////////////////////////////////
+
+Poi::IrBlock::IrBlock() {
+  instructions = std::make_shared<
+    std::vector<std::shared_ptr<const IrInstruction>>
+  >();
+}
+
+std::uint16_t Poi::IrBlock::frame_size() const {
+  std::uint16_t num_registers = 0;
+  for (auto &instruction : *instructions) {
+    num_registers = std::max(
+      num_registers,
+      static_cast<std::uint16_t>(instruction->max_register() + 1)
+    );
+  }
+  return num_registers;
+}
+
+void Poi::IrBlock::emit_bytecode(
+  Poi::BytecodeBlock &archive,
+  Poi::BytecodeBlock &current
+) const {
+  for (auto &instruction : *instructions) {
+    instruction->emit_bytecode(archive, current);
+  }
+}
+
+std::string Poi::IrBlock::show() const {
+  std::string result;
+  for (auto &instruction : *instructions) {
+    result += instruction->show() + "\n";
+  }
+  return result;
+}
+
+std::shared_ptr<
+  std::vector<std::shared_ptr<const Poi::IrInstruction>>
+> Poi::IrBlock::get_instructions() {
+  return instructions;
 }

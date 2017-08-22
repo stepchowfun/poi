@@ -13,27 +13,6 @@
 #include <vector>
 
 namespace Poi {
-  class IrInstruction;
-
-  class BasicBlock {
-  public:
-    explicit BasicBlock();
-    std::shared_ptr<
-      std::vector<std::shared_ptr<const IrInstruction>>
-    > get_instructions();
-    std::uint16_t frame_size() const;
-    void emit_bytecode(
-      std::vector<Bytecode> &archive,
-      std::vector<Bytecode> &current
-    ) const;
-    std::string show() const;
-
-  private:
-    std::shared_ptr<
-      std::vector<std::shared_ptr<const IrInstruction>>
-    > instructions;
-  };
-
   class IrInstruction {
   public:
     const std::shared_ptr<const Node> node;
@@ -43,8 +22,8 @@ namespace Poi {
     virtual bool terminates_block() const = 0;
     virtual std::uint16_t max_register() const = 0;
     virtual void emit_bytecode(
-      std::vector<Bytecode> &archive,
-      std::vector<Bytecode> &current
+      BytecodeBlock &archive,
+      BytecodeBlock &current
     ) const = 0; // Returns the number of registers used so far
     virtual std::string show() const = 0;
   };
@@ -60,8 +39,8 @@ namespace Poi {
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(
-      std::vector<Bytecode> &archive,
-      std::vector<Bytecode> &current
+      BytecodeBlock &archive,
+      BytecodeBlock &current
     ) const override;
     std::string show() const override;
   };
@@ -81,8 +60,8 @@ namespace Poi {
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(
-      std::vector<Bytecode> &archive,
-      std::vector<Bytecode> &current
+      BytecodeBlock &archive,
+      BytecodeBlock &current
     ) const override;
     std::string show() const override;
   };
@@ -100,8 +79,8 @@ namespace Poi {
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(
-      std::vector<Bytecode> &archive,
-      std::vector<Bytecode> &current
+      BytecodeBlock &archive,
+      BytecodeBlock &current
     ) const override;
     std::string show() const override;
   };
@@ -119,8 +98,8 @@ namespace Poi {
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(
-      std::vector<Bytecode> &archive,
-      std::vector<Bytecode> &current
+      BytecodeBlock &archive,
+      BytecodeBlock &current
     ) const override;
     std::string show() const override;
   };
@@ -128,20 +107,20 @@ namespace Poi {
   class IrCreateFunction : public IrInstruction {
   public:
     const std::uint16_t destination;
-    const std::shared_ptr<const BasicBlock> body;
+    const std::shared_ptr<const IrBlock> body;
     const std::shared_ptr<std::vector<std::uint16_t>> captures;
 
     explicit IrCreateFunction(
       std::uint16_t destination,
-      std::shared_ptr<const BasicBlock> body,
+      std::shared_ptr<const IrBlock> body,
       std::shared_ptr<std::vector<std::uint16_t>> captures,
       const std::shared_ptr<const Node> node
     );
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(
-      std::vector<Bytecode> &archive,
-      std::vector<Bytecode> &current
+      BytecodeBlock &archive,
+      BytecodeBlock &current
     ) const override;
     std::string show() const override;
   };
@@ -159,8 +138,8 @@ namespace Poi {
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(
-      std::vector<Bytecode> &archive,
-      std::vector<Bytecode> &current
+      BytecodeBlock &archive,
+      BytecodeBlock &current
     ) const override;
     std::string show() const override;
   };
@@ -178,8 +157,8 @@ namespace Poi {
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(
-      std::vector<Bytecode> &archive,
-      std::vector<Bytecode> &current
+      BytecodeBlock &archive,
+      BytecodeBlock &current
     ) const override;
     std::string show() const override;
   };
@@ -195,8 +174,8 @@ namespace Poi {
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(
-      std::vector<Bytecode> &archive,
-      std::vector<Bytecode> &current
+      BytecodeBlock &archive,
+      BytecodeBlock &current
     ) const override;
     std::string show() const override;
   };
@@ -212,10 +191,29 @@ namespace Poi {
     bool terminates_block() const override;
     std::uint16_t max_register() const override;
     void emit_bytecode(
-      std::vector<Bytecode> &archive,
-      std::vector<Bytecode> &current
+      BytecodeBlock &archive,
+      BytecodeBlock &current
     ) const override;
     std::string show() const override;
+  };
+
+  class IrBlock {
+  public:
+    explicit IrBlock();
+    std::shared_ptr<
+      std::vector<std::shared_ptr<const IrInstruction>>
+    > get_instructions();
+    std::uint16_t frame_size() const;
+    void emit_bytecode(
+      BytecodeBlock &archive,
+      BytecodeBlock &current
+    ) const;
+    std::string show() const;
+
+  private:
+    std::shared_ptr<
+      std::vector<std::shared_ptr<const IrInstruction>>
+    > instructions;
   };
 }
 

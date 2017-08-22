@@ -115,3 +115,36 @@ std::string Poi::Bytecode::show() const {
   }
   return result;
 }
+
+void Poi::BytecodeBlock::push(
+  Poi::Bytecode &bc,
+  std::shared_ptr<const Poi::Node> node
+) {
+  bytecode.push_back(bc);
+  nodes.push_back(node);
+}
+
+void Poi::BytecodeBlock::append(Poi::BytecodeBlock &block) {
+  bytecode.insert(
+    bytecode.end(),
+    block.bytecode.begin(),
+    block.bytecode.end()
+  );
+  nodes.insert(
+    nodes.end(),
+    block.nodes.begin(),
+    block.nodes.end()
+  );
+}
+
+std::size_t Poi::BytecodeBlock::size() const {
+  return bytecode.size();
+}
+
+std::string Poi::BytecodeBlock::show() const {
+  std::string result;
+  for (std::size_t i = 0; i < bytecode.size(); ++i) {
+    result += std::to_string(i) + " " + bytecode[i].show() + "\n";
+  }
+  return result;
+}

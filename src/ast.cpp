@@ -165,7 +165,7 @@ std::string Poi::Variable::show(const Poi::StringPool &pool) const {
 
 std::size_t Poi::Variable::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  BasicBlock &current_block,
+  IrBlock &current_block,
   std::size_t destination,
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
@@ -218,7 +218,7 @@ std::string Poi::Function::show(const Poi::StringPool &pool) const {
 
 std::size_t Poi::Function::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  BasicBlock &current_block,
+  IrBlock &current_block,
   std::size_t destination,
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
@@ -244,7 +244,7 @@ std::size_t Poi::Function::emit_ir(
     index++;
   }
 
-  auto body_block = std::make_shared<BasicBlock>();
+  auto body_block = std::make_shared<IrBlock>();
   body->emit_ir(
     body,
     *body_block,
@@ -300,7 +300,7 @@ std::string Poi::Application::show(const Poi::StringPool &pool) const {
 
 std::size_t Poi::Application::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  BasicBlock &current_block,
+  IrBlock &current_block,
   std::size_t destination,
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
@@ -378,7 +378,7 @@ std::string Poi::Binding::show(const Poi::StringPool &pool) const {
 
 std::size_t Poi::Binding::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  BasicBlock &current_block,
+  IrBlock &current_block,
   std::size_t destination,
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
@@ -499,7 +499,7 @@ std::string Poi::DataType::show(const Poi::StringPool &pool) const {
 
 std::size_t Poi::DataType::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  BasicBlock &current_block,
+  IrBlock &current_block,
   std::size_t destination,
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
@@ -539,7 +539,7 @@ std::string Poi::Data::show(const Poi::StringPool &pool) const {
 
 std::size_t Poi::Data::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  BasicBlock &current_block,
+  IrBlock &current_block,
   std::size_t destination,
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
@@ -574,7 +574,7 @@ std::string Poi::Member::show(const Poi::StringPool &pool) const {
 
 std::size_t Poi::Member::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  BasicBlock &current_block,
+  IrBlock &current_block,
   std::size_t destination,
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
@@ -621,7 +621,7 @@ std::string Poi::Match::show(const Poi::StringPool &pool) const {
 
 std::size_t Poi::Match::emit_ir(
   std::shared_ptr<const Poi::Term> term,
-  BasicBlock &current_block,
+  IrBlock &current_block,
   std::size_t destination,
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
