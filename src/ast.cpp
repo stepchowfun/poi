@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <poi/ast.h>
 #include <poi/bytecode.h>
 #include <poi/error.h>
@@ -222,10 +223,13 @@ std::size_t Poi::Function::emit_ir(
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  std::unordered_map<std::size_t, VariableInfo> body_environment;
-  auto variable = std::dynamic_pointer_cast<
+  auto variable_pattern = std::dynamic_pointer_cast<
     const VariablePattern
-  >(pattern)->variable;
+  >(pattern);
+  assert(variable_pattern != nullptr);
+  auto variable = variable_pattern->variable;
+
+  std::unordered_map<std::size_t, VariableInfo> body_environment;
   body_environment.insert({ variable, VariableInfo(0, false) });
 
   auto captures = std::make_shared<std::vector<std::uint16_t>>();
@@ -386,9 +390,11 @@ std::size_t Poi::Binding::emit_ir(
     )
   );
 
-  auto variable = std::dynamic_pointer_cast<
+  auto variable_pattern = std::dynamic_pointer_cast<
     const VariablePattern
-  >(pattern)->variable;
+  >(pattern);
+  assert(variable_pattern != nullptr);
+  auto variable = variable_pattern->variable;
 
   auto new_environment = environment;
   auto variable_iter = new_environment.find(variable);
