@@ -36,31 +36,31 @@ namespace Poi {
     "RETURN"
   };
 
-  class BeginFixpointArguments {
+  class BeginFixpointArgs {
   public:
     std::uint16_t destination;
   };
 
-  class CallNonTailArguments {
+  class CallNonTailArgs {
   public:
     std::uint16_t destination;
     std::uint16_t function;
     std::uint16_t argument;
   };
 
-  class CallTailArguments {
+  class CallTailArgs {
   public:
     std::uint16_t function;
     std::uint16_t argument;
   };
 
-  class CopyArguments {
+  class CopyArgs {
   public:
     std::uint16_t destination;
     std::uint16_t source;
   };
 
-  class CreateFunctionArguments {
+  class CreateFunctionArgs {
   public:
     std::uint16_t destination;
     std::uint16_t frame_size;
@@ -69,24 +69,24 @@ namespace Poi {
     std::size_t body;
   };
 
-  class DerefFixpointArguments {
+  class DerefFixpointArgs {
   public:
     std::uint16_t destination;
     std::uint16_t fixpoint;
   };
 
-  class EndFixpointArguments {
+  class EndFixpointArgs {
   public:
     std::uint16_t fixpoint;
     std::uint16_t target;
   };
 
-  class ExitArguments {
+  class ExitArgs {
   public:
     std::uint16_t value;
   };
 
-  class ReturnArguments {
+  class ReturnArgs {
   public:
     std::uint16_t value;
   };
@@ -95,15 +95,15 @@ namespace Poi {
   public:
     BytecodeType type;
     union {
-      BeginFixpointArguments begin_fixpoint_args;
-      CallNonTailArguments call_non_tail_args;
-      CallTailArguments call_tail_args;
-      CopyArguments copy_args;
-      CreateFunctionArguments create_function_args;
-      DerefFixpointArguments deref_fixpoint_args;
-      EndFixpointArguments end_fixpoint_args;
-      ExitArguments exit_args;
-      ReturnArguments return_args;
+      BeginFixpointArgs begin_fixpoint_args;
+      CallNonTailArgs call_non_tail_args;
+      CallTailArgs call_tail_args;
+      CopyArgs copy_args;
+      CreateFunctionArgs create_function_args;
+      DerefFixpointArgs deref_fixpoint_args;
+      EndFixpointArgs end_fixpoint_args;
+      ExitArgs exit_args;
+      ReturnArgs return_args;
     };
 
     void relocate(std::ptrdiff_t offset); // Shift instruction pointers

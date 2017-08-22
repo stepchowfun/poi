@@ -1,6 +1,6 @@
+#include <cstddef>
 #include <fstream>
 #include <iostream>
-#include <memory>
 #include <poi/ast.h>
 #include <poi/bytecode.h>
 #include <poi/compiler.h>
@@ -65,13 +65,11 @@ int main(int argc, char * argv[]) {
     return 0;
   }
 
-  // Check that we got the right number of arguments.
+  // Determine what the user wants us to do with the given source file.
   if (argc != 2 && argc != 3) {
     std::cerr << parse_error;
     return 1;
   }
-
-  // Determine what the user wants us to do.
   std::string input_path = argv[1];
   auto cli_action = CliAction::RUN;
   if (argc == 3) {
@@ -111,7 +109,7 @@ int main(int argc, char * argv[]) {
 
   // Catch any Poi errors and report them.
   try {
-    // Perform lexical analysis.
+    // Perform lexical analysis to convert the source file into tokens.
     auto token_stream = Poi::tokenize(source_name, source, pool);
     if (cli_action == CliAction::EMIT_TOKENS) {
       for (auto &token : *(token_stream.tokens)) {
@@ -143,7 +141,7 @@ int main(int argc, char * argv[]) {
       return 0;
     }
 
-    // Run the program.
+    // Run the program by interpreting the BC.
     auto result = Poi::interpret(&bytecode->at(0), block->frame_size());
     std::cout << result->show(0) << "\n";
   } catch(Poi::Error &e) {

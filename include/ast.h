@@ -107,10 +107,10 @@ namespace Poi {
     virtual std::size_t emit_ir(
       std::shared_ptr<const Poi::Term> term,
       BasicBlock &current_block,
-      std::size_t destination, // Don't touch any registers under this one
+      std::size_t destination, // Don't touch any registers under this one.
       bool tail_position,
       const std::unordered_map<std::size_t, VariableInfo> &environment
-    ) const = 0; // Returns the number of new registers used
+    ) const = 0; // Return the number of new registers used.
   };
 
   class Variable : public Term {
