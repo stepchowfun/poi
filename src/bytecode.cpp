@@ -11,13 +11,7 @@ void Poi::Bytecode::relocate(std::ptrdiff_t offset) {
     case BytecodeType::BEGIN_FIXPOINT: {
       break;
     }
-    case BytecodeType::CALL_NON_TAIL: {
-      break;
-    }
-    case BytecodeType::CALL_TAIL: {
-      break;
-    }
-    case BytecodeType::COPY: {
+    case BytecodeType::CALL: {
       break;
     }
     case BytecodeType::CREATE_FUNCTION: {
@@ -33,7 +27,13 @@ void Poi::Bytecode::relocate(std::ptrdiff_t offset) {
     case BytecodeType::EXIT: {
       break;
     }
+    case BytecodeType::MOVE: {
+      break;
+    }
     case BytecodeType::RETURN: {
+      break;
+    }
+    case BytecodeType::TAIL_CALL: {
       break;
     }
     default: {
@@ -53,23 +53,11 @@ std::string Poi::Bytecode::show() const {
         " destination=" + std::to_string(begin_fixpoint_args.destination);
       break;
     }
-    case BytecodeType::CALL_NON_TAIL: {
+    case BytecodeType::CALL: {
       result +=
         " destination=" + std::to_string(call_non_tail_args.destination) +
         " function=" + std::to_string(call_non_tail_args.function) +
         " argument=" + std::to_string(call_non_tail_args.argument);
-      break;
-    }
-    case BytecodeType::CALL_TAIL: {
-      result +=
-        " function=" + std::to_string(call_tail_args.function) +
-        " argument=" + std::to_string(call_tail_args.argument);
-      break;
-    }
-    case BytecodeType::COPY: {
-      result +=
-        " destination=" + std::to_string(copy_args.destination) +
-        " source=" + std::to_string(copy_args.source);
       break;
     }
     case BytecodeType::CREATE_FUNCTION: {
@@ -104,9 +92,21 @@ std::string Poi::Bytecode::show() const {
         " value=" + std::to_string(exit_args.value);
       break;
     }
+    case BytecodeType::MOVE: {
+      result +=
+        " destination=" + std::to_string(move_args.destination) +
+        " source=" + std::to_string(move_args.source);
+      break;
+    }
     case BytecodeType::RETURN: {
       result +=
         " value=" + std::to_string(return_args.value);
+      break;
+    }
+    case BytecodeType::TAIL_CALL: {
+      result +=
+        " function=" + std::to_string(call_tail_args.function) +
+        " argument=" + std::to_string(call_tail_args.argument);
       break;
     }
     default: {

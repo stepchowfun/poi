@@ -15,26 +15,26 @@
 namespace Poi {
   enum class BytecodeType {
     BEGIN_FIXPOINT,
-    CALL_NON_TAIL,
-    CALL_TAIL,
-    COPY,
+    CALL,
     CREATE_FUNCTION,
     DEREF_FIXPOINT,
     END_FIXPOINT,
     EXIT,
-    RETURN
+    MOVE,
+    RETURN,
+    TAIL_CALL
   };
 
   const char * const BytecodeTypeName[] = {
     "BEGIN_FIXPOINT",
-    "CALL_NON_TAIL",
-    "CALL_TAIL",
-    "COPY",
+    "CALL",
     "CREATE_FUNCTION",
     "DEREF_FIXPOINT",
     "END_FIXPOINT",
     "EXIT",
-    "RETURN"
+    "MOVE",
+    "RETURN",
+    "TAIL_CALL"
   };
 
   class BeginFixpointArgs {
@@ -42,23 +42,11 @@ namespace Poi {
     std::uint16_t destination;
   };
 
-  class CallNonTailArgs {
+  class CallArgs {
   public:
     std::uint16_t destination;
     std::uint16_t function;
     std::uint16_t argument;
-  };
-
-  class CallTailArgs {
-  public:
-    std::uint16_t function;
-    std::uint16_t argument;
-  };
-
-  class CopyArgs {
-  public:
-    std::uint16_t destination;
-    std::uint16_t source;
   };
 
   class CreateFunctionArgs {
@@ -87,9 +75,21 @@ namespace Poi {
     std::uint16_t value;
   };
 
+  class MoveArgs {
+  public:
+    std::uint16_t destination;
+    std::uint16_t source;
+  };
+
   class ReturnArgs {
   public:
     std::uint16_t value;
+  };
+
+  class TailCallArgs {
+  public:
+    std::uint16_t function;
+    std::uint16_t argument;
   };
 
   class Bytecode {
@@ -97,14 +97,14 @@ namespace Poi {
     BytecodeType type;
     union {
       BeginFixpointArgs begin_fixpoint_args;
-      CallNonTailArgs call_non_tail_args;
-      CallTailArgs call_tail_args;
-      CopyArgs copy_args;
+      CallArgs call_non_tail_args;
       CreateFunctionArgs create_function_args;
       DerefFixpointArgs deref_fixpoint_args;
       EndFixpointArgs end_fixpoint_args;
       ExitArgs exit_args;
+      MoveArgs move_args;
       ReturnArgs return_args;
+      TailCallArgs call_tail_args;
     };
 
     void relocate(std::ptrdiff_t offset); // Shift instruction pointers

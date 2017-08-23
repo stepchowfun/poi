@@ -45,54 +45,16 @@ namespace Poi {
     std::string show() const override;
   };
 
-  class IrCallNonTail : public IrInstruction {
+  class IrCall : public IrInstruction {
   public:
     const std::uint16_t destination;
     const std::uint16_t function;
     const std::uint16_t argument;
 
-    explicit IrCallNonTail(
+    explicit IrCall(
       std::uint16_t destination,
       std::uint16_t function,
       std::uint16_t argument,
-      const std::shared_ptr<const Node> node
-    );
-    bool terminates_block() const override;
-    std::uint16_t max_register() const override;
-    void emit_bytecode(
-      BytecodeBlock &archive,
-      BytecodeBlock &current
-    ) const override;
-    std::string show() const override;
-  };
-
-  class IrCallTail : public IrInstruction {
-  public:
-    const std::uint16_t function;
-    const std::uint16_t argument;
-
-    explicit IrCallTail(
-      std::uint16_t function,
-      std::uint16_t argument,
-      const std::shared_ptr<const Node> node
-    );
-    bool terminates_block() const override;
-    std::uint16_t max_register() const override;
-    void emit_bytecode(
-      BytecodeBlock &archive,
-      BytecodeBlock &current
-    ) const override;
-    std::string show() const override;
-  };
-
-  class IrCopy : public IrInstruction {
-  public:
-    const std::uint16_t destination;
-    const std::uint16_t source;
-
-    explicit IrCopy(
-      std::uint16_t destination,
-      std::uint16_t source,
       const std::shared_ptr<const Node> node
     );
     bool terminates_block() const override;
@@ -180,12 +142,50 @@ namespace Poi {
     std::string show() const override;
   };
 
+  class IrMove : public IrInstruction {
+  public:
+    const std::uint16_t destination;
+    const std::uint16_t source;
+
+    explicit IrMove(
+      std::uint16_t destination,
+      std::uint16_t source,
+      const std::shared_ptr<const Node> node
+    );
+    bool terminates_block() const override;
+    std::uint16_t max_register() const override;
+    void emit_bytecode(
+      BytecodeBlock &archive,
+      BytecodeBlock &current
+    ) const override;
+    std::string show() const override;
+  };
+
   class IrReturn : public IrInstruction {
   public:
     const std::uint16_t value;
 
     explicit IrReturn(
       std::uint16_t value,
+      const std::shared_ptr<const Node> node
+    );
+    bool terminates_block() const override;
+    std::uint16_t max_register() const override;
+    void emit_bytecode(
+      BytecodeBlock &archive,
+      BytecodeBlock &current
+    ) const override;
+    std::string show() const override;
+  };
+
+  class IrTailCall : public IrInstruction {
+  public:
+    const std::uint16_t function;
+    const std::uint16_t argument;
+
+    explicit IrTailCall(
+      std::uint16_t function,
+      std::uint16_t argument,
       const std::shared_ptr<const Node> node
     );
     bool terminates_block() const override;
