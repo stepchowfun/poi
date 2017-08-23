@@ -7,6 +7,7 @@
 #include <poi/error.h>
 #include <poi/interpreter.h>
 #include <poi/ir.h>
+#include <poi/optimizer.h>
 #include <poi/parser.h>
 #include <poi/string_pool.h>
 #include <poi/token.h>
@@ -132,8 +133,11 @@ int main(int argc, char * argv[]) {
       return 0;
     }
 
+    // Optimize the IR.
+    auto optimized_ir_block = optimize(ir_block);
+
     // Compile the IR into BC.
-    auto bytecode_block = compile_ir_to_bc(*ir_block);
+    auto bytecode_block = compile_ir_to_bc(*optimized_ir_block);
     if (cli_action == CliAction::EMIT_BC) {
       std::cout << bytecode_block->show();
       return 0;
