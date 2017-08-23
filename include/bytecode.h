@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <poi/ast.h>
 #include <poi/string_pool.h>
 #include <string>
 #include <type_traits>
@@ -114,6 +115,17 @@ namespace Poi {
     std::is_pod<Bytecode>::value,
     "Poi::Bytecode must be a POD type."
   );
+
+  class BytecodeBlock {
+  public:
+    std::vector<Bytecode> bytecode;
+    std::vector<std::shared_ptr<const Node>> nodes;
+
+    void push(Bytecode &bc, std::shared_ptr<const Node> node);
+    void append(BytecodeBlock &block);
+    std::size_t size() const;
+    std::string show() const;
+  };
 }
 
 #endif

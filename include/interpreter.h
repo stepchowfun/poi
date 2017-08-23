@@ -7,14 +7,16 @@
 
 #include <cstddef>
 #include <poi/bytecode.h>
+#include <poi/string_pool.h>
 #include <poi/value.h>
 #include <vector>
 
 namespace Poi {
   // Interpret a BC program.
   Value * interpret(
-    Bytecode * program,
-    std::size_t start_stack_size // Stack locations (not bytes)
+    std::size_t start_stack_size, // Stack locations (not bytes)
+    const BytecodeBlock &block,
+    const Poi::StringPool &pool
   );
 }
 

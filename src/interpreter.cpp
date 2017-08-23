@@ -3,6 +3,7 @@
 #include <poi/error.h>
 #include <poi/interpreter.h>
 #include <poi/value.h>
+#include <string>
 
 #ifndef NDEBUG
   #include <iostream>
@@ -65,12 +66,56 @@ namespace Poi {
     }
     current_logical_size = requested_logical_size;
   }
+
+  void throw_error(
+    const std::string &message,
+    std::size_t program_counter,
+    const Frame * const call_stack,
+    std::size_t call_stack_size,
+    const Poi::BytecodeBlock &block,
+    const StringPool &pool
+  ) {
+    auto trace = message + "\n\nStack trace:\n  " + get_location(
+      pool.find(block.nodes[program_counter]->source_name),
+      pool.find(block.nodes[program_counter]->source),
+      block.nodes[program_counter]->start_pos,
+      block.nodes[program_counter]->end_pos
+    );
+    if (call_stack_size != 0) {
+      for (std::size_t i = call_stack_size - 1; true; --i) {
+        trace += "\n  " + get_location(
+          pool.find(
+            block.nodes[call_stack[i].return_address - 1]->source_name
+          ),
+          pool.find(
+            block.nodes[call_stack[i].return_address - 1]->source
+          ),
+          block.nodes[call_stack[i].return_address - 1]->start_pos,
+          block.nodes[call_stack[i].return_address - 1]->end_pos
+        );
+        if (i == 0) {
+          break;
+        }
+      }
+    }
+    trace += "\n";
+    throw Error(
+      trace,
+      pool.find(block.nodes[program_counter]->source_name),
+      pool.find(block.nodes[program_counter]->source),
+      block.nodes[program_counter]->start_pos,
+      block.nodes[program_counter]->end_pos
+    );
+  }
 }
 
 Poi::Value * Poi::interpret(
-  Poi::Bytecode * program,
-  std::size_t start_stack_size
+  std::size_t start_stack_size,
+  const Poi::BytecodeBlock &block,
+  const Poi::StringPool &pool
 ) {
+  auto program = &(block.bytecode[0]);
+
   std::size_t value_stack_size = start_stack_size;
   std::size_t value_stack_buffer_size = min_stack_buffer_size;
   auto value_stack = new Value * [value_stack_buffer_size];
@@ -270,7 +315,14 @@ Poi::Value * Poi::interpret(
           value_stack_size - 1 - bytecode.deref_fixpoint_args.fixpoint
         ]->fixpoint_members.target;
         if (target == nullptr) {
-          throw Error("Recursive references must occur in function bodies.");
+          throw_error(
+            "Recursive reference evaluated before the knot has been tied.",
+            program_counter,
+            call_stack,
+            call_stack_size,
+            block,
+            pool
+          );
         }
         value_stack[
           value_stack_size - 1 - bytecode.deref_fixpoint_args.destination

@@ -5,10 +5,10 @@
 #include <poi/ir.h>
 #include <vector>
 
-std::shared_ptr<Poi::BasicBlock> Poi::compile_ast_to_ir(
+std::shared_ptr<Poi::IrBlock> Poi::compile_ast_to_ir(
   std::shared_ptr<const Poi::Term> term
 ) {
-  auto block = std::make_shared<BasicBlock>();
+  auto block = std::make_shared<IrBlock>();
   std::unordered_map<std::size_t, VariableInfo> environment;
   term->emit_ir(term, *block, 0, false, environment);
   block->get_instructions()->push_back(
@@ -17,16 +17,16 @@ std::shared_ptr<Poi::BasicBlock> Poi::compile_ast_to_ir(
   return block;
 }
 
-std::shared_ptr<std::vector<Poi::Bytecode>> Poi::compile_ir_to_bc(
-  const Poi::BasicBlock &basic_block
+std::shared_ptr<Poi::BytecodeBlock> Poi::compile_ir_to_bc(
+  const Poi::IrBlock &ir_block
 ) {
-  std::vector<Bytecode> program;
-  auto bytecode = std::make_shared<std::vector<Bytecode>>();
-  basic_block.emit_bytecode(program, *bytecode);
-  std::ptrdiff_t offset = bytecode->size();
-  bytecode->insert(bytecode->end(), program.begin(), program.end());
-  for (auto &bc : *bytecode) {
+  BytecodeBlock archive;
+  auto current = std::make_shared<BytecodeBlock>();
+  ir_block.emit_bytecode(archive, *current);
+  std::ptrdiff_t offset = current->size();
+  current->append(archive);
+  for (auto &bc : current->bytecode) {
     bc.relocate(offset);
   }
-  return bytecode;
+  return current;
 }

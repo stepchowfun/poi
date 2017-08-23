@@ -126,23 +126,25 @@ int main(int argc, char * argv[]) {
     }
 
     // Compile the AST into IR.
-    auto block = Poi::compile_ast_to_ir(term);
+    auto ir_block = Poi::compile_ast_to_ir(term);
     if (cli_action == CliAction::EMIT_IR) {
-      std::cout << block->show();
+      std::cout << ir_block->show();
       return 0;
     }
 
     // Compile the IR into BC.
-    auto bytecode = compile_ir_to_bc(*block);
+    auto bytecode_block = compile_ir_to_bc(*ir_block);
     if (cli_action == CliAction::EMIT_BC) {
-      for (std::size_t i = 0; i < bytecode->size(); ++i) {
-        std::cout << i << " " << bytecode->at(i).show() << "\n";
-      }
+      std::cout << bytecode_block->show();
       return 0;
     }
 
     // Run the program by interpreting the BC.
-    auto result = Poi::interpret(&bytecode->at(0), block->frame_size());
+    auto result = Poi::interpret(
+      ir_block->frame_size(),
+      *bytecode_block,
+      pool
+    );
     std::cout << result->show(0) << "\n";
   } catch(Poi::Error &e) {
     // There was an error. Print it and exit.
