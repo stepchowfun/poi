@@ -181,7 +181,7 @@ std::size_t Poi::Variable::emit_ir(
     );
   } else {
     current_block.get_instructions()->push_back(
-      std::make_shared<IrCopy>(
+      std::make_shared<IrMove>(
         destination,
         variable_iter->second.stack_location,
         std::static_pointer_cast<const Node>(term)
@@ -323,7 +323,7 @@ std::size_t Poi::Application::emit_ir(
 
   if (tail_position) {
     current_block.get_instructions()->push_back(
-      std::make_shared<IrCallTail>(
+      std::make_shared<IrTailCall>(
         destination + 1,
         destination + 1 + function_footprint,
         std::static_pointer_cast<const Node>(term)
@@ -331,7 +331,7 @@ std::size_t Poi::Application::emit_ir(
     );
   } else {
     current_block.get_instructions()->push_back(
-      std::make_shared<IrCallNonTail>(
+      std::make_shared<IrCall>(
         destination,
         destination + 1,
         destination + 1 + function_footprint,
@@ -438,7 +438,7 @@ std::size_t Poi::Binding::emit_ir(
 
   if (!current_block.get_instructions()->back()->terminates_block()) {
     current_block.get_instructions()->push_back(
-      std::make_shared<IrCopy>(
+      std::make_shared<IrMove>(
         destination,
         destination + 2 + definition_footprint,
         std::static_pointer_cast<const Node>(term)

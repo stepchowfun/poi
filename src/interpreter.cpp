@@ -196,7 +196,7 @@ Poi::Value * Poi::interpret(
         ] = fixpoint_value;
         break;
       }
-      case BytecodeType::CALL_NON_TAIL: {
+      case BytecodeType::CALL: {
         assert(
           value_stack[
             value_stack_size - 1 - bytecode.call_non_tail_args.function
@@ -241,43 +241,6 @@ Poi::Value * Poi::interpret(
 
         program_counter = function_members.body;
         continue;
-      }
-      case BytecodeType::CALL_TAIL: {
-        assert(
-          value_stack[
-            value_stack_size - 1 - bytecode.call_tail_args.function
-          ]->type == ValueType::FUNCTION
-        );
-        auto &function_members = value_stack[
-          value_stack_size - 1 - bytecode.call_tail_args.function
-        ]->function_members;
-        auto argument = value_stack[
-          value_stack_size - 1 - bytecode.call_tail_args.argument
-        ];
-        std::size_t new_value_stack_size =
-          call_stack[call_stack_size - 1].base_pointer +
-          function_members.frame_size;
-        resize_buffer_if_needed(
-          new_value_stack_size,
-          value_stack_size,
-          value_stack_buffer_size,
-          value_stack
-          #ifndef NDEBUG
-            , "VALUE_STACK"
-          #endif
-        );
-        value_stack[value_stack_size - 1] = argument;
-        for (std::uint16_t i = 0; i < function_members.num_captures; ++i) {
-          value_stack[value_stack_size - 2 - i] = function_members.captures[i];
-        }
-
-        program_counter = function_members.body;
-        continue;
-      }
-      case BytecodeType::COPY: {
-        value_stack[value_stack_size - 1 - bytecode.copy_args.destination] =
-          value_stack[value_stack_size - 1 - bytecode.copy_args.source];
-        break;
       }
       case BytecodeType::CREATE_FUNCTION: {
         Value * function_value = new Value;
@@ -350,6 +313,11 @@ Poi::Value * Poi::interpret(
         delete [] call_stack;
         return result;
       }
+      case BytecodeType::MOVE: {
+        value_stack[value_stack_size - 1 - bytecode.move_args.destination] =
+          value_stack[value_stack_size - 1 - bytecode.move_args.source];
+        break;
+      }
       case BytecodeType::RETURN: {
         auto return_value = value_stack[
           value_stack_size - 1 - bytecode.return_args.value
@@ -378,12 +346,44 @@ Poi::Value * Poi::interpret(
           #endif
         );
         assert(
-          program[program_counter - 1].type == BytecodeType::CALL_NON_TAIL
+          program[program_counter - 1].type == BytecodeType::CALL
         );
         value_stack[
           value_stack_size - 1 -
             program[program_counter - 1].call_non_tail_args.destination
         ] = return_value;
+        continue;
+      }
+      case BytecodeType::TAIL_CALL: {
+        assert(
+          value_stack[
+            value_stack_size - 1 - bytecode.call_tail_args.function
+          ]->type == ValueType::FUNCTION
+        );
+        auto &function_members = value_stack[
+          value_stack_size - 1 - bytecode.call_tail_args.function
+        ]->function_members;
+        auto argument = value_stack[
+          value_stack_size - 1 - bytecode.call_tail_args.argument
+        ];
+        std::size_t new_value_stack_size =
+          call_stack[call_stack_size - 1].base_pointer +
+          function_members.frame_size;
+        resize_buffer_if_needed(
+          new_value_stack_size,
+          value_stack_size,
+          value_stack_buffer_size,
+          value_stack
+          #ifndef NDEBUG
+            , "VALUE_STACK"
+          #endif
+        );
+        value_stack[value_stack_size - 1] = argument;
+        for (std::uint16_t i = 0; i < function_members.num_captures; ++i) {
+          value_stack[value_stack_size - 2 - i] = function_members.captures[i];
+        }
+
+        program_counter = function_members.body;
         continue;
       }
       default: {
