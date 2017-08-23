@@ -11,7 +11,7 @@ std::shared_ptr<Poi::IrBlock> Poi::compile_ast_to_ir(
   auto block = std::make_shared<IrBlock>();
   std::unordered_map<std::size_t, VariableInfo> environment;
   term->emit_ir(term, *block, 0, false, environment);
-  block->get_instructions()->push_back(
+  block->instructions->push_back(
     std::make_shared<IrExit>(0, std::static_pointer_cast<const Node>(term))
   );
   return block;

@@ -20,7 +20,6 @@ namespace Poi {
     DEREF_FIXPOINT,
     END_FIXPOINT,
     EXIT,
-    MOVE,
     RETURN,
     TAIL_CALL
   };
@@ -32,7 +31,6 @@ namespace Poi {
     "DEREF_FIXPOINT",
     "END_FIXPOINT",
     "EXIT",
-    "MOVE",
     "RETURN",
     "TAIL_CALL"
   };
@@ -75,12 +73,6 @@ namespace Poi {
     std::uint16_t value;
   };
 
-  class MoveArgs {
-  public:
-    std::uint16_t destination;
-    std::uint16_t source;
-  };
-
   class ReturnArgs {
   public:
     std::uint16_t value;
@@ -102,7 +94,6 @@ namespace Poi {
       DerefFixpointArgs deref_fixpoint_args;
       EndFixpointArgs end_fixpoint_args;
       ExitArgs exit_args;
-      MoveArgs move_args;
       ReturnArgs return_args;
       TailCallArgs call_tail_args;
     };

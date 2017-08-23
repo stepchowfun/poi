@@ -1,3 +1,4 @@
+#include <cassert>
 #include <poi/bytecode.h>
 #include <poi/error.h>
 #include <type_traits>
@@ -27,9 +28,6 @@ void Poi::Bytecode::relocate(std::ptrdiff_t offset) {
     case BytecodeType::EXIT: {
       break;
     }
-    case BytecodeType::MOVE: {
-      break;
-    }
     case BytecodeType::RETURN: {
       break;
     }
@@ -37,7 +35,7 @@ void Poi::Bytecode::relocate(std::ptrdiff_t offset) {
       break;
     }
     default: {
-      throw Error("relocate(...) is not implemented for '" + type_name + "'.");
+      assert(false);
     }
   }
 }
@@ -92,12 +90,6 @@ std::string Poi::Bytecode::show() const {
         " value=" + std::to_string(exit_args.value);
       break;
     }
-    case BytecodeType::MOVE: {
-      result +=
-        " destination=" + std::to_string(move_args.destination) +
-        " source=" + std::to_string(move_args.source);
-      break;
-    }
     case BytecodeType::RETURN: {
       result +=
         " value=" + std::to_string(return_args.value);
@@ -110,7 +102,7 @@ std::string Poi::Bytecode::show() const {
       break;
     }
     default: {
-      throw Error("show(...) is not implemented for '" + result + "'.");
+      assert(false);
     }
   }
   return result;

@@ -1,3 +1,4 @@
+#include <cassert>
 #include <poi/error.h>
 #include <poi/value.h>
 #include <type_traits>
@@ -39,7 +40,7 @@ std::string Poi::Value::show(std::size_t depth) const {
       break;
     }
     default: {
-      throw Error("show(...) is not implemented for '" + result + "'.");
+      assert(false);
     }
   }
 

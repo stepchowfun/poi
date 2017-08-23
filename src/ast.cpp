@@ -172,7 +172,7 @@ std::size_t Poi::Variable::emit_ir(
 ) const {
   auto variable_iter = environment.find(variable);
   if (variable_iter->second.is_fixpoint) {
-    current_block.get_instructions()->push_back(
+    current_block.instructions->push_back(
       std::make_shared<IrDerefFixpoint>(
         destination,
         variable_iter->second.stack_location,
@@ -180,7 +180,7 @@ std::size_t Poi::Variable::emit_ir(
       )
     );
   } else {
-    current_block.get_instructions()->push_back(
+    current_block.instructions->push_back(
       std::make_shared<IrMove>(
         destination,
         variable_iter->second.stack_location,
@@ -226,7 +226,7 @@ std::size_t Poi::Function::emit_ir(
   auto variable_pattern = std::dynamic_pointer_cast<
     const VariablePattern
   >(pattern);
-  assert(variable_pattern != nullptr);
+  assert(variable_pattern);
   auto variable = variable_pattern->variable;
 
   std::unordered_map<std::size_t, VariableInfo> body_environment;
@@ -253,14 +253,11 @@ std::size_t Poi::Function::emit_ir(
     body_environment
   );
 
-  auto body_instructions = body_block->get_instructions();
-  if (!body_instructions->back()->terminates_block()) {
-    auto return_instruction = std::make_shared<IrReturn>(
-      index,
-      std::static_pointer_cast<const Node>(term)
-    );
-    body_instructions->push_back(return_instruction);
-  }
+  auto return_instruction = std::make_shared<IrReturn>(
+    index,
+    std::static_pointer_cast<const Node>(term)
+  );
+  body_block->instructions->push_back(return_instruction);
 
   auto function = std::make_shared<IrCreateFunction>(
     destination,
@@ -269,7 +266,7 @@ std::size_t Poi::Function::emit_ir(
     std::static_pointer_cast<const Node>(term)
   );
 
-  current_block.get_instructions()->push_back(function);
+  current_block.instructions->push_back(function);
   return 1;
 }
 
@@ -322,7 +319,7 @@ std::size_t Poi::Application::emit_ir(
   );
 
   if (tail_position) {
-    current_block.get_instructions()->push_back(
+    current_block.instructions->push_back(
       std::make_shared<IrTailCall>(
         destination + 1,
         destination + 1 + function_footprint,
@@ -330,7 +327,7 @@ std::size_t Poi::Application::emit_ir(
       )
     );
   } else {
-    current_block.get_instructions()->push_back(
+    current_block.instructions->push_back(
       std::make_shared<IrCall>(
         destination,
         destination + 1,
@@ -383,7 +380,7 @@ std::size_t Poi::Binding::emit_ir(
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  current_block.get_instructions()->push_back(
+  current_block.instructions->push_back(
     std::make_shared<IrBeginFixpoint>(
       destination + 1,
       std::static_pointer_cast<const Node>(term)
@@ -393,7 +390,7 @@ std::size_t Poi::Binding::emit_ir(
   auto variable_pattern = std::dynamic_pointer_cast<
     const VariablePattern
   >(pattern);
-  assert(variable_pattern != nullptr);
+  assert(variable_pattern);
   auto variable = variable_pattern->variable;
 
   auto new_environment = environment;
@@ -415,7 +412,7 @@ std::size_t Poi::Binding::emit_ir(
     definition_environment
   );
 
-  current_block.get_instructions()->push_back(
+  current_block.instructions->push_back(
     std::make_shared<IrEndFixpoint>(
       destination + 1,
       destination + 2,
@@ -436,15 +433,13 @@ std::size_t Poi::Binding::emit_ir(
     body_environment
   );
 
-  if (!current_block.get_instructions()->back()->terminates_block()) {
-    current_block.get_instructions()->push_back(
-      std::make_shared<IrMove>(
-        destination,
-        destination + 2 + definition_footprint,
-        std::static_pointer_cast<const Node>(term)
-      )
-    );
-  }
+  current_block.instructions->push_back(
+    std::make_shared<IrMove>(
+      destination,
+      destination + 2 + definition_footprint,
+      std::static_pointer_cast<const Node>(term)
+    )
+  );
 
   return destination + 2 + definition_footprint + body_footprint;
 }

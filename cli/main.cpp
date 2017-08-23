@@ -21,6 +21,7 @@ enum class CliAction {
   EMIT_TOKENS,
   EMIT_AST,
   EMIT_IR,
+  EMIT_OPTIMIZED_IR,
   EMIT_BC,
   RUN
 };
@@ -49,6 +50,7 @@ int main(int argc, char * argv[]) {
       "  poi --emit-tokens source\n"
       "  poi --emit-ast source\n"
       "  poi --emit-ir source\n"
+      "  poi --emit-optimized-ir source\n"
       "  poi --emit-bc source\n"
       "  poi --run source\n";
     return 0;
@@ -80,6 +82,8 @@ int main(int argc, char * argv[]) {
       cli_action = CliAction::EMIT_AST;
     } else if (std::string(argv[1]) == "--emit-ir") {
       cli_action = CliAction::EMIT_IR;
+    } else if (std::string(argv[1]) == "--emit-optimized-ir") {
+      cli_action = CliAction::EMIT_OPTIMIZED_IR;
     } else if (std::string(argv[1]) == "--emit-bc") {
       cli_action = CliAction::EMIT_BC;
     } else if (std::string(argv[1]) == "--run") {
@@ -135,6 +139,10 @@ int main(int argc, char * argv[]) {
 
     // Optimize the IR.
     auto optimized_ir_block = optimize(ir_block);
+    if (cli_action == CliAction::EMIT_OPTIMIZED_IR) {
+      std::cout << optimized_ir_block->show();
+      return 0;
+    }
 
     // Compile the IR into BC.
     auto bytecode_block = compile_ir_to_bc(*optimized_ir_block);

@@ -1,6 +1,6 @@
 {
   "source": "(x -> x (x x)) (a -> b -> a)",
-  "stdout": "FUNCTION body=9 frame_size=3 captures=[FUNCTION body=9 frame_size=3 captures=[FUNCTION body=11 frame_size=2 captures=[]]]\n",
+  "stdout": "FUNCTION body=6 frame_size=2 captures=[FUNCTION body=6 frame_size=2 captures=[FUNCTION body=7 frame_size=1 captures=[]]]\n",
   "stderr": "",
   "exit_code": 0
 }
