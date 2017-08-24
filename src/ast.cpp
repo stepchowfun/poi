@@ -11,7 +11,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::VariableInfo::VariableInfo(
-  std::size_t stack_location,
+  Register stack_location,
   bool is_fixpoint
 ) : stack_location(stack_location), is_fixpoint(is_fixpoint) {
 }
@@ -499,7 +499,31 @@ std::size_t Poi::DataType::emit_ir(
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  return 0;
+  Register i = 1;
+  auto captures = std::make_shared<std::vector<Register>>();
+  std::size_t constructor_block = 0;
+  for (auto &c : * constructors) {
+    auto c_block = c.second->emit_ir(
+      c.second,
+      current_block,
+      destination + 1 + constructor_block,
+      false,
+      environment
+    );
+    constructor_block += c_block;
+    captures->push_back(destination + i);
+    i++;
+  }
+
+  current_block.instructions->push_back(
+    std::make_shared<IrDataType>(
+      destination,
+      captures,
+      std::static_pointer_cast<const Node>(term)
+    )
+  );
+
+  return 1 + i;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -539,7 +563,25 @@ std::size_t Poi::Data::emit_ir(
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  return 0;
+  auto constructor_params = data_type.lock()->constructor_params->
+    find(constructor)->second;
+
+  auto captures = std::make_shared<std::vector<Register>>();
+  for (auto &c : constructor_params) {
+    captures->push_back(environment.at(c).stack_location);
+  }
+
+  current_block.instructions->push_back(
+    std::make_shared<IrData>(
+      destination,
+      constructor,
+      captures,
+      std::make_shared<std::vector<std::size_t>>(constructor_params),
+      std::static_pointer_cast<const Node>(term)
+    )
+  );
+
+  return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -574,7 +616,24 @@ std::size_t Poi::Member::emit_ir(
   bool tail_position,
   const std::unordered_map<std::size_t, VariableInfo> &environment
 ) const {
-  return 0;
+  auto object_block = object->emit_ir(
+    object,
+    current_block,
+    destination + 1,
+    false,
+    environment
+  );
+
+  current_block.instructions->push_back(
+    std::make_shared<IrMember>(
+      destination,
+      destination + 1,
+      field,
+      std::static_pointer_cast<const Node>(term)
+    )
+  );
+
+  return 1 + object_block;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

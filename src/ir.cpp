@@ -38,7 +38,7 @@ void Poi::IrBeginFixpoint::emit_bytecode(
   current.push(bc, node);
 }
 
-std::string Poi::IrBeginFixpoint::show() const {
+std::string Poi::IrBeginFixpoint::show(const StringPool &pool) const {
   return std::string("BEGIN_FIXPOINT") +
     " destination=" + std::to_string(destination);
 }
@@ -75,7 +75,7 @@ void Poi::IrCall::emit_bytecode(
   current.push(bc, node);
 }
 
-std::string Poi::IrCall::show() const {
+std::string Poi::IrCall::show(const StringPool &pool) const {
   return std::string("CALL") +
     " destination=" + std::to_string(destination) +
     " function=" + std::to_string(function) +
@@ -127,16 +127,104 @@ void Poi::IrCreateFunction::emit_bytecode(
   current.push(bc, node);
 }
 
-std::string Poi::IrCreateFunction::show() const {
+std::string Poi::IrCreateFunction::show(const StringPool &pool) const {
   auto result = std::string("CREATE_FUNCTION") +
     " destination=" + std::to_string(destination) +
-    " body=[\n" + body->show() + "]" +
+    " body=[\n" + body->show(pool) + "]" +
     " captures=[";
     for (Register i = 0; i < captures->size(); i++) {
       if (i != 0) {
         result += ", ";
       }
       result += std::to_string(captures->at(i));
+    }
+    result += "]";
+    return result;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// IrData                                                                    //
+///////////////////////////////////////////////////////////////////////////////
+
+Poi::IrData::IrData(
+  Poi::Register destination,
+  std::size_t constructor,
+  std::shared_ptr<std::vector<Poi::Register>> captures,
+  std::shared_ptr<std::vector<std::size_t>> parameters,
+  const std::shared_ptr<const Node> node
+) :
+  Poi::IrInstruction(node),
+  destination(destination),
+  constructor(constructor),
+  captures(captures),
+  parameters(parameters) {
+}
+
+Poi::Register Poi::IrData::max_register() const {
+  Register highest_register = destination;
+  for (auto &capture : *captures) {
+    highest_register = std::max(highest_register, capture);
+  }
+  return highest_register;
+}
+
+void Poi::IrData::emit_bytecode(
+  Poi::BytecodeBlock &archive,
+  Poi::BytecodeBlock &current
+) const {
+  assert(false);
+}
+
+std::string Poi::IrData::show(const StringPool &pool) const {
+  auto result = std::string("DATA") +
+    " name=" + pool.find(constructor) +
+    " destination=" + std::to_string(destination) +
+    " parameters=[";
+    for (Register i = 0; i < captures->size(); i++) {
+      if (i != 0) {
+        result += ", ";
+      }
+      result += pool.find(parameters->at(i)) + "=" +
+        std::to_string(captures->at(i));
+    }
+    result += "]";
+    return result;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// IrDataType                                                                //
+///////////////////////////////////////////////////////////////////////////////
+
+Poi::IrDataType::IrDataType(
+  Poi::Register destination,
+  std::shared_ptr<std::vector<Poi::Register>> constructors,
+  const std::shared_ptr<const Node> node
+) :
+  Poi::IrInstruction(node),
+  destination(destination),
+  constructors(constructors) {
+}
+
+Poi::Register Poi::IrDataType::max_register() const {
+  return destination;
+}
+
+void Poi::IrDataType::emit_bytecode(
+  Poi::BytecodeBlock &archive,
+  Poi::BytecodeBlock &current
+) const {
+  assert(false);
+}
+
+std::string Poi::IrDataType::show(const StringPool &pool) const {
+  auto result = std::string("DATA_TYPE") +
+    " destination=" + std::to_string(destination) +
+    " constructors=[";
+    for (Register i = 0; i < constructors->size(); i++) {
+      if (i != 0) {
+        result += ", ";
+      }
+      result += std::to_string(constructors->at(i));
     }
     result += "]";
     return result;
@@ -171,7 +259,7 @@ Poi::Register Poi::IrDerefFixpoint::max_register() const {
   return std::max(destination, fixpoint);
 }
 
-std::string Poi::IrDerefFixpoint::show() const {
+std::string Poi::IrDerefFixpoint::show(const StringPool &pool) const {
   return std::string("DEREF_FIXPOINT") +
     " destination=" + std::to_string(destination) +
     " fixpoint=" + std::to_string(fixpoint);
@@ -206,7 +294,7 @@ Poi::Register Poi::IrEndFixpoint::max_register() const {
   return std::max(fixpoint, target);
 }
 
-std::string Poi::IrEndFixpoint::show() const {
+std::string Poi::IrEndFixpoint::show(const StringPool &pool) const {
   return std::string("END_FIXPOINT") +
     " fixpoint=" + std::to_string(fixpoint) +
     " target=" + std::to_string(target);
@@ -238,7 +326,7 @@ void Poi::IrExit::emit_bytecode(
   current.push(bc, node);
 }
 
-std::string Poi::IrExit::show() const {
+std::string Poi::IrExit::show(const StringPool &pool) const {
   return std::string("EXIT") +
     " value=" + std::to_string(value);
 }
@@ -268,10 +356,44 @@ void Poi::IrMove::emit_bytecode(
   assert(false);
 }
 
-std::string Poi::IrMove::show() const {
+std::string Poi::IrMove::show(const StringPool &pool) const {
   return std::string("MOVE") +
     " destination=" + std::to_string(destination) +
     " source=" + std::to_string(source);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// IrMember                                                                  //
+///////////////////////////////////////////////////////////////////////////////
+
+Poi::IrMember::IrMember(
+  Poi::Register destination,
+  Poi::Register object,
+  std::size_t field,
+  const std::shared_ptr<const Node> node
+) :
+  Poi::IrInstruction(node),
+  destination(destination),
+  object(object),
+  field(field) {
+}
+
+Poi::Register Poi::IrMember::max_register() const {
+  return std::max(destination, object);
+}
+
+void Poi::IrMember::emit_bytecode(
+  Poi::BytecodeBlock &archive,
+  Poi::BytecodeBlock &current
+) const {
+  assert(false);
+}
+
+std::string Poi::IrMember::show(const StringPool &pool) const {
+  return std::string("MEMBER") +
+    " destination=" + std::to_string(destination) +
+    " object=" + std::to_string(object) +
+    " field=" + pool.find(field);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -300,7 +422,7 @@ void Poi::IrReturn::emit_bytecode(
   current.push(bc, node);
 }
 
-std::string Poi::IrReturn::show() const {
+std::string Poi::IrReturn::show(const StringPool &pool) const {
   return std::string("RETURN") +
     " value=" + std::to_string(value);
 }
@@ -331,7 +453,7 @@ void Poi::IrTailCall::emit_bytecode(
   current.push(bc, node);
 }
 
-std::string Poi::IrTailCall::show() const {
+std::string Poi::IrTailCall::show(const StringPool &pool) const {
   return std::string("TAIL_CALL") +
     " function=" + std::to_string(function) +
     " argument=" + std::to_string(argument);
@@ -367,10 +489,10 @@ void Poi::IrBlock::emit_bytecode(
   }
 }
 
-std::string Poi::IrBlock::show() const {
+std::string Poi::IrBlock::show(const StringPool &pool) const {
   std::string result;
   for (auto &instruction : *instructions) {
-    result += instruction->show() + "\n";
+    result += instruction->show(pool) + "\n";
   }
   return result;
 }

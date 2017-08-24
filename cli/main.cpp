@@ -133,14 +133,14 @@ int main(int argc, char * argv[]) {
     // Compile the AST into IR.
     auto ir_block = Poi::compile_ast_to_ir(term);
     if (cli_action == CliAction::EMIT_IR) {
-      std::cout << ir_block->show();
+      std::cout << ir_block->show(pool);
       return 0;
     }
 
     // Optimize the IR.
     auto optimized_ir_block = optimize(ir_block);
     if (cli_action == CliAction::EMIT_OPTIMIZED_IR) {
-      std::cout << optimized_ir_block->show();
+      std::cout << optimized_ir_block->show(pool);
       return 0;
     }
 

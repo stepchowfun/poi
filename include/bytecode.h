@@ -19,9 +19,12 @@ namespace Poi {
     BEGIN_FIXPOINT,
     CALL,
     CREATE_FUNCTION,
+    DATA,
+    DATA_TYPE,
     DEREF_FIXPOINT,
     END_FIXPOINT,
     EXIT,
+    MEMBER,
     RETURN,
     TAIL_CALL
   };
@@ -30,9 +33,12 @@ namespace Poi {
     "BEGIN_FIXPOINT",
     "CALL",
     "CREATE_FUNCTION",
+    "DATA",
+    "DATA_TYPE",
     "DEREF_FIXPOINT",
     "END_FIXPOINT",
     "EXIT",
+    "MEMBER",
     "RETURN",
     "TAIL_CALL"
   };
@@ -58,6 +64,19 @@ namespace Poi {
     std::size_t body;
   };
 
+  class DataArgs {
+  public:
+    Register destination;
+    Register * captures;
+    std::size_t * parameters;
+  };
+
+  class DataTypeArgs {
+  public:
+    Register destination;
+    Register * constructors;
+  };
+
   class DerefFixpointArgs {
   public:
     Register destination;
@@ -73,6 +92,13 @@ namespace Poi {
   class ExitArgs {
   public:
     Register value;
+  };
+
+  class MemberArgs {
+  public:
+    Register destination;
+    Register object;
+    std::size_t field;
   };
 
   class ReturnArgs {

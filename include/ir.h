@@ -22,7 +22,7 @@ namespace Poi {
       BytecodeBlock &archive,
       BytecodeBlock &current
     ) const = 0; // Returns the number of registers used so far
-    virtual std::string show() const = 0;
+    virtual std::string show(const StringPool &pool) const = 0;
   };
 
   class IrBeginFixpoint : public IrInstruction {
@@ -38,7 +38,7 @@ namespace Poi {
       BytecodeBlock &archive,
       BytecodeBlock &current
     ) const override;
-    std::string show() const override;
+    std::string show(const StringPool &pool) const override;
   };
 
   class IrCall : public IrInstruction {
@@ -58,7 +58,7 @@ namespace Poi {
       BytecodeBlock &archive,
       BytecodeBlock &current
     ) const override;
-    std::string show() const override;
+    std::string show(const StringPool &pool) const override;
   };
 
   class IrCreateFunction : public IrInstruction {
@@ -78,7 +78,47 @@ namespace Poi {
       BytecodeBlock &archive,
       BytecodeBlock &current
     ) const override;
-    std::string show() const override;
+    std::string show(const StringPool &pool) const override;
+  };
+
+  class IrData : public IrInstruction {
+    public:
+    const Register destination;
+    const std::size_t constructor;
+    const std::shared_ptr<std::vector<Register>> captures;
+    const std::shared_ptr<std::vector<std::size_t>> parameters;
+
+    explicit IrData(
+      Register destination,
+      std::size_t constructor,
+      std::shared_ptr<std::vector<Register>> captures,
+      std::shared_ptr<std::vector<std::size_t>> parameters,
+      const std::shared_ptr<const Node> node
+    );
+    Register max_register() const override;
+    void emit_bytecode(
+      BytecodeBlock &archive,
+      BytecodeBlock &current
+    ) const override;
+    std::string show(const StringPool &pool) const override;
+  };
+
+  class IrDataType : public IrInstruction {
+  public:
+    const Register destination;
+    const std::shared_ptr<std::vector<Register>> constructors;
+
+    explicit IrDataType(
+      Register destination,
+      std::shared_ptr<std::vector<Register>> constructors,
+      const std::shared_ptr<const Node> node
+    );
+    Register max_register() const override;
+    void emit_bytecode(
+      BytecodeBlock &archive,
+      BytecodeBlock &current
+    ) const override;
+    std::string show(const StringPool &pool) const override;
   };
 
   class IrDerefFixpoint : public IrInstruction {
@@ -96,7 +136,7 @@ namespace Poi {
       BytecodeBlock &archive,
       BytecodeBlock &current
     ) const override;
-    std::string show() const override;
+    std::string show(const StringPool &pool) const override;
   };
 
   class IrEndFixpoint : public IrInstruction {
@@ -114,7 +154,7 @@ namespace Poi {
       BytecodeBlock &archive,
       BytecodeBlock &current
     ) const override;
-    std::string show() const override;
+    std::string show(const StringPool &pool) const override;
   };
 
   class IrExit : public IrInstruction {
@@ -130,7 +170,7 @@ namespace Poi {
       BytecodeBlock &archive,
       BytecodeBlock &current
     ) const override;
-    std::string show() const override;
+    std::string show(const StringPool &pool) const override;
   };
 
   class IrMove : public IrInstruction {
@@ -148,7 +188,27 @@ namespace Poi {
       BytecodeBlock &archive,
       BytecodeBlock &current
     ) const override;
-    std::string show() const override;
+    std::string show(const StringPool &pool) const override;
+  };
+
+  class IrMember : public IrInstruction {
+  public:
+    const Register destination;
+    const Register object;
+    const std::size_t field;
+
+    explicit IrMember(
+      Register destination,
+      Register object,
+      std::size_t field,
+      const std::shared_ptr<const Node> node
+    );
+    Register max_register() const override;
+    void emit_bytecode(
+      BytecodeBlock &archive,
+      BytecodeBlock &current
+    ) const override;
+    std::string show(const StringPool &pool) const override;
   };
 
   class IrReturn : public IrInstruction {
@@ -164,7 +224,7 @@ namespace Poi {
       BytecodeBlock &archive,
       BytecodeBlock &current
     ) const override;
-    std::string show() const override;
+    std::string show(const StringPool &pool) const override;
   };
 
   class IrTailCall : public IrInstruction {
@@ -182,7 +242,7 @@ namespace Poi {
       BytecodeBlock &archive,
       BytecodeBlock &current
     ) const override;
-    std::string show() const override;
+    std::string show(const StringPool &pool) const override;
   };
 
   class IrBlock {
@@ -193,7 +253,7 @@ namespace Poi {
       BytecodeBlock &archive,
       BytecodeBlock &current
     ) const;
-    std::string show() const;
+    std::string show(const StringPool &pool) const;
 
     std::shared_ptr<
       std::vector<std::shared_ptr<const IrInstruction>>
