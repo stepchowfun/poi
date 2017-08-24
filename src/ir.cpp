@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <poi/ir.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -21,10 +22,6 @@ Poi::IrBeginFixpoint::IrBeginFixpoint(
   std::uint16_t destination,
   const std::shared_ptr<const Node> node
 ) : Poi::IrInstruction(node), destination(destination) {
-}
-
-bool Poi::IrBeginFixpoint::terminates_block() const {
-  return false;
 }
 
 std::uint16_t Poi::IrBeginFixpoint::max_register() const {
@@ -60,10 +57,6 @@ Poi::IrCall::IrCall(
   destination(destination),
   function(function),
   argument(argument) {
-}
-
-bool Poi::IrCall::terminates_block() const {
-  return false;
 }
 
 std::uint16_t Poi::IrCall::max_register() const {
@@ -103,10 +96,6 @@ Poi::IrCreateFunction::IrCreateFunction(
   destination(destination),
   body(body),
   captures(captures) {
-}
-
-bool Poi::IrCreateFunction::terminates_block() const {
-  return false;
 }
 
 std::uint16_t Poi::IrCreateFunction::max_register() const {
@@ -178,10 +167,6 @@ void Poi::IrDerefFixpoint::emit_bytecode(
   current.push(bc, node);
 }
 
-bool Poi::IrDerefFixpoint::terminates_block() const {
-  return false;
-}
-
 std::uint16_t Poi::IrDerefFixpoint::max_register() const {
   return std::max(destination, fixpoint);
 }
@@ -217,10 +202,6 @@ void Poi::IrEndFixpoint::emit_bytecode(
   current.push(bc, node);
 }
 
-bool Poi::IrEndFixpoint::terminates_block() const {
-  return false;
-}
-
 std::uint16_t Poi::IrEndFixpoint::max_register() const {
   return std::max(fixpoint, target);
 }
@@ -241,10 +222,6 @@ Poi::IrExit::IrExit(
 ) :
   Poi::IrInstruction(node),
   value(value) {
-}
-
-bool Poi::IrExit::terminates_block() const {
-  return true;
 }
 
 std::uint16_t Poi::IrExit::max_register() const {
@@ -280,10 +257,6 @@ Poi::IrMove::IrMove(
   source(source) {
 }
 
-bool Poi::IrMove::terminates_block() const {
-  return false;
-}
-
 std::uint16_t Poi::IrMove::max_register() const {
   return std::max(destination, source);
 }
@@ -292,11 +265,7 @@ void Poi::IrMove::emit_bytecode(
   Poi::BytecodeBlock &archive,
   Poi::BytecodeBlock &current
 ) const {
-  Bytecode bc;
-  bc.type = BytecodeType::MOVE;
-  bc.move_args.destination = destination;
-  bc.move_args.source = source;
-  current.push(bc, node);
+  assert(false);
 }
 
 std::string Poi::IrMove::show() const {
@@ -317,10 +286,6 @@ Poi::IrReturn::IrReturn(
   value(value) {
 }
 
-bool Poi::IrReturn::terminates_block() const {
-  return true;
-}
-
 std::uint16_t Poi::IrReturn::max_register() const {
   return value;
 }
@@ -338,6 +303,38 @@ void Poi::IrReturn::emit_bytecode(
 std::string Poi::IrReturn::show() const {
   return std::string("RETURN") +
     " value=" + std::to_string(value);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// IrTailCall                                                                //
+///////////////////////////////////////////////////////////////////////////////
+
+Poi::IrTailCall::IrTailCall(
+  std::uint16_t function,
+  std::uint16_t argument,
+  const std::shared_ptr<const Node> node
+) : Poi::IrInstruction(node), function(function), argument(argument) {
+}
+
+std::uint16_t Poi::IrTailCall::max_register() const {
+  return std::max(function, argument);
+}
+
+void Poi::IrTailCall::emit_bytecode(
+  Poi::BytecodeBlock &archive,
+  Poi::BytecodeBlock &current
+) const {
+  Bytecode bc;
+  bc.type = BytecodeType::TAIL_CALL;
+  bc.call_tail_args.function = function;
+  bc.call_tail_args.argument = argument;
+  current.push(bc, node);
+}
+
+std::string Poi::IrTailCall::show() const {
+  return std::string("TAIL_CALL") +
+    " function=" + std::to_string(function) +
+    " argument=" + std::to_string(argument);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -376,46 +373,4 @@ std::string Poi::IrBlock::show() const {
     result += instruction->show() + "\n";
   }
   return result;
-}
-
-std::shared_ptr<
-  std::vector<std::shared_ptr<const Poi::IrInstruction>>
-> Poi::IrBlock::get_instructions() {
-  return instructions;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// IrTailCall                                                                //
-///////////////////////////////////////////////////////////////////////////////
-
-Poi::IrTailCall::IrTailCall(
-  std::uint16_t function,
-  std::uint16_t argument,
-  const std::shared_ptr<const Node> node
-) : Poi::IrInstruction(node), function(function), argument(argument) {
-}
-
-bool Poi::IrTailCall::terminates_block() const {
-  return true;
-}
-
-std::uint16_t Poi::IrTailCall::max_register() const {
-  return std::max(function, argument);
-}
-
-void Poi::IrTailCall::emit_bytecode(
-  Poi::BytecodeBlock &archive,
-  Poi::BytecodeBlock &current
-) const {
-  Bytecode bc;
-  bc.type = BytecodeType::TAIL_CALL;
-  bc.call_tail_args.function = function;
-  bc.call_tail_args.argument = argument;
-  current.push(bc, node);
-}
-
-std::string Poi::IrTailCall::show() const {
-  return std::string("TAIL_CALL") +
-    " function=" + std::to_string(function) +
-    " argument=" + std::to_string(argument);
 }

@@ -1,6 +1,6 @@
 {
   "source": "(x -> y -> z -> y) (a -> a) (b -> b) (c -> c)",
-  "stdout": "FUNCTION body=16 frame_size=2 captures=[]\n",
+  "stdout": "FUNCTION body=14 frame_size=1 captures=[]\n",
   "stderr": "",
   "exit_code": 0
 }

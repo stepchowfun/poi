@@ -10,7 +10,9 @@
 
 namespace Poi {
   // Optimize a block of IR.
-  std::shared_ptr<IrBlock> optimize(std::shared_ptr<IrBlock> block);
+  const std::shared_ptr<const IrBlock> optimize(
+    const std::shared_ptr<const IrBlock> block
+  );
 }
 
 #endif

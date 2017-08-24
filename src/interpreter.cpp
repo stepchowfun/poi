@@ -116,7 +116,7 @@ Poi::Value * Poi::interpret(
 ) {
   auto program = &(block.bytecode[0]);
 
-  std::size_t value_stack_size = start_stack_size;
+  std::size_t value_stack_size = 0;
   std::size_t value_stack_buffer_size = min_stack_buffer_size;
   auto value_stack = new Value * [value_stack_buffer_size];
   #ifndef NDEBUG
@@ -277,7 +277,7 @@ Poi::Value * Poi::interpret(
         auto target = value_stack[
           value_stack_size - 1 - bytecode.deref_fixpoint_args.fixpoint
         ]->fixpoint_members.target;
-        if (target == nullptr) {
+        if (!target) {
           throw_error(
             "Recursive reference evaluated before the knot has been tied.",
             program_counter,
@@ -312,11 +312,6 @@ Poi::Value * Poi::interpret(
         delete [] value_stack;
         delete [] call_stack;
         return result;
-      }
-      case BytecodeType::MOVE: {
-        value_stack[value_stack_size - 1 - bytecode.move_args.destination] =
-          value_stack[value_stack_size - 1 - bytecode.move_args.source];
-        break;
       }
       case BytecodeType::RETURN: {
         auto return_value = value_stack[
@@ -387,9 +382,7 @@ Poi::Value * Poi::interpret(
         continue;
       }
       default: {
-        throw Error(
-          "interpret(...) is not implemented for '" + bytecode.show() + "'."
-        );
+        assert(false);
       }
     }
     program_counter++;
