@@ -221,7 +221,7 @@ Poi::Value * Poi::interpret(
           #endif
         );
         value_stack[value_stack_size - 1] = argument;
-        for (std::uint16_t i = 0; i < function_members.num_captures; ++i) {
+        for (Register i = 0; i < function_members.num_captures; ++i) {
           value_stack[value_stack_size - 2 - i] = function_members.captures[i];
         }
 
@@ -255,7 +255,7 @@ Poi::Value * Poi::interpret(
           bytecode.create_function_args.num_captures
         ];
         for (
-          std::uint16_t i = 0;
+          Register i = 0;
           i < bytecode.create_function_args.num_captures;
           ++i
         ) {
@@ -374,7 +374,7 @@ Poi::Value * Poi::interpret(
           #endif
         );
         value_stack[value_stack_size - 1] = argument;
-        for (std::uint16_t i = 0; i < function_members.num_captures; ++i) {
+        for (Register i = 0; i < function_members.num_captures; ++i) {
           value_stack[value_stack_size - 2 - i] = function_members.captures[i];
         }
 

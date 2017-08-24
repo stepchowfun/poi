@@ -19,12 +19,12 @@ Poi::IrInstruction::~IrInstruction() {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::IrBeginFixpoint::IrBeginFixpoint(
-  std::uint16_t destination,
+  Poi::Register destination,
   const std::shared_ptr<const Node> node
 ) : Poi::IrInstruction(node), destination(destination) {
 }
 
-std::uint16_t Poi::IrBeginFixpoint::max_register() const {
+Poi::Register Poi::IrBeginFixpoint::max_register() const {
   return destination;
 }
 
@@ -48,9 +48,9 @@ std::string Poi::IrBeginFixpoint::show() const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::IrCall::IrCall(
-  std::uint16_t destination,
-  std::uint16_t function,
-  std::uint16_t argument,
+  Poi::Register destination,
+  Poi::Register function,
+  Poi::Register argument,
   const std::shared_ptr<const Node> node
 ) :
   Poi::IrInstruction(node),
@@ -59,7 +59,7 @@ Poi::IrCall::IrCall(
   argument(argument) {
 }
 
-std::uint16_t Poi::IrCall::max_register() const {
+Poi::Register Poi::IrCall::max_register() const {
   return std::max(destination, std::max(function, argument));
 }
 
@@ -87,9 +87,9 @@ std::string Poi::IrCall::show() const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::IrCreateFunction::IrCreateFunction(
-  std::uint16_t destination,
+  Poi::Register destination,
   std::shared_ptr<const IrBlock> body,
-  std::shared_ptr<std::vector<std::uint16_t>> captures,
+  std::shared_ptr<std::vector<Poi::Register>> captures,
   const std::shared_ptr<const Node> node
 ) :
   Poi::IrInstruction(node),
@@ -98,8 +98,8 @@ Poi::IrCreateFunction::IrCreateFunction(
   captures(captures) {
 }
 
-std::uint16_t Poi::IrCreateFunction::max_register() const {
-  std::uint16_t highest_register = destination;
+Poi::Register Poi::IrCreateFunction::max_register() const {
+  Register highest_register = destination;
   for (auto &capture : *captures) {
     highest_register = std::max(highest_register, capture);
   }
@@ -132,7 +132,7 @@ std::string Poi::IrCreateFunction::show() const {
     " destination=" + std::to_string(destination) +
     " body=[\n" + body->show() + "]" +
     " captures=[";
-    for (std::uint16_t i = 0; i < captures->size(); i++) {
+    for (Register i = 0; i < captures->size(); i++) {
       if (i != 0) {
         result += ", ";
       }
@@ -147,8 +147,8 @@ std::string Poi::IrCreateFunction::show() const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::IrDerefFixpoint::IrDerefFixpoint(
-  std::uint16_t destination,
-  std::uint16_t fixpoint,
+  Poi::Register destination,
+  Poi::Register fixpoint,
   const std::shared_ptr<const Node> node
 ) :
   Poi::IrInstruction(node),
@@ -167,7 +167,7 @@ void Poi::IrDerefFixpoint::emit_bytecode(
   current.push(bc, node);
 }
 
-std::uint16_t Poi::IrDerefFixpoint::max_register() const {
+Poi::Register Poi::IrDerefFixpoint::max_register() const {
   return std::max(destination, fixpoint);
 }
 
@@ -182,8 +182,8 @@ std::string Poi::IrDerefFixpoint::show() const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::IrEndFixpoint::IrEndFixpoint(
-  std::uint16_t fixpoint,
-  std::uint16_t target,
+  Poi::Register fixpoint,
+  Poi::Register target,
   const std::shared_ptr<const Node> node
 ) :
   Poi::IrInstruction(node),
@@ -202,7 +202,7 @@ void Poi::IrEndFixpoint::emit_bytecode(
   current.push(bc, node);
 }
 
-std::uint16_t Poi::IrEndFixpoint::max_register() const {
+Poi::Register Poi::IrEndFixpoint::max_register() const {
   return std::max(fixpoint, target);
 }
 
@@ -217,14 +217,14 @@ std::string Poi::IrEndFixpoint::show() const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::IrExit::IrExit(
-  std::uint16_t value,
+  Poi::Register value,
   const std::shared_ptr<const Node> node
 ) :
   Poi::IrInstruction(node),
   value(value) {
 }
 
-std::uint16_t Poi::IrExit::max_register() const {
+Poi::Register Poi::IrExit::max_register() const {
   return value;
 }
 
@@ -248,8 +248,8 @@ std::string Poi::IrExit::show() const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::IrMove::IrMove(
-  std::uint16_t destination,
-  std::uint16_t source,
+  Poi::Register destination,
+  Poi::Register source,
   const std::shared_ptr<const Node> node
 ) :
   Poi::IrInstruction(node),
@@ -257,7 +257,7 @@ Poi::IrMove::IrMove(
   source(source) {
 }
 
-std::uint16_t Poi::IrMove::max_register() const {
+Poi::Register Poi::IrMove::max_register() const {
   return std::max(destination, source);
 }
 
@@ -279,14 +279,14 @@ std::string Poi::IrMove::show() const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::IrReturn::IrReturn(
-  std::uint16_t value,
+  Poi::Register value,
   const std::shared_ptr<const Node> node
 ) :
   Poi::IrInstruction(node),
   value(value) {
 }
 
-std::uint16_t Poi::IrReturn::max_register() const {
+Poi::Register Poi::IrReturn::max_register() const {
   return value;
 }
 
@@ -310,13 +310,13 @@ std::string Poi::IrReturn::show() const {
 ///////////////////////////////////////////////////////////////////////////////
 
 Poi::IrTailCall::IrTailCall(
-  std::uint16_t function,
-  std::uint16_t argument,
+  Poi::Register function,
+  Poi::Register argument,
   const std::shared_ptr<const Node> node
 ) : Poi::IrInstruction(node), function(function), argument(argument) {
 }
 
-std::uint16_t Poi::IrTailCall::max_register() const {
+Poi::Register Poi::IrTailCall::max_register() const {
   return std::max(function, argument);
 }
 
@@ -347,12 +347,12 @@ Poi::IrBlock::IrBlock() {
   >();
 }
 
-std::uint16_t Poi::IrBlock::frame_size() const {
-  std::uint16_t num_registers = 0;
+Poi::Register Poi::IrBlock::frame_size() const {
+  Register num_registers = 0;
   for (auto &instruction : *instructions) {
     num_registers = std::max(
       num_registers,
-      static_cast<std::uint16_t>(instruction->max_register() + 1)
+      static_cast<Register>(instruction->max_register() + 1)
     );
   }
   return num_registers;

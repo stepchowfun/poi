@@ -5,8 +5,6 @@
 #ifndef POI_IR_H
 #define POI_IR_H
 
-#include <cstddef>
-#include <cstdint>
 #include <memory>
 #include <poi/ast.h>
 #include <poi/bytecode.h>
@@ -19,7 +17,7 @@ namespace Poi {
 
     explicit IrInstruction(const std::shared_ptr<const Node> node);
     virtual ~IrInstruction() = 0;
-    virtual std::uint16_t max_register() const = 0;
+    virtual Register max_register() const = 0;
     virtual void emit_bytecode(
       BytecodeBlock &archive,
       BytecodeBlock &current
@@ -29,13 +27,13 @@ namespace Poi {
 
   class IrBeginFixpoint : public IrInstruction {
   public:
-    const std::uint16_t destination;
+    const Register destination;
 
     explicit IrBeginFixpoint(
-      std::uint16_t destination,
+      Register destination,
       const std::shared_ptr<const Node> node
     );
-    std::uint16_t max_register() const override;
+    Register max_register() const override;
     void emit_bytecode(
       BytecodeBlock &archive,
       BytecodeBlock &current
@@ -45,17 +43,17 @@ namespace Poi {
 
   class IrCall : public IrInstruction {
   public:
-    const std::uint16_t destination;
-    const std::uint16_t function;
-    const std::uint16_t argument;
+    const Register destination;
+    const Register function;
+    const Register argument;
 
     explicit IrCall(
-      std::uint16_t destination,
-      std::uint16_t function,
-      std::uint16_t argument,
+      Register destination,
+      Register function,
+      Register argument,
       const std::shared_ptr<const Node> node
     );
-    std::uint16_t max_register() const override;
+    Register max_register() const override;
     void emit_bytecode(
       BytecodeBlock &archive,
       BytecodeBlock &current
@@ -65,17 +63,17 @@ namespace Poi {
 
   class IrCreateFunction : public IrInstruction {
   public:
-    const std::uint16_t destination;
+    const Register destination;
     const std::shared_ptr<const IrBlock> body;
-    const std::shared_ptr<std::vector<std::uint16_t>> captures;
+    const std::shared_ptr<std::vector<Register>> captures;
 
     explicit IrCreateFunction(
-      std::uint16_t destination,
+      Register destination,
       std::shared_ptr<const IrBlock> body,
-      std::shared_ptr<std::vector<std::uint16_t>> captures,
+      std::shared_ptr<std::vector<Register>> captures,
       const std::shared_ptr<const Node> node
     );
-    std::uint16_t max_register() const override;
+    Register max_register() const override;
     void emit_bytecode(
       BytecodeBlock &archive,
       BytecodeBlock &current
@@ -85,15 +83,15 @@ namespace Poi {
 
   class IrDerefFixpoint : public IrInstruction {
   public:
-    const std::uint16_t destination;
-    const std::uint16_t fixpoint;
+    const Register destination;
+    const Register fixpoint;
 
     explicit IrDerefFixpoint(
-      std::uint16_t destination,
-      std::uint16_t fixpoint,
+      Register destination,
+      Register fixpoint,
       const std::shared_ptr<const Node> node
     );
-    std::uint16_t max_register() const override;
+    Register max_register() const override;
     void emit_bytecode(
       BytecodeBlock &archive,
       BytecodeBlock &current
@@ -103,15 +101,15 @@ namespace Poi {
 
   class IrEndFixpoint : public IrInstruction {
   public:
-    const std::uint16_t fixpoint;
-    const std::uint16_t target;
+    const Register fixpoint;
+    const Register target;
 
     explicit IrEndFixpoint(
-      std::uint16_t fixpoint,
-      std::uint16_t target,
+      Register fixpoint,
+      Register target,
       const std::shared_ptr<const Node> node
     );
-    std::uint16_t max_register() const override;
+    Register max_register() const override;
     void emit_bytecode(
       BytecodeBlock &archive,
       BytecodeBlock &current
@@ -121,13 +119,13 @@ namespace Poi {
 
   class IrExit : public IrInstruction {
   public:
-    const std::uint16_t value;
+    const Register value;
 
     explicit IrExit(
-      std::uint16_t value,
+      Register value,
       const std::shared_ptr<const Node> node
     );
-    std::uint16_t max_register() const override;
+    Register max_register() const override;
     void emit_bytecode(
       BytecodeBlock &archive,
       BytecodeBlock &current
@@ -137,15 +135,15 @@ namespace Poi {
 
   class IrMove : public IrInstruction {
   public:
-    const std::uint16_t destination;
-    const std::uint16_t source;
+    const Register destination;
+    const Register source;
 
     explicit IrMove(
-      std::uint16_t destination,
-      std::uint16_t source,
+      Register destination,
+      Register source,
       const std::shared_ptr<const Node> node
     );
-    std::uint16_t max_register() const override;
+    Register max_register() const override;
     void emit_bytecode(
       BytecodeBlock &archive,
       BytecodeBlock &current
@@ -155,13 +153,13 @@ namespace Poi {
 
   class IrReturn : public IrInstruction {
   public:
-    const std::uint16_t value;
+    const Register value;
 
     explicit IrReturn(
-      std::uint16_t value,
+      Register value,
       const std::shared_ptr<const Node> node
     );
-    std::uint16_t max_register() const override;
+    Register max_register() const override;
     void emit_bytecode(
       BytecodeBlock &archive,
       BytecodeBlock &current
@@ -171,15 +169,15 @@ namespace Poi {
 
   class IrTailCall : public IrInstruction {
   public:
-    const std::uint16_t function;
-    const std::uint16_t argument;
+    const Register function;
+    const Register argument;
 
     explicit IrTailCall(
-      std::uint16_t function,
-      std::uint16_t argument,
+      Register function,
+      Register argument,
       const std::shared_ptr<const Node> node
     );
-    std::uint16_t max_register() const override;
+    Register max_register() const override;
     void emit_bytecode(
       BytecodeBlock &archive,
       BytecodeBlock &current
@@ -190,7 +188,7 @@ namespace Poi {
   class IrBlock {
   public:
     explicit IrBlock();
-    std::uint16_t frame_size() const;
+    Register frame_size() const;
     void emit_bytecode(
       BytecodeBlock &archive,
       BytecodeBlock &current

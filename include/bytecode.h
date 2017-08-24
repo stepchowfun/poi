@@ -13,6 +13,8 @@
 #include <type_traits>
 
 namespace Poi {
+  using Register = std::uint16_t;
+
   enum class BytecodeType {
     BEGIN_FIXPOINT,
     CALL,
@@ -37,51 +39,51 @@ namespace Poi {
 
   class BeginFixpointArgs {
   public:
-    std::uint16_t destination;
+    Register destination;
   };
 
   class CallArgs {
   public:
-    std::uint16_t destination;
-    std::uint16_t function;
-    std::uint16_t argument;
+    Register destination;
+    Register function;
+    Register argument;
   };
 
   class CreateFunctionArgs {
   public:
-    std::uint16_t destination;
-    std::uint16_t frame_size;
-    std::uint16_t num_captures;
-    std::uint16_t * captures;
+    Register destination;
+    Register frame_size;
+    Register num_captures;
+    Register * captures;
     std::size_t body;
   };
 
   class DerefFixpointArgs {
   public:
-    std::uint16_t destination;
-    std::uint16_t fixpoint;
+    Register destination;
+    Register fixpoint;
   };
 
   class EndFixpointArgs {
   public:
-    std::uint16_t fixpoint;
-    std::uint16_t target;
+    Register fixpoint;
+    Register target;
   };
 
   class ExitArgs {
   public:
-    std::uint16_t value;
+    Register value;
   };
 
   class ReturnArgs {
   public:
-    std::uint16_t value;
+    Register value;
   };
 
   class TailCallArgs {
   public:
-    std::uint16_t function;
-    std::uint16_t argument;
+    Register function;
+    Register argument;
   };
 
   class Bytecode {
