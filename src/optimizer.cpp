@@ -1,15 +1,18 @@
 #include <cassert>
 #include <cstddef>
-#include <cstdint>
 #include <poi/optimizer.h>
 #include <unordered_map>
 #include <unordered_set>
 
 namespace Poi {
+  /////////////////////////////////////////////////////////////////////////////
+  // Register allocation                                                     //
+  /////////////////////////////////////////////////////////////////////////////
+
   void reverse_pass_input(
-    std::uint16_t input_register,
-    std::unordered_set<std::uint16_t> &alive,
-    std::unordered_set<std::uint16_t> &last_read
+    Register input_register,
+    std::unordered_set<Register> &alive,
+    std::unordered_set<Register> &last_read
   ) {
     if (alive.insert(input_register).second) {
       last_read.insert(input_register);
@@ -17,8 +20,8 @@ namespace Poi {
   }
 
   void reverse_pass_output(
-    std::uint16_t output_register,
-    std::unordered_set<std::uint16_t> &alive
+    Register output_register,
+    std::unordered_set<Register> &alive
   ) {
     auto iter = alive.find(output_register);
     if (iter != alive.end()) {
@@ -26,18 +29,18 @@ namespace Poi {
     }
   }
 
-  std::uint16_t forward_pass_read(
-    std::uint16_t old,
-    std::unordered_map<std::uint16_t, std::uint16_t> &old_to_new
+  Register forward_pass_read(
+    Register old,
+    std::unordered_map<Register, Register> &old_to_new
   ) {
     return old_to_new.find(old)->second;
   }
 
   void forward_pass_elim_registers(
-    std::unordered_set<std::uint16_t> &free_registers,
-    std::unordered_map<std::uint16_t, std::uint16_t> &old_to_new,
-    std::unordered_map<std::uint16_t, std::uint16_t> &new_refcounts,
-    std::unordered_set<std::uint16_t> &registers
+    std::unordered_set<Register> &free_registers,
+    std::unordered_map<Register, Register> &old_to_new,
+    std::unordered_map<Register, unsigned int> &new_refcounts,
+    std::unordered_set<Register> &registers
   ) {
     for (auto &old_reg : registers) {
       auto new_reg = forward_pass_read(old_reg, old_to_new);
@@ -51,12 +54,12 @@ namespace Poi {
     }
   }
 
-  std::uint16_t forward_pass_write(
-    std::uint16_t old,
-    std::uint16_t &total_registers,
-    std::unordered_set<std::uint16_t> &free_registers,
-    std::unordered_map<std::uint16_t, std::uint16_t> &old_to_new,
-    std::unordered_map<std::uint16_t, std::uint16_t> &new_refcounts
+  Register forward_pass_write(
+    Register old,
+    Register &total_registers,
+    std::unordered_set<Register> &free_registers,
+    std::unordered_map<Register, Register> &old_to_new,
+    std::unordered_map<Register, unsigned int> &new_refcounts
   ) {
     auto free_reg = free_registers.begin();
     if (free_reg == free_registers.end()) {
@@ -89,8 +92,8 @@ namespace Poi {
   ) {
     // Iterate through the instructions in reverse, marking the last time each
     // register was read.
-    std::unordered_set<std::uint16_t> alive;
-    std::vector<std::unordered_set<std::uint16_t>> last_read(
+    std::unordered_set<Register> alive;
+    std::vector<std::unordered_set<Register>> last_read(
       block->instructions->size()
     );
     for (std::size_t i = block->instructions->size() - 1; true; --i) {
@@ -206,9 +209,9 @@ namespace Poi {
 
     // Do a forward pass through the instructions to allocate the registers.
     auto new_block = std::make_shared<IrBlock>();
-    std::unordered_map<std::uint16_t, std::uint16_t> old_to_new;
-    std::unordered_map<std::uint16_t, std::uint16_t> new_refcounts;
-    std::uint16_t total_registers = 0;
+    std::unordered_map<Register, Register> old_to_new;
+    std::unordered_map<Register, unsigned int> new_refcounts;
+    Register total_registers = 0;
     for (auto &reg : alive) {
       old_to_new.insert({ reg, reg });
       new_refcounts.insert({ reg, 1 });
@@ -216,8 +219,8 @@ namespace Poi {
         total_registers = reg + 1;
       }
     }
-    std::unordered_set<std::uint16_t> free_registers;
-    for (std::uint16_t i = 0; i < total_registers; ++i) {
+    std::unordered_set<Register> free_registers;
+    for (Register i = 0; i < total_registers; ++i) {
       if (alive.find(i) == alive.end()) {
         free_registers.insert(i);
       }
@@ -291,7 +294,7 @@ namespace Poi {
         const IrCreateFunction
       >(block->instructions->at(i));
       if (bc_create_function) {
-        auto captures = std::make_shared<std::vector<std::uint16_t>>();
+        auto captures = std::make_shared<std::vector<Register>>();
         for (auto &capture : *(bc_create_function->captures)) {
           captures->push_back(forward_pass_read(capture, old_to_new));
         }

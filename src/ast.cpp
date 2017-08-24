@@ -232,7 +232,7 @@ std::size_t Poi::Function::emit_ir(
   std::unordered_map<std::size_t, VariableInfo> body_environment;
   body_environment.insert({ variable, VariableInfo(0, false) });
 
-  auto captures = std::make_shared<std::vector<std::uint16_t>>();
+  auto captures = std::make_shared<std::vector<Register>>();
   std::size_t index = 1;
   for (auto iter : *free_variables) {
     auto capture_info = environment.at(iter);
